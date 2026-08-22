@@ -15,8 +15,8 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-const GOA_IMAGE =
-  'https://images.pexels.com/photos/10185531/pexels-photo-10185531.jpeg?auto=compress&cs=tinysrgb&w=1920';
+const BACKGROUND_IMAGE = '/pg2bg.png';
+
 
 interface WelcomeScreenProps {
   userName?: string;
@@ -104,12 +104,17 @@ export function WelcomeScreen({
       aria-label="Choose a state or language for AgriOptima AI"
     >
       {/* Atmospheric background layers */}
-      <div className="absolute inset-0" aria-hidden="true">
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <img
-          src={GOA_IMAGE}
+          src={BACKGROUND_IMAGE}
           alt="Agricultural landscape"
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ transform: 'scale(1.12)' }}
+          className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none"
+          style={{
+            transform: 'scale(1.12)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
           loading="eager"
         />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,21,16,0.5)_0%,rgba(4,43,29,0.35)_50%,rgba(2,21,16,0.72)_100%)]" />
