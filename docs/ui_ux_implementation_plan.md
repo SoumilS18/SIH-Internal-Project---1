@@ -1,4 +1,4 @@
-# AgriOptima AI (USICT038) — Frontend & UI/UX Implementation Plan
+# AgriOptima AI — Frontend & UI/UX Implementation Plan
 
 **Target:** Smart India Hackathon (SIH) 2026  
 **Document Version:** 1.0.0  

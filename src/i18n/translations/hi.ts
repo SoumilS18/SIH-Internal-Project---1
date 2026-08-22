@@ -2,7 +2,7 @@ export const hi = {
   // Brand & General
   brand: {
     name: 'AgriOptima AI',
-    problemCode: 'USICT038 · SIH 2026',
+    problemCode: 'SIH 2026',
     hackathon: 'स्मार्ट इंडिया हैकाथॉन 2026',
     tagline: 'स्वायत्त कृषि निर्णय बुद्धिमत्ता',
     mission: 'मौसम की अनिश्चितता को आर्थिक रूप से अनुकूलित सटीक कृषि निर्णयों में बदलें।',

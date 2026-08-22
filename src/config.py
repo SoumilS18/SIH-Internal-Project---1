@@ -1,6 +1,6 @@
 """
 src/config.py
-Configuration and Indian Agronomic Constants for USICT038
+Configuration and Indian Agronomic Constants for AgriOptima
 Autonomous AI Agent for Strategic Farm Management & Dynamic Economic Optimization
 """
 

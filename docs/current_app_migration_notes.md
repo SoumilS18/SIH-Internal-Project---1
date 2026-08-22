@@ -1,4 +1,4 @@
-# AgriOptima AI (USICT038) — Streamlit Migration & Transition Notes
+# AgriOptima AI — Streamlit Migration & Transition Notes
 
 **Target:** Smart India Hackathon 2026  
 **Document Version:** 1.0.0  
@@ -8,7 +8,7 @@
 
 ## 1. What `app.py` Currently Does
 
-The current `app.py` serves as the initial demonstration prototype for USICT038. It performs:
+The current `app.py` serves as the initial demonstration prototype. It performs:
 1. Direct Streamlit sidebar widget bindings for state, district, season, land, budget, irrigation, and weather scenario overrides.
 2. Invocations of `service.execute_decision_pipeline(...)` and `service.compare_scenarios(...)`.
 3. Manual dictionary unpacking of raw `farm_state`, `optimization`, and `explanation` dictionaries.

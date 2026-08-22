@@ -1,4 +1,4 @@
-# AgriOptima AI (USICT038) — Frontend Screen & State Specification
+# AgriOptima AI — Frontend Screen & State Specification
 
 **Target:** Smart India Hackathon 2026  
 **Document Version:** 1.0.0  

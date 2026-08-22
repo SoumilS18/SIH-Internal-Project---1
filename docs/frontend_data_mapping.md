@@ -1,4 +1,4 @@
-# AgriOptima AI (USICT038) — Frontend Data Mapping Specification
+# AgriOptima AI — Frontend Data Mapping Specification
 
 **Target:** Smart India Hackathon 2026  
 **Document Version:** 1.0.0  

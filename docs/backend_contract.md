@@ -1,4 +1,4 @@
-# AgriOptima AI (USICT038) — Backend Service API Contract Specification
+# AgriOptima AI — Backend Service API Contract Specification
 
 **Target:** Smart India Hackathon 2026  
 **Document Version:** 1.0.0  

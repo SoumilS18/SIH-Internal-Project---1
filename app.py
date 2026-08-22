@@ -1,6 +1,6 @@
 """
 app.py
-Production-Ready Streamlit Dashboard for USICT038
+Production-Ready Streamlit Dashboard
 Smart India Hackathon (SIH) 2026
 Autonomous AI Agent for Strategic Farm Management & Dynamic Economic Optimization
 Dynamic crop allocation using weather, soil moisture, agricultural economics, and constrained optimization.
@@ -248,7 +248,7 @@ qual = state["quality"]
 risks = state["risk"]
 
 # --- MAIN HEADER ---
-st.markdown("<div class='main-header'>🌾 USICT038 — Autonomous AI Agent for Strategic Farm Management</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-header'>🌾 Autonomous AI Agent for Strategic Farm Management</div>", unsafe_allow_html=True)
 st.markdown(
     "<div class='sub-header'>Dynamic crop allocation using weather, soil moisture, agricultural economics, and constrained optimization.</div>",
     unsafe_allow_html=True

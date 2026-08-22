@@ -1,6 +1,6 @@
 """
 src/api_server.py
-Lightweight, multi-threaded REST API server for USICT038 Autonomous Farm Decision Intelligence.
+Lightweight, multi-threaded REST API server for Autonomous Farm Decision Intelligence.
 Exposes standard HTTP endpoints:
   - GET  /api/health
   - GET  /api/locations
@@ -68,7 +68,7 @@ class FarmDecisionApiHandler(BaseHTTPRequestHandler):
         if url_path == "/api/health" or url_path == "/":
             payload = {
                 "status": "ok",
-                "service": "USICT038 Autonomous Farm Decision Intelligence",
+                "service": "Autonomous Farm Decision Intelligence",
                 "version": "1.0.0",
                 "hackathon": "Smart India Hackathon 2026"
             }
@@ -160,7 +160,7 @@ def run_server(host: str = "127.0.0.1", port: int = 8000):
     server_address = (host, port)
     httpd = ThreadedHTTPServer(server_address, FarmDecisionApiHandler)
     print(f"==================================================")
-    print(f"USICT038 Farm Intelligence API Server")
+    print(f"AgriOptima Farm Intelligence API Server")
     print(f"Running on http://{host}:{port}")
     print(f"Health Check: http://{host}:{port}/api/health")
     print(f"Locations:    http://{host}:{port}/api/locations")
@@ -178,7 +178,7 @@ def run_server(host: str = "127.0.0.1", port: int = 8000):
             sys.stderr.write(f"[Server Recovered] {ex}\n")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="USICT038 API Server")
+    parser = argparse.ArgumentParser(description="AgriOptima API Server")
     parser.add_argument("--host", default="127.0.0.1", help="Host binding address (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8000, help="Port to bind server (default: 8000)")
     args = parser.parse_args()

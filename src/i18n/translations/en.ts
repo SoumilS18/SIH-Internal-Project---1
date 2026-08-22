@@ -2,7 +2,7 @@ export const en = {
   // Brand & General
   brand: {
     name: 'AgriOptima AI',
-    problemCode: 'USICT038 · SIH 2026',
+    problemCode: 'SIH 2026',
     hackathon: 'Smart India Hackathon 2026',
     tagline: 'Autonomous Farm Decision Intelligence',
     mission: 'Turn environmental uncertainty into economically optimized farm decisions.',

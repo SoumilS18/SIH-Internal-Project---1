@@ -1,6 +1,6 @@
 """
 src/api_models.py
-Frontend-Neutral Data Models & Schema Contracts for AgriOptima AI (USICT038).
+Frontend-Neutral Data Models & Schema Contracts for AgriOptima AI.
 Defines standard request and response dataclasses with JSON-serializable converters.
 Ensures clean boundary decoupling between the scientific backend and any future frontend (Web, Mobile, REST API).
 """

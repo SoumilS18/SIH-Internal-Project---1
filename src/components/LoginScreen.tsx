@@ -148,9 +148,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       {/* ========================================================================= */}
       <header className="relative z-20 flex shrink-0 items-center justify-between px-5 py-4 sm:px-8 lg:px-12 backdrop-blur-[2px]">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold-300/40 bg-gradient-to-br from-forest-800 to-forest-950 shadow-[0_0_15px_rgba(255,210,26,0.2)]">
-            <Leaf className="h-5 w-5 text-gold-300" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="AgriOptima AI Logo"
+            className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-contain border border-gold-300/40 bg-gradient-to-br from-forest-800 to-forest-950 shadow-[0_0_15px_rgba(255,210,26,0.2)]"
+          />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-serif text-lg font-bold tracking-tight text-cream-100 drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">

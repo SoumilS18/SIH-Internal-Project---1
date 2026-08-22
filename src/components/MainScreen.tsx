@@ -312,7 +312,7 @@ export function MainScreen({
                 AgriOptima AI
               </span>
               <span className="hidden font-mono text-[10px] uppercase tracking-widest text-cream-300/50 sm:inline">
-                USICT038 · SIH 2026
+                SIH 2026
               </span>
             </div>
           </div>

@@ -1,4 +1,4 @@
-# USICT038 — Autonomous AI Agent for Strategic Farm Management & Dynamic Economic Optimization
+# Autonomous AI Agent for Strategic Farm Management & Dynamic Economic Optimization
 
 **Smart India Hackathon (SIH) 2026**  
 *An India-centric, risk-aware autonomous agricultural decision support and portfolio optimization system.*
@@ -9,7 +9,7 @@
 Indian smallholder farmers face severe economic vulnerability due to static crop planning. Traditional agricultural advisories recommend crops based strictly on historical regional averages ("What usually grows here?"). However, Indian agriculture is subject to extreme intra-seasonal climate variability—delayed monsoons, sudden moisture deficits, unseasonal waterlogging, heat waves during flowering, and volatile mandi prices. Farmers lack an integrated system that connects live environmental conditions, soil physics, market price dynamics, and their personal capital constraints to formulate an optimal, risk-mitigated crop allocation plan.
 
 ## 2. Proposed Solution
-**AgriOptima AI (USICT038)** transforms farm decision-making from static guesswork into a **deterministic, explainable, and risk-optimized economic strategy**. The system merges compiled Indian historical agricultural baselines with live numerical weather predictions, multi-depth soil moisture telemetry, and a forward 7-day forecast. It translates environmental stressors into crop-specific yield response factors, recalculates net farm margins per acre, and solves a constrained Linear Program using the SciPy HiGHS optimization engine.
+**AgriOptima AI** transforms farm decision-making from static guesswork into a **deterministic, explainable, and risk-optimized economic strategy**. The system merges compiled Indian historical agricultural baselines with live numerical weather predictions, multi-depth soil moisture telemetry, and a forward 7-day forecast. It translates environmental stressors into crop-specific yield response factors, recalculates net farm margins per acre, and solves a constrained Linear Program using the SciPy HiGHS optimization engine.
 
 ```
 HISTORICAL BASELINES (DES APY, Agmarknet, CACP C2, IMD)

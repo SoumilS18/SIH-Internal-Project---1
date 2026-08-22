@@ -183,7 +183,7 @@ export function WelcomeScreen({
         <header className="flex shrink-0 items-center justify-between px-5 pt-4 sm:px-10 sm:pt-6">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-cream-100/90">
-              AgriOptima AI · USICT038
+              AgriOptima AI
             </span>
             <span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-cream-200/70 sm:inline-block">
               · SIH 2026

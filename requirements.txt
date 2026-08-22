@@ -1,4 +1,4 @@
-# USICT038 — Autonomous AI Agent for Strategic Farm Management & Dynamic Economic Optimization
+# Autonomous AI Agent for Strategic Farm Management & Dynamic Economic Optimization
 # Core Runtime Dependencies
 
 streamlit>=1.30.0
