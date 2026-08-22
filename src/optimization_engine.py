@@ -43,13 +43,20 @@ class DynamicFarmOptimizer:
         budget_inr = max(0.0, farmer.budget_capital_inr)
         risk_tolerance = farmer.risk_tolerance
 
-        # Risk tolerance aversion parameter lambda
-        risk_weights = {
-            "Conservative": 0.50,
-            "Balanced": 0.25,
-            "Aggressive": 0.10
-        }
-        lambda_risk = risk_weights.get(risk_tolerance, 0.25)
+        # Risk tolerance parameters & diversification limits
+        num_candidates = len(candidate_crop_baselines)
+        if risk_tolerance == "Conservative":
+            lambda_risk = 0.65
+            # Conservative: Strict diversification across 3+ crops (max 40% per crop if >=3 candidates, else 50%)
+            default_max_share = 0.40 if num_candidates >= 3 else 0.50
+        elif risk_tolerance == "Aggressive":
+            lambda_risk = 0.05
+            # Aggressive: High concentration in top cash crop (up to 85-90%)
+            default_max_share = 0.90
+        else:  # Balanced
+            lambda_risk = 0.25
+            # Balanced: Moderate diversification across 2-3 crops
+            default_max_share = 0.60
 
         # Process each candidate crop
         processed_candidates = []
@@ -89,7 +96,24 @@ class DynamicFarmOptimizer:
             
             # Risk-adjusted economic return (Objective function coefficient)
             risk_score = suitability["risk_score"]
-            risk_adjusted_profit_acre = round(expected_profit_acre * (1.0 - (risk_score * lambda_risk)), 2)
+            if risk_tolerance == "Conservative":
+                # Stronger penalty on risky crops for conservative farmers
+                risk_penalty = (risk_score ** 1.25) * lambda_risk
+            elif risk_tolerance == "Aggressive":
+                # Minimal risk penalty for aggressive farmers
+                risk_penalty = (risk_score ** 0.8) * lambda_risk
+            else:
+                risk_penalty = risk_score * lambda_risk
+
+            risk_adjusted_profit_acre = round(expected_profit_acre * max(0.05, 1.0 - risk_penalty), 2)
+
+            base_max_share = baseline.get("max_acre_share", 0.75)
+            if risk_tolerance == "Conservative":
+                crop_max_share = min(default_max_share, base_max_share)
+            elif risk_tolerance == "Aggressive":
+                crop_max_share = max(default_max_share, base_max_share)
+            else:
+                crop_max_share = min(default_max_share, base_max_share)
 
             processed_candidates.append({
                 "crop_name": crop_name,
@@ -107,7 +131,7 @@ class DynamicFarmOptimizer:
                 "waterlogging_penalty": suitability["waterlogging_penalty"],
                 "heat_penalty": suitability["heat_penalty"],
                 "min_acres": baseline.get("min_acres", 0.5),
-                "max_acre_share": baseline.get("max_acre_share", 0.75),
+                "max_acre_share": crop_max_share,
                 "water_req_mm": baseline.get("water_req_mm", 500),
                 "reasons": suitability["reasons"],
                 "description": baseline.get("description", "")
@@ -179,9 +203,17 @@ class DynamicFarmOptimizer:
         # Constraints Setup
         # 1. Budget Constraint: Sum x_i * Cost_i <= budget_inr
         # 2. Land Constraint:
-        # If budget is sufficient: Sum x_i = total_land_acres (equality)
-        # If budget is strictly deficient: Sum x_i <= total_land_acres (inequality to cultivate max possible within budget)
-        if not budget_constrained:
+        # For Aggressive: maximize capital efficiency and profit without being artificially forced into low-return crops
+        # For Conservative/Balanced: cultivate full land acreage when budget allows
+        if risk_tolerance == "Aggressive":
+            A_ub = [
+                [cand["cost_c2_per_acre"] for cand in processed_candidates],
+                [1.0] * num_crops
+            ]
+            b_ub = [budget_inr, total_land_acres]
+            A_eq = None
+            b_eq = None
+        elif not budget_constrained:
             A_ub = [[cand["cost_c2_per_acre"] for cand in processed_candidates]]
             b_ub = [budget_inr]
             A_eq = [[1.0] * num_crops]

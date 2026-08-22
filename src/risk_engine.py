@@ -252,8 +252,28 @@ class AgriculturalRiskEngine:
         total_risk_penalty = min(0.75, effective_drought_penalty + waterlogging_penalty + heat_penalty)
         weather_adjustment_multiplier = round(max(0.25, 1.0 - total_risk_penalty), 3)
 
-        # 5. Risk Score for Economic Objective (0.0 to 1.0)
-        risk_score = round(min(1.0, total_risk_penalty * 1.5), 2)
+        # 5. Risk Score for Economic Objective (0.05 to 1.0)
+        # Combines inherent agronomic/market crop volatility (60%) with live environmental stress penalty (40%)
+        base_crop_risks = {
+            "Sugarcane": 0.45,
+            "Cotton": 0.42,
+            "Potato": 0.44,
+            "Onion": 0.48,
+            "Tomato": 0.50,
+            "Soyabean": 0.32,
+            "Groundnut": 0.28,
+            "Mustard": 0.26,
+            "Rice": 0.22,
+            "Wheat": 0.20,
+            "Maize": 0.16,
+            "Gram": 0.14,
+            "Pigeonpea (Arhar)": 0.15,
+            "Moong": 0.12,
+            "Bajra": 0.10,
+            "Jowar": 0.10,
+        }
+        base_risk = base_crop_risks.get(crop_name, 0.25)
+        risk_score = round(min(1.0, max(0.05, base_risk * 0.65 + total_risk_penalty * 0.70)), 2)
 
         # 6. Detailed Causal Explanations
         reasons = []

@@ -241,7 +241,7 @@ export function WelcomeScreen({
 
           {/* District Selection Overlay Modal */}
           {chosenState && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-forest-950/70 px-4 backdrop-blur-sm transition-all duration-300">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-forest-950/80 px-4 backdrop-blur-md transition-all duration-300">
               <div className="w-full max-w-md rounded-2xl border border-gold-300/30 bg-forest-900/90 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.7)] backdrop-blur-md sm:p-7 animate-in fade-in zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gold-300/15 pb-3">

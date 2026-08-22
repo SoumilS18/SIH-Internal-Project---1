@@ -170,7 +170,7 @@ export function MainScreen({
 
       // Initial optimization call
       if (isMounted) {
-        runOptimization(activeLocations);
+        runOptimization();
       }
     }
 
@@ -194,8 +194,11 @@ export function MainScreen({
     return Array.from(new Set(sList)).sort();
   }, [locations]);
 
+  // Track if initial load has occurred
+  const isInitialMount = useRef(true);
+
   // Execute optimization request
-  const runOptimization = async (locCatalog = locations) => {
+  const runOptimization = async (overrides?: Partial<FarmDecisionRequest>) => {
     setLoading(true);
     setError(null);
 
@@ -216,6 +219,7 @@ export function MainScreen({
       force_refresh: forceRefresh,
       simulate_primary_failure: simulatePrimaryFail,
       simulate_all_failure: simulateOffline,
+      ...overrides,
     };
 
     try {
@@ -229,6 +233,34 @@ export function MainScreen({
       setLoading(false);
     }
   };
+
+  // Auto-recalculate whenever farm parameters or risk tolerance changes
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      runOptimization();
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [
+    selectedState,
+    selectedDistrict,
+    landAcres,
+    budgetInr,
+    irrigationType,
+    irrigationReliability,
+    season,
+    riskTolerance,
+    forceRefresh,
+    simulatePrimaryFail,
+    simulateOffline,
+    customLat,
+    customLon,
+  ]);
 
   // Confidence badge color mapping
   const getConfidenceBadgeColor = (score: string) => {
@@ -307,61 +339,38 @@ export function MainScreen({
               <span>{t('header.changeFarm')}</span>
             </button>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-serif text-sm font-semibold tracking-wide text-gold-100">
-                AgriOptima AI
-              </span>
-              <span className="hidden font-mono text-[10px] uppercase tracking-widest text-cream-300/50 sm:inline">
-                SIH 2026
-              </span>
-            </div>
-          </div>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="font-serif text-sm font-semibold tracking-wide text-gold-100">
+                  AgriOptima AI
+                </span>
+                <span className="hidden font-mono text-[10px] uppercase tracking-widest text-cream-300/50 sm:inline">
+                  SIH 2026
+                </span>
+              </div>
 
-          {/* Location & Provenance Metadata Chips */}
-          <div className="flex flex-wrap items-center gap-2">
-            {decision && (
-              <>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-gold-300/25 bg-forest-900/70 px-3.5 py-1 text-xs font-semibold text-gold-200">
-                  <Compass size={13} className="text-gold-300" />
+              {decision && (
+                <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-gold-300/25 bg-forest-900/70 px-3 py-0.5 text-xs font-semibold text-gold-200">
+                  <Compass size={12} className="text-gold-300" />
                   <span>
                     {getDistrictDisplayName(decision.location.district_name, language)},{' '}
                     {getStateDisplayName(decision.location.state_name, language)}
                   </span>
                 </div>
+              )}
+            </div>
+          </div>
 
-                <div
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider ${getConfidenceBadgeColor(
-                    decision.weather.confidence_score
-                  )}`}
-                >
-                  <ShieldCheck size={11} />
-                  <span>
-                    {translateConfidence(decision.weather.confidence_score, language)}{' '}
-                    {language === 'hi' ? 'विश्वसनीयता' : 'Confidence'}
-                  </span>
-                </div>
-
-                <div className="hidden items-center gap-1.5 rounded-full border border-forest-600/30 bg-forest-900/40 px-2.5 py-1 text-[10px] font-mono text-cream-300/70 md:inline-flex">
-                  <Activity size={11} className="text-forest-400" />
-                  <span>{decision.weather.data_provider}</span>
-                </div>
-
-                {decision.weather.cache_hit && (
-                  <span className="hidden rounded-full bg-gold-300/10 px-2 py-0.5 font-mono text-[9px] text-gold-300 lg:inline">
-                    {t('header.cache3h')}
-                  </span>
-                )}
-              </>
-            )}
-
+          {/* Right Section: Language Selector & Vertical Profile / Logout */}
+          <div className="flex items-center gap-3">
             {/* Multilingual Selector */}
             <LanguageSelector />
 
-            {/* User Session & Logout */}
-            <div className="flex items-center gap-1.5">
-              <div className="hidden items-center gap-1.5 rounded-full border border-gold-300/20 bg-forest-900/60 px-3 py-1 text-xs text-cream-200 sm:inline-flex">
+            {/* User Session & Logout stacked vertically */}
+            <div className="flex flex-col items-end gap-1.5">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-gold-300/20 bg-forest-900/60 px-3 py-1 text-xs text-cream-200">
                 <User size={12} className="text-gold-300" />
-                <span>{userName}</span>
+                <span className="font-medium">{userName}</span>
               </div>
 
               {onLogout && (
@@ -372,7 +381,7 @@ export function MainScreen({
                   title={t('header.logout')}
                 >
                   <LogOut size={12} />
-                  <span className="hidden sm:inline">{t('header.logout')}</span>
+                  <span>{t('header.logout')}</span>
                 </button>
               )}
             </div>
@@ -789,16 +798,10 @@ export function MainScreen({
 
                   {/* KPI 4: Weighted Risk Score */}
                   <div className="rounded-2xl border border-gold-300/20 bg-forest-900/50 p-4 backdrop-blur-md">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-cream-300/60">
-                      {language === 'hi' ? 'भारित जोखिम' : 'Weighted Risk'}
-                    </span>
-                    <div className="mt-1 flex items-baseline gap-2">
-                      <span className="font-serif text-xl font-bold text-cream-100 sm:text-2xl">
-                        {decision.farm_totals.weighted_risk_score.toFixed(2)}
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-cream-300/60">
+                        {language === 'hi' ? 'भारित जोखिम' : 'Weighted Risk'}
                       </span>
-                      <span className="font-mono text-[10px] text-cream-300/50">/ 1.0</span>
-                    </div>
-                    <div className="mt-1">
                       <span
                         className={`inline-block rounded-full border px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider ${getRiskBadgeColor(
                           decision.farm_totals.weighted_risk_label
@@ -807,6 +810,53 @@ export function MainScreen({
                         {translateRiskLevel(decision.farm_totals.weighted_risk_label, language)}{' '}
                         {language === 'hi' ? 'जोखिम' : 'RISK'}
                       </span>
+                    </div>
+
+                    <div className="mt-1 flex items-baseline gap-1.5">
+                      <span
+                        className={`font-serif text-xl font-bold sm:text-2xl ${
+                          decision.farm_totals.weighted_risk_score < 0.25
+                            ? 'text-emerald-300'
+                            : decision.farm_totals.weighted_risk_score < 0.50
+                            ? 'text-gold-200'
+                            : decision.farm_totals.weighted_risk_score < 0.75
+                            ? 'text-orange-300'
+                            : 'text-rose-400'
+                        }`}
+                      >
+                        {decision.farm_totals.weighted_risk_score.toFixed(2)}
+                      </span>
+                      <span className="font-mono text-[10px] text-cream-300/50">/ 1.00</span>
+                    </div>
+
+                    {/* Interactive Visual Risk Scale Meter */}
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-forest-950/80">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          decision.farm_totals.weighted_risk_score < 0.25
+                            ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                            : decision.farm_totals.weighted_risk_score < 0.50
+                            ? 'bg-gradient-to-r from-emerald-500 via-gold-400 to-gold-300'
+                            : decision.farm_totals.weighted_risk_score < 0.75
+                            ? 'bg-gradient-to-r from-gold-400 to-orange-400'
+                            : 'bg-gradient-to-r from-orange-400 to-rose-500'
+                        }`}
+                        style={{
+                          width: `${Math.min(100, Math.max(6, decision.farm_totals.weighted_risk_score * 100))}%`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="mt-1 flex items-center justify-between text-[9px] font-mono text-cream-300/45">
+                      <span>0.00</span>
+                      <span className="text-cream-200/60 font-medium">
+                        {riskTolerance === 'Conservative'
+                          ? 'Low-Risk Safe Portfolio'
+                          : riskTolerance === 'Aggressive'
+                          ? 'High-Return Concentrated'
+                          : 'Balanced Risk Hedge'}
+                      </span>
+                      <span>1.00</span>
                     </div>
                   </div>
                 </div>

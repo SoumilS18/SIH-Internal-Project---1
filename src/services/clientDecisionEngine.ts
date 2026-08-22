@@ -124,9 +124,33 @@ export function calculateClientFarmDecision(request: FarmDecisionRequest): FarmD
     const netProfitPerAcre = expRevenue - crop.cost_c2;
 
     const riskPenaltyDeduction =
-      request.risk_tolerance === 'Conservative' ? 0.35 : request.risk_tolerance === 'Balanced' ? 0.2 : 0.08;
-    const riskAdjProfit = Math.round(netProfitPerAcre * (1.0 - totalPenalty * riskPenaltyDeduction));
-    const cropRiskScore = Number((totalPenalty * 1.4).toFixed(2));
+      request.risk_tolerance === 'Conservative' ? 0.70 : request.risk_tolerance === 'Balanced' ? 0.25 : 0.05;
+    const penaltyMultiplier =
+      request.risk_tolerance === 'Conservative'
+        ? Math.pow(totalPenalty, 1.25) * riskPenaltyDeduction
+        : request.risk_tolerance === 'Aggressive'
+        ? Math.pow(totalPenalty, 0.8) * riskPenaltyDeduction
+        : totalPenalty * riskPenaltyDeduction;
+
+    const baseCropRisks: Record<string, number> = {
+      Sugarcane: 0.45,
+      Cotton: 0.42,
+      Potato: 0.44,
+      Onion: 0.48,
+      Tomato: 0.50,
+      Soyabean: 0.32,
+      Groundnut: 0.28,
+      Mustard: 0.26,
+      Rice: 0.22,
+      Wheat: 0.20,
+      Maize: 0.16,
+      Gram: 0.14,
+      Moong: 0.12,
+      Bajra: 0.10,
+    };
+    const baseRisk = baseCropRisks[crop.crop_name] || 0.25;
+    const cropRiskScore = Number(Math.min(1.0, Math.max(0.05, baseRisk * 0.65 + totalPenalty * 0.70)).toFixed(2));
+    const riskAdjProfit = Math.round(netProfitPerAcre * Math.max(0.05, 1.0 - penaltyMultiplier));
 
     return {
       crop_name: crop.crop_name,
@@ -157,7 +181,14 @@ export function calculateClientFarmDecision(request: FarmDecisionRequest): FarmD
 
   let remainingLand = request.land_size_acres;
   let remainingBudget = request.budget_inr;
-  const maxSharePerCrop = sortedCrops.length > 1 ? 0.65 : 1.0;
+  const maxSharePerCrop =
+    sortedCrops.length > 1
+      ? request.risk_tolerance === 'Conservative'
+        ? 0.40
+        : request.risk_tolerance === 'Balanced'
+        ? 0.60
+        : 0.88
+      : 1.0;
 
   const allocatedMap = new Map<string, number>();
 
@@ -406,8 +437,31 @@ export function calculateClientFarmDecision(request: FarmDecisionRequest): FarmD
       total_expected_revenue_inr: totalRevenue,
       total_expected_net_profit_inr: totalProfit,
       expected_farm_roi_pct: farmRoi,
-      weighted_risk_score: Number((overallRiskScore * 100).toFixed(0)),
-      weighted_risk_label: overallRiskLabel,
+      weighted_risk_score:
+        totalAllocatedAcres > 0
+          ? Number(
+              (
+                allocatedCrops.reduce((acc, c) => acc + c.risk_score * c.allocated_acres, 0) /
+                totalAllocatedAcres
+              ).toFixed(2)
+            )
+          : Number(overallRiskScore.toFixed(2)),
+      weighted_risk_label:
+        totalAllocatedAcres > 0
+          ? allocatedCrops.reduce((acc, c) => acc + c.risk_score * c.allocated_acres, 0) /
+              totalAllocatedAcres <
+            0.25
+            ? 'LOW'
+            : allocatedCrops.reduce((acc, c) => acc + c.risk_score * c.allocated_acres, 0) /
+                totalAllocatedAcres <
+              0.5
+            ? 'MODERATE'
+            : allocatedCrops.reduce((acc, c) => acc + c.risk_score * c.allocated_acres, 0) /
+                totalAllocatedAcres <
+              0.75
+            ? 'HIGH'
+            : 'CRITICAL'
+          : overallRiskLabel,
       budget_constrained: budgetConstrained,
       all_negative_profits: false,
       solver_method: 'Constrained Linear Programming (Simplex / Knapsack)',
