@@ -299,33 +299,82 @@ def build_database():
 
     # Populate district_crop_historical_baseline
     print("[3/4] Generating Unified Historical District Crop Economics (DES APY + Agmarknet + CACP)...")
+    DEFAULT_CROP_YIELDS = {
+        "Wheat": 36.0,
+        "Rice": 34.0,
+        "Soyabean": 15.5,
+        "Maize": 32.0,
+        "Cotton": 18.0,
+        "Chickpea (Gram)": 13.5,
+        "Gram": 13.5,
+        "Pigeonpea (Arhar)": 12.0,
+        "Arhar": 12.0,
+        "Groundnut": 18.5,
+        "Mustard": 15.5,
+        "Sugarcane": 720.0
+    }
+
+    DEFAULT_CROP_COSTS = {
+        "Wheat": 38000.0,
+        "Rice": 44000.0,
+        "Soyabean": 29000.0,
+        "Maize": 26500.0,
+        "Cotton": 50000.0,
+        "Chickpea (Gram)": 27000.0,
+        "Gram": 27000.0,
+        "Pigeonpea (Arhar)": 33000.0,
+        "Arhar": 33000.0,
+        "Groundnut": 35000.0,
+        "Mustard": 27000.0,
+        "Sugarcane": 88000.0
+    }
+
     records_count = 0
     for d in INDIAN_DISTRICTS_CATALOG:
         dist_id = d["district_id"]
         state = d["state_name"]
         dist = d["district_name"]
 
+        # Ensure district has a solid selection of crops for both Kharif and Rabi
+        district_crops = list(d.get("major_crops", []))
+        if len(district_crops) < 3:
+            # Add regional defaults
+            if "Rice" not in district_crops:
+                district_crops.append("Rice")
+            if "Wheat" not in district_crops and d["latitude"] > 14.0:
+                district_crops.append("Wheat")
+            if "Mustard" not in district_crops and d["latitude"] > 18.0:
+                district_crops.append("Mustard")
+            if "Maize" not in district_crops:
+                district_crops.append("Maize")
+            if "Chickpea (Gram)" not in district_crops and "Gram" not in district_crops and d["latitude"] > 14.0:
+                district_crops.append("Chickpea (Gram)")
+
         # Loop through all crops suitable for this district
-        for crop_name in d.get("major_crops", []):
+        for raw_crop_name in district_crops:
+            crop_name = raw_crop_name
+            if crop_name == "Gram":
+                crop_name = "Chickpea (Gram)"
+            elif crop_name == "Arhar":
+                crop_name = "Pigeonpea (Arhar)"
+
             if crop_name not in CROP_AGRONOMIC_PROFILES:
-                if crop_name == "Gram":
-                    crop_name = "Chickpea (Gram)"
-                elif crop_name == "Arhar":
-                    crop_name = "Pigeonpea (Arhar)"
-                else:
-                    continue
+                continue
 
             season = CROP_AGRONOMIC_PROFILES[crop_name]["season"]
 
             # Lookup yield
             yield_qtl_ha = DISTRICT_YIELD_BENCHMARKS.get((dist_id, crop_name))
             if yield_qtl_ha is None:
-                yield_qtl_ha = DISTRICT_YIELD_BENCHMARKS.get((dist_id, "Gram" if crop_name == "Chickpea (Gram)" else crop_name), 25.0)
+                yield_qtl_ha = DISTRICT_YIELD_BENCHMARKS.get(
+                    (dist_id, "Gram" if crop_name == "Chickpea (Gram)" else crop_name),
+                    DEFAULT_CROP_YIELDS.get(crop_name, 25.0)
+                )
 
             # Lookup CACP Cost
             cost_info = CACP_BENCHMARK_DEFAULTS.get((state, crop_name))
             if cost_info is None:
-                cost_c2_ha = 32000.0
+                cost_c2_ha = DEFAULT_CROP_COSTS.get(crop_name, 32000.0)
             else:
                 cost_c2_ha = cost_info["cost_c2_ha"]
 

@@ -80,6 +80,50 @@ export const STATE_NAMES: Record<string, string> = {
   'wb': 'West Bengal',
 };
 
+export const STATE_TO_LANG_MAP: Record<string, LanguageCode> = {
+  // Northern & Hindi Belt
+  up: 'hi', // Uttar Pradesh
+  ut: 'hi', // Uttarakhand
+  hr: 'hi', // Haryana
+  hp: 'hi', // Himachal Pradesh
+  rj: 'hi', // Rajasthan
+  mp: 'hi', // Madhya Pradesh
+  br: 'hi', // Bihar
+  jh: 'hi', // Jharkhand
+  ct: 'hi', // Chhattisgarh
+  dl: 'hi', // Delhi
+  ch: 'hi', // Chandigarh
+  jk: 'ur', // Jammu and Kashmir
+
+  // Western & Southern
+  pb: 'pa', // Punjab
+  gj: 'gu', // Gujarat
+  mh: 'mr', // Maharashtra
+  ka: 'kn', // Karnataka
+  kl: 'ml', // Kerala
+  tn: 'ta', // Tamil Nadu
+  tg: 'te', // Telangana
+  ap: 'te', // Andhra Pradesh
+  ga: 'en', // Goa
+  py: 'ta', // Puducherry
+  dn: 'gu', // Dadra and Nagar Haveli
+  dd: 'gu', // Daman and Diu
+  ld: 'ml', // Lakshadweep
+
+  // Eastern & North-Eastern
+  wb: 'bn', // West Bengal
+  or: 'or', // Odisha
+  as: 'as', // Assam
+  sk: 'ne', // Sikkim
+  tr: 'bn', // Tripura
+  ar: 'en', // Arunachal Pradesh
+  mn: 'en', // Manipur
+  ml: 'en', // Meghalaya
+  mz: 'en', // Mizoram
+  nl: 'en', // Nagaland
+  an: 'en', // Andaman and Nicobar Islands
+};
+
 export interface LangState {
   stateId: string;
   stateName: string;
@@ -102,6 +146,13 @@ export const LANG_STATES: LangState[] = [
   { stateId: 'as', stateName: 'Assam', langCode: 'as', langEnglish: 'Assamese', langNative: 'অসমীয়া' },
   { stateId: 'jk', stateName: 'Jammu and Kashmir', langCode: 'ur', langEnglish: 'Urdu', langNative: 'اردو' },
   { stateId: 'ga', stateName: 'Goa', langCode: 'en', langEnglish: 'English', langNative: 'English' },
+  { stateId: 'ar', stateName: 'Arunachal Pradesh', langCode: 'en', langEnglish: 'English', langNative: 'English' },
+  { stateId: 'mn', stateName: 'Manipur', langCode: 'en', langEnglish: 'English', langNative: 'English' },
+  { stateId: 'ml', stateName: 'Meghalaya', langCode: 'en', langEnglish: 'English', langNative: 'English' },
+  { stateId: 'mz', stateName: 'Mizoram', langCode: 'en', langEnglish: 'English', langNative: 'English' },
+  { stateId: 'nl', stateName: 'Nagaland', langCode: 'en', langEnglish: 'English', langNative: 'English' },
+  { stateId: 'sk', stateName: 'Sikkim', langCode: 'ne', langEnglish: 'Nepali', langNative: 'नेपाली' },
+  { stateId: 'tr', stateName: 'Tripura', langCode: 'bn', langEnglish: 'Bengali', langNative: 'বাংলা' },
 ];
 
 export const HINDI_BELT: string[] = [
@@ -115,6 +166,7 @@ export const HINDI_BELT: string[] = [
   'jh', // Jharkhand
   'ct', // Chhattisgarh
   'dl', // Delhi
+  'ch', // Chandigarh
 ];
 
 export const GOA_STATE_ID = 'ga';

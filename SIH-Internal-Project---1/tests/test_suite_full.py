@@ -37,12 +37,20 @@ Validates all 32 core functional, mathematical, agronomic, environmental, failur
 """
 
 import sys
+import os
 import io
 import json
 import math
 
-# Ensure UTF-8 output formatting
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+# Ensure project root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Ensure UTF-8 output formatting for terminal
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 from src.farm_service import FarmDecisionService
 from src.config import ACRES_TO_HECTARES, HECTARES_TO_ACRES

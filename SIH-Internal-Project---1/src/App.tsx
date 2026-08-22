@@ -1,70 +1,108 @@
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { LoginScreen } from '@/components/LoginScreen';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
+import { InitializingScreen } from '@/components/InitializingScreen';
 import { MainScreen } from '@/components/MainScreen';
-import { usePrefersReducedMotion } from '@/lib/hooks';
-import type { LanguageCode } from '@/lib/languages';
+import { LanguageProvider } from '@/i18n/LanguageContext';
+import { LanguageComingSoonModal } from '@/components/LanguageComingSoonModal';
 
-type AppState = 'welcome' | 'transitioning' | 'main';
+type AppStage = 'login' | 'map' | 'initializing' | 'dashboard';
 
-export default function App() {
-  const [state, setState] = useState<AppState>('welcome');
-  const [selectedLang, setSelectedLang] = useState<LanguageCode>('en');
-  const reduced = usePrefersReducedMotion();
+function AppContent() {
+  const [stage, setStage] = useState<AppStage>('login');
+  const [userName, setUserName] = useState<string>('Demo Farmer');
+  const [selectedState, setSelectedState] = useState<string>('Madhya Pradesh');
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('Bhopal');
+  const [welcomeKey, setWelcomeKey] = useState<number>(0);
 
-  const enterApp = useCallback((lang: LanguageCode) => {
-    setSelectedLang(lang);
-    setState('transitioning');
-    const delay = reduced ? 60 : 820;
-    window.setTimeout(() => {
-      setState('main');
-    }, delay);
-  }, [reduced]);
-
-  const backToWelcome = useCallback(() => {
-    setState('welcome');
+  // 1. Handle Login
+  const handleLogin = useCallback((name: string) => {
+    setUserName(name || 'Demo Farmer');
+    setStage('map');
   }, []);
 
-  // Keyboard: Escape returns to welcome from main
+  // 2. Handle Logout
+  const handleLogout = useCallback(() => {
+    setStage('login');
+  }, []);
+
+  // 3. Handle Location Confirmation from Map & District Modal
+  const handleConfirmLocation = useCallback(
+    (stateName: string, districtName: string) => {
+      setSelectedState(stateName);
+      setSelectedDistrict(districtName);
+      setStage('initializing');
+    },
+    []
+  );
+
+  // 4. Handle Initialization Ready
+  const handleInitializationReady = useCallback(() => {
+    setStage('dashboard');
+  }, []);
+
+  // 5. Handle Change Farm (Return to Map)
+  const handleChangeFarm = useCallback(() => {
+    setWelcomeKey((k) => k + 1);
+    setStage('map');
+  }, []);
+
+  // Keyboard: Escape returns to map when in dashboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (state === 'main' && e.key === 'Escape') {
-        backToWelcome();
+      if (stage === 'dashboard' && e.key === 'Escape') {
+        handleChangeFarm();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [state, backToWelcome]);
-
-  const welcomeTranslate = state === 'main' ? '-100%' : '0%';
-  const mainTranslate = state === 'main' ? '0%' : '100%';
-  const transitionDuration = state === 'transitioning' ? (reduced ? '0ms' : '820ms') : '0ms';
+  }, [stage, handleChangeFarm]);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-forest-950">
-      {/* Welcome panel */}
-      <div
-        className="absolute inset-0 h-full w-full"
-        style={{
-          transform: `translateX(${welcomeTranslate})`,
-          transition: `transform ${transitionDuration} cubic-bezier(0.22, 1, 0.36, 1)`,
-          willChange: 'transform',
-        }}
-      >
-        <WelcomeScreen onEnter={enterApp} />
-      </div>
+    <div className="relative h-screen w-screen overflow-hidden bg-forest-950 font-sans text-cream-100">
+      {/* Multilingual Coming Soon Modal (accessible anywhere) */}
+      <LanguageComingSoonModal />
 
-      {/* Main panel */}
-      <div
-        className="absolute inset-0 h-full w-full"
-        style={{
-          transform: `translateX(${mainTranslate})`,
-          transition: `transform ${transitionDuration} cubic-bezier(0.22, 1, 0.36, 1)`,
-          willChange: 'transform',
-        }}
-        aria-hidden={state === 'welcome'}
-      >
-        <MainScreen onBack={backToWelcome} initialLanguage={selectedLang} />
-      </div>
+      {/* 1. LOGIN SCREEN */}
+      {stage === 'login' && <LoginScreen onLogin={handleLogin} />}
+
+      {/* 2. INDIA MAP / STATE & DISTRICT SELECTION */}
+      {stage === 'map' && (
+        <WelcomeScreen
+          key={welcomeKey}
+          userName={userName}
+          onLogout={handleLogout}
+          onConfirmLocation={handleConfirmLocation}
+        />
+      )}
+
+      {/* 3. INITIALIZING TRANSITION SCREEN */}
+      {stage === 'initializing' && (
+        <InitializingScreen
+          stateName={selectedState}
+          districtName={selectedDistrict}
+          onReady={handleInitializationReady}
+        />
+      )}
+
+      {/* 4. MAIN FARM INTELLIGENCE DASHBOARD */}
+      {stage === 'dashboard' && (
+        <MainScreen
+          userName={userName}
+          onBack={handleChangeFarm}
+          onLogout={handleLogout}
+          initialState={selectedState}
+          initialDistrict={selectedDistrict}
+        />
+      )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }

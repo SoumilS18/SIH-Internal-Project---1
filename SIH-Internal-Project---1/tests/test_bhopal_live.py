@@ -7,7 +7,11 @@ import sys
 import io
 
 # Ensure UTF-8 output formatting for terminal
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 from src.farm_service import FarmDecisionService
 

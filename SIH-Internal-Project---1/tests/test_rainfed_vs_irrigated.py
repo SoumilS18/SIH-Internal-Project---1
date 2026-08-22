@@ -5,9 +5,13 @@ and crop selection under identical environmental drought conditions.
 """
 
 import sys
-import io
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+# Ensure UTF-8 output formatting for terminal
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 from src.farm_service import FarmDecisionService
 
