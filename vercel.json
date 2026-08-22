@@ -5,6 +5,14 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
+  "env": {
+    "UV_LINK_MODE": "copy"
+  },
+  "build": {
+    "env": {
+      "UV_LINK_MODE": "copy"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
