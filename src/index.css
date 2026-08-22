@@ -49,44 +49,46 @@
     color: transparent;
   }
 
-  .cream-text {
-    color: #FFF4D6;
+  .gold-border {
+    border-color: rgba(255, 210, 26, 0.3);
   }
 
-  .radial-fade {
-    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 75%);
-    mask-image: radial-gradient(circle at center, black 40%, transparent 75%);
+  .gold-glow {
+    box-shadow: 0 0 20px rgba(255, 210, 26, 0.15);
   }
 
   .grid-texture {
+    background-size: 24px 24px;
     background-image:
-      linear-gradient(rgba(255, 210, 26, 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 210, 26, 0.06) 1px, transparent 1px);
-    background-size: 48px 48px;
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   }
 
-  .dot-texture {
-    background-image: radial-gradient(rgba(255, 210, 26, 0.18) 1px, transparent 1px);
-    background-size: 22px 22px;
+  .radial-fade {
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
   }
 
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .mask-radial {
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   }
 }
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 0.9; transform: scale(1.2); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-twinkle {
+  animation: twinkle 4s ease-in-out infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
 }
