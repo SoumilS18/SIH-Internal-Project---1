@@ -138,7 +138,9 @@ export const hi = {
     causal: 'यह योजना क्यों?',
     trust: 'यह जानकारी कहाँ से आई?',
     simplePlan: 'खेत की योजना',
-    detailedAnalysis: 'विस्तृत तकनीकी विश्लेषण',
+    farmerView: 'सरल किसान दृश्य',
+    detailedAnalysis: 'विस्तृत विश्लेषण',
+    autonomousAgent: 'स्वायत्त एजेंट',
     whyPlan: 'यह योजना क्यों?',
   },
 
@@ -223,7 +225,7 @@ export const hi = {
 
   // Telemetry & Soil Page
   telemetry: {
-    title: 'मृदा एवं मौसम बुद्धिमत्ता',
+    title: 'मृदा एवं मौसम बुद्धिमत्ता (पर्यावरण व मिट्टी)',
     subtitle: 'लाइव टेलीमेट्री, मृदा नमी और 7-दिवसीय पूर्वानुमान जो आज के कृषि निर्णय को निर्देशित करते हैं।',
     liveWeather: 'लाइव मौसम',
     dataConfidence: 'डेटा विश्वसनीयता',
@@ -270,7 +272,7 @@ export const hi = {
 
   // Crop Evaluations Page
   crops: {
-    title: 'फसल विकल्प व मूल्यांकन',
+    title: 'फसल विकल्प व फसल मूल्यांकन',
     subtitle: 'प्रत्याशी फसलों का व्यापक कृषि-वैज्ञानिक, आर्थिक और जोखिम प्रोफाइल',
     cropName: 'फसल का नाम',
     season: 'मौसम',
@@ -428,8 +430,8 @@ export const hi = {
     stressResolved: 'तनाव समाधान सत्यापित',
     telemetryFallback: 'क्षेत्रीय आधार रेखा सक्रिय',
     conditionUnchanged: 'स्थिति अपरिवर्तित (सलाह प्रभावी)',
-    runCheckNow: 'स्वायत्त जांच चलाएं',
-    checking: 'खेत टेलीमेट्री का अवलोकन जारी...',
+    runCheckNow: 'अभी जाँच करें',
+    checking: 'खेत की स्थिति जांची जा रही है...',
     modalTitle: 'स्वायत्त निर्णय एवं कार्रवाई लॉग',
     modalSubtitle: 'अवलोकन → विश्लेषण → निर्णय → सत्यापन → कार्रवाई → परिणाम',
     stepObserve: '1. अवलोकन (टेलीमेट्री इनपुट)',
@@ -446,6 +448,102 @@ export const hi = {
     recommendedAction: 'अनुशंसित कार्रवाई',
     emptyLogs: 'अभी तक कोई स्वायत्त घटना दर्ज नहीं हुई है।',
     viewLog: 'निर्णय लॉग देखें',
+
+    // Simplified, Action-Oriented Autonomous Workflow keys
+    sentinelHeaderTitle: 'एग्रीऑप्टिमा प्रहरी (AGRIOPTIMA SENTINEL)',
+    sentinelHeaderSubtitle: 'आपके खेत की स्वचालित रूप से जाँच की जा रही है।',
+    sentinelHeaderDesc: 'खेत की स्थितियों की जाँच कर यह तय कर रहे हैं कि क्या कोई कार्रवाई जरूरी है।',
+    sentinelActive: 'सक्रिय',
+    
+    // 5-Step Checklist
+    todayCheckTitle: 'आज की खेत जाँच',
+    todayCheckSubtitle: 'सलाह देने से पहले एजेंट कुछ महत्वपूर्ण बातों की जाँच करता है।',
+    
+    step1Title: 'मौसम जाँचें',
+    step1Desc: 'आने वाली बारिश और तापमान का आकलन।',
+    step2Title: 'मिट्टी और पानी जाँचें',
+    step2Desc: 'मिट्टी की नमी और सिंचाई की स्थिति की जाँच।',
+    step3Title: 'फसल जाँचें',
+    step3Desc: 'यह देखना कि क्या आपकी फसलों पर कोई दबाव या तनाव है।',
+    step4Title: 'खेत का जोखिम जाँचें',
+    step4Desc: 'यह देखना कि क्या मौजूदा लागत, मुनाफे और जोखिम में कोई बदलाव हुआ है।',
+    step5Title: 'निर्णय लें',
+    step5Desc: 'सभी जानकारियों को जोड़कर यह तय करना कि आगे क्या करना चाहिए।',
+
+    statusChecking: 'जाँच जारी है...',
+    statusChecked: 'जाँच पूर्ण',
+    statusPending: 'प्रतीक्षा में',
+    statusDecisionReady: 'निर्णय तैयार',
+
+    // Decision Card
+    decisionCardTitle: 'आपके खेत का निर्णय',
+    nextStepTitle: 'अगला कदम',
+    whyDidAgentDecideTitle: 'एजेंट ने यह निर्णय क्यों लिया?',
+    whyItemRain: 'अनुमानित वर्षा',
+    whyItemSoil: 'मिट्टी की नमी',
+    whyItemCropStress: 'फसल तनाव स्तर',
+    whyItemFinancial: 'आर्थिक उपयुक्तता',
+    
+    // Dynamic Decision States
+    stateNoActionTitle: 'किसी कार्रवाई की आवश्यकता नहीं',
+    stateNoActionHeadline: 'आपका खेत अच्छी और सुरक्षित स्थिति में है।',
+    stateNoActionDesc: 'आज जांची गई स्थितियों के अनुसार आपकी वर्तमान फसल योजना पूरी तरह उपयुक्त है।',
+    stateNoActionNext: 'अपनी वर्तमान योजना के साथ आगे बढ़ें।',
+    stateNoActionWhy: 'बारिश और मिट्टी की नमी आपकी फसल योजना के अनुकूल हैं, इसलिए इस समय अतिरिक्त सिंचाई या बदलाव की आवश्यकता नहीं है।',
+
+    stateActionTitle: 'कार्रवाई की अनुशंसा',
+    stateActionHeadline: 'आपकी फसलों के लिए खेत में समायोजन की सलाह दी जाती है।',
+    stateActionDesc: 'मिट्टी की नमी आवश्यक स्तर से कम है और आने वाले दिनों में कम बारिश का अनुमान है।',
+    stateActionNext: 'कल सुबह के लिए हल्की सिंचाई की योजना बनाएं।',
+
+    stateChangePlanTitle: 'योजना में बदलाव करें',
+    stateChangePlanHeadline: 'बारिश में उल्लेखनीय वृद्धि का अनुमान है।',
+    stateChangePlanDesc: 'अतिरिक्त सिंचाई से जलभराव हो सकता है और पानी की बर्बादी होगी।',
+    stateChangePlanNext: 'सिंचाई को कम करें या कुछ दिनों के लिए टाल दें।',
+
+    stateHighRiskTitle: 'उच्च जोखिम चेतावनी',
+    stateHighRiskHeadline: 'आपकी फसल पर्यावरणीय गर्मी व नमी के तनाव में आ सकती है।',
+    stateHighRiskDesc: 'उच्च तापमान और नमी की कमी के कारण फसल सुरक्षात्मक उपायों की आवश्यकता है।',
+    stateHighRiskNext: 'सिंचाई की समीक्षा करें और फसल सुरक्षा उपाय लागू करें।',
+
+    viewTechnicalDetails: 'तकनीकी विवरण देखें',
+    hideTechnicalDetails: 'तकनीकी विवरण छिपाएं',
+    securityBadge: 'कठोर सुरक्षा सीमा: 100% स्वीकृत सुरक्षित कार्रवाइयां',
+    dataProvenanceNotice: 'ओपन-मिटिओ और ERA5-Land से प्राप्त वास्तविक टेलीमेट्री। अगमार्कनेट से मंडी बेंचमार्क। किसी भी अनुचित सेंसर का ढोंग नहीं किया जाता।',
+    runCheckNow: 'अभी जाँच करें',
+    checking: 'खेत की स्थिति जांची जा रही है...',
+
+    // "Tell the Agent" (Optional Farmer Context)
+    tellAgentTitle: 'एजेंट को बताएं',
+    tellAgentSubtitle: 'क्या आपने अपने खेत में कुछ असामान्य देखा?',
+    tellAgentHelp: 'आप एजेंट को कुछ ऐसा बता सकते हैं जो खेत के डेटा में दिखाई न दे।',
+    tabSpeak: 'बोलें',
+    tabType: 'लिखें',
+    tabPhoto: 'फोटो जोड़ें',
+    quickTellHeading: 'जल्दी से बताएं:',
+    chipCropDifferent: 'फसल अलग दिख रही है',
+    chipWaterProblem: 'पानी की समस्या',
+    chipPestNoticed: 'कीट दिखाई दिए',
+    chipHeavyRain: 'भारी बारिश',
+    chipUnusualHeat: 'असामान्य गर्मी',
+    chipEquipmentProblem: 'उपकरण की समस्या',
+    chipOther: 'अन्य',
+    typePlaceholder: 'उदाहरण: मेरे टमाटर के पत्ते पीले पड़ रहे हैं...',
+    addToFarmCheckBtn: 'खेत जाँच में जोड़ें',
+    removeObservationBtn: 'जानकारी हटाएं',
+    observationAddedBadge: 'किसान की जानकारी जोड़ दी गई ✓',
+    reevaluatingMsg: 'इस जानकारी के साथ आपके खेत का फिर से मूल्यांकन किया जा रहा है...',
+    reevaluationStep: 'किसान की जानकारी के आधार पर खेत का पुनर्मूल्यांकन',
+    micListening: 'सुन रहे हैं... कृपया अपनी बात बोलें',
+    micStop: 'सुनना बंद करें',
+    micErrorNotice: 'इस ब्राउज़र में माइक्रोफ़ोन अनुमति या स्पीच रिकॉग्निशन समर्थित नहीं है।',
+    photoUploadTitle: 'फसल या खेत की फोटो संलग्न करें',
+    photoUploadHelp: 'कैमरे से फोटो खींचने या चुनने के लिए टैप करें',
+    photoAttachedTag: 'फोटो संलग्न है',
+    photoVisionNotice: 'फोटो संलग्न की गई। ध्यान दें: स्वचालित एआई रोग पहचान मॉडल सर्वर पर सक्रिय रहता है।',
+    whyItemFarmerObs: 'किसान की जानकारी',
+    farmerObsDecisionNote: 'आपके खेत का डेटा स्थिर दिख रहा है, लेकिन आपने बताया: ',
+    farmerObsInspectAction: 'प्रभावित पौधों की पोषक तत्वों, पानी या कीटों के लिए जाँच करें और आवश्यक सुधार करें।',
   },
 };
 

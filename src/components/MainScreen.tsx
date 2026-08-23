@@ -8,6 +8,7 @@ import {
   XCircle,
   AlertTriangle,
   Info,
+  Sparkles,
 } from 'lucide-react';
 import { Atmosphere } from '@/components/Atmosphere';
 import { useLanguage } from '@/i18n/LanguageContext';
@@ -25,6 +26,7 @@ import { DetailedAnalysisView, DetailedTabType } from '@/components/DetailedAnal
 import { VoiceAssistantPanel } from '@/components/VoiceAssistantPanel';
 import { AutonomousSentinelPill } from '@/components/AutonomousSentinelPill';
 import { AutonomousLogModal } from '@/components/AutonomousLogModal';
+import { AutonomousAgentView } from '@/components/AutonomousAgentView';
 import { runAutonomousCycle } from '@/services/autonomousSentinel';
 import type {
   FarmDecisionRequest,
@@ -46,7 +48,7 @@ interface MainScreenProps {
   userName?: string;
 }
 
-type ViewMode = 'farmer' | 'expert';
+type ViewMode = 'farmer' | 'expert' | 'autonomous';
 
 const FARM_PARAMS_STORAGE_KEY = 'agrioptima_farm_params_v1';
 const FARM_DECISION_STORAGE_KEY = 'agrioptima_farm_decision_v1';
@@ -396,32 +398,58 @@ export function MainScreen({
 
           {/* Right Section: View Mode Toggle, Language Selector & Profile */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Progressive Disclosure Mode Switcher */}
-            <div className="inline-flex rounded-full border border-gold-300/25 bg-forest-950/90 p-1 shadow-inner">
+            {/* Progressive Disclosure Mode Switcher: 3-Option Primary Navigation */}
+            <div className="inline-flex items-center rounded-full border border-gold-300/25 bg-forest-950/90 p-1 shadow-inner max-w-full overflow-x-auto no-scrollbar">
+              {/* 1. Farmer View */}
               <button
                 type="button"
                 onClick={() => setViewMode('farmer')}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer ${
                   viewMode === 'farmer'
                     ? 'bg-gradient-to-r from-gold-400 to-gold-500 text-forest-950 shadow-[0_0_12px_rgba(255,210,26,0.3)]'
-                    : 'text-cream-300/70 hover:text-cream-100'
+                    : 'text-cream-300/70 hover:text-cream-100 hover:bg-forest-900/40'
                 }`}
               >
                 <span>🌾</span>
                 <span>{isHi ? 'सरल किसान दृश्य' : 'Farmer View'}</span>
               </button>
 
+              {/* 2. Detailed Analysis */}
               <button
                 type="button"
                 onClick={() => setViewMode('expert')}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer ${
                   viewMode === 'expert'
                     ? 'bg-gradient-to-r from-gold-400 to-gold-500 text-forest-950 shadow-[0_0_12px_rgba(255,210,26,0.3)]'
-                    : 'text-cream-300/70 hover:text-cream-100'
+                    : 'text-cream-300/70 hover:text-cream-100 hover:bg-forest-900/40'
                 }`}
               >
-                <span>🔬</span>
+                <span>📊</span>
                 <span>{isHi ? 'विस्तृत विश्लेषण' : 'Detailed Analysis'}</span>
+              </button>
+
+              {/* 3. Autonomous Agent */}
+              <button
+                type="button"
+                onClick={() => setViewMode('autonomous')}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                  viewMode === 'autonomous'
+                    ? 'bg-gradient-to-r from-gold-400 to-gold-500 text-forest-950 shadow-[0_0_12px_rgba(255,210,26,0.3)]'
+                    : 'text-cream-300/70 hover:text-cream-100 hover:bg-forest-900/40'
+                }`}
+              >
+                <span className="relative flex items-center justify-center">
+                  <Sparkles
+                    size={13}
+                    className={viewMode === 'autonomous' ? 'text-forest-950' : 'text-emerald-400'}
+                  />
+                  {/* Subtle active monitoring indicator dot */}
+                  <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                  </span>
+                </span>
+                <span>{isHi ? 'स्वायत्त एजेंट' : 'Autonomous Agent'}</span>
               </button>
             </div>
 
@@ -448,19 +476,6 @@ export function MainScreen({
             </div>
           </div>
         </header>
-
-        {/* Active Autonomous Sentinel Monitoring Pill */}
-        {decision && (
-          <div className="mt-3">
-            <AutonomousSentinelPill
-              latestLog={sentinelLogs[0] || null}
-              advisory={proactiveAdvisory}
-              isChecking={isCheckingSentinel}
-              onOpenLog={() => setIsLogModalOpen(true)}
-              onRunCheck={handleRunSentinelCheck}
-            />
-          </div>
-        )}
 
         {/* Active Alerts Banner */}
         {decision && (
@@ -557,11 +572,19 @@ export function MainScreen({
                     setViewMode('expert');
                   }}
                 />
-              ) : (
+              ) : viewMode === 'expert' ? (
                 <DetailedAnalysisView
                   decision={decision}
                   initialTab={selectedExpertTab}
                   onReturnToFarmerView={() => setViewMode('farmer')}
+                />
+              ) : (
+                <AutonomousAgentView
+                  decision={decision}
+                  logs={sentinelLogs}
+                  advisory={proactiveAdvisory}
+                  isChecking={isCheckingSentinel}
+                  onRunCheck={handleRunSentinelCheck}
                 />
               )
             ) : null}
