@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import os
+
+code = """import React, { useEffect, useState, useCallback } from 'react';
 import {
   ArrowLeft,
   Compass,
@@ -355,3 +357,9 @@ export function MainScreen({
     </section>
   );
 }
+"""
+
+with open('src/components/MainScreen.tsx', 'w', encoding='utf-8') as f:
+    f.write(code)
+
+print('MainScreen.tsx created successfully! Size:', len(code))

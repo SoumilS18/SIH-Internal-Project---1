@@ -12,6 +12,29 @@ export function formatCurrency(amount: number | null | undefined, _lang: string 
   return '₹' + rounded.toLocaleString('en-IN');
 }
 
+/**
+ * Format Indian currency with human-friendly denominations (e.g. ₹2.08 Lakh / ₹2.08 लाख)
+ */
+export function formatCurrencyWords(amount: number | null | undefined, lang: string = 'en'): string {
+  if (amount === null || amount === undefined || isNaN(amount)) {
+    return lang === 'hi' ? 'लगभग ₹0' : 'Approx. ₹0';
+  }
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+
+  if (abs >= 10000000) { // 1 Crore+
+    const val = (abs / 10000000).toFixed(2);
+    return lang === 'hi' ? `लगभग ${sign}₹${val} करोड़` : `Approx. ${sign}₹${val} Cr`;
+  } else if (abs >= 100000) { // 1 Lakh+
+    const val = (abs / 100000).toFixed(2);
+    return lang === 'hi' ? `लगभग ${sign}₹${val} लाख` : `Approx. ${sign}₹${val} Lakh`;
+  } else if (abs >= 1000) { // 1 Thousand+
+    const val = (abs / 1000).toFixed(1);
+    return lang === 'hi' ? `लगभग ${sign}₹${val} हज़ार` : `Approx. ${sign}₹${val}k`;
+  }
+  return formatCurrency(amount, lang);
+}
+
 export function formatNumber(val: number | null | undefined, decimals: number = 2): string {
   if (val === null || val === undefined || isNaN(val)) {
     return '0';

@@ -80,14 +80,17 @@ export const en = {
     step3: 'Optimizing farm allocation via HiGHS LP engine...',
   },
 
-  // Navigation Tabs
+  // Navigation Tabs (Farmer-Friendly & Clear)
   nav: {
-    overview: 'Strategic Overview',
-    environmental: 'Telemetry & Soil',
-    crops: 'Crop Evaluations',
-    scenarios: '4-Way Stress Test',
-    causal: '8-Step Causality',
-    trust: 'Data Provenance',
+    overview: 'Your Farm Plan',
+    environmental: 'Soil & Weather',
+    crops: 'Crop Options',
+    scenarios: 'What If?',
+    causal: 'Why this plan?',
+    trust: 'Where did this info come from?',
+    simplePlan: 'Your Farm Plan',
+    detailedAnalysis: 'Detailed Analysis',
+    whyPlan: 'Why this plan?',
   },
 
   // Dashboard Header & Status
@@ -102,13 +105,49 @@ export const en = {
     logout: 'Logout',
   },
 
+  // Farmer-First Primary Plan Experience (Level 1 & 2)
+  farmerPlan: {
+    title: '🌾 Your Recommended Farm Plan',
+    subtitle: 'Simple, risk-aware crop plan calculated for your land, budget and water',
+    recommendationLead: 'We recommend growing:',
+    bestChoiceForFarm: 'Best choice for your farm',
+    expectedEarning: 'Expected Earning',
+    earningHelper: 'Estimated net profit after all crop expenses',
+    expectedReturn: 'Expected Return',
+    returnHelper: 'On every ₹100 invested, expected profit is',
+    riskLevel: 'Risk Level',
+    riskHelper: 'Estimated uncertainty under current weather & mandi prices',
+    moneyUsed: 'Money Used',
+    budgetUtilized: 'of your available money used',
+    waterStatus: 'Water Availability',
+    weatherStatus: 'Weather Outlook',
+    whyThisPlanBtn: 'Why are we recommending this?',
+    whyThisPlanTitle: 'Why this plan for your farm?',
+    seeDetailedAnalysisBtn: '🔬 See Detailed Analysis & Math (Expert / Judge View)',
+    hideDetailedAnalysisBtn: '🌾 Return to Farmer View',
+    viewMode: 'View Mode',
+    farmerMode: 'Farmer View (Simple)',
+    expertMode: 'Expert & Judge View (Advanced Analysis)',
+    level1Title: '1. Simple Decision',
+    level2Title: '2. Why This Plan?',
+    level3Title: '3. Detailed Analysis',
+    soilCardTitle: '🌱 Soil Condition',
+    weatherCardTitle: '🌦️ Weather Outlook',
+    waterCardTitle: '💧 Water Source Buffer',
+    marketCardTitle: '💰 Mandi Price Benchmark',
+    fallowWarning: 'Some land kept fallow to protect your budget and prevent losses.',
+    fallowAcres: 'acres uncultivated',
+    cultivatedAcres: 'acres cultivated',
+    allocatedShare: 'of your farm',
+  },
+
   // Strategic Overview Page
   overview: {
     title: 'Autonomous Strategic Overview',
     subtitle: 'Optimal crop allocation driven by live telemetry and economic modeling',
-    netProfit: 'Projected Net Profit',
-    capitalInvested: 'Capital Invested',
-    returnOnInvestment: 'Return on Investment',
+    netProfit: 'Expected Earning',
+    capitalInvested: 'Money Used',
+    returnOnInvestment: 'Expected Return',
     allocatedLand: 'Allocated Land',
     fallowLand: 'Fallow Buffer',
     confidenceScore: 'Confidence Score',
@@ -135,7 +174,7 @@ export const en = {
 
   // Telemetry & Soil Page
   telemetry: {
-    title: 'Environmental Intelligence',
+    title: 'Soil & Weather Intelligence',
     subtitle: "Live telemetry, soil moisture and forecast conditions driving today's farm decision.",
     liveWeather: 'Live Weather',
     dataConfidence: 'Data Confidence',
@@ -182,7 +221,7 @@ export const en = {
 
   // Crop Evaluations Page
   crops: {
-    title: 'Candidate Crop Evaluations',
+    title: 'Crop Options & Evaluations',
     subtitle: 'Comprehensive agronomic, economic, and risk profiling for candidate crops',
     cropName: 'Crop Name',
     season: 'Season',
@@ -203,7 +242,7 @@ export const en = {
 
   // 4-Way Stress Test Page
   scenarios: {
-    title: '4-Way Environmental Stress Test',
+    title: 'What If? 4-Way Environmental Stress Test',
     subtitle: 'Dynamic resilience evaluation across 4 simulated environmental states',
     liveConditions: 'Live Conditions',
     severeDrought: 'Severe Drought (+35% Deficit)',
@@ -218,7 +257,7 @@ export const en = {
 
   // 8-Step Causality Page
   causal: {
-    title: '8-Step Explainable Decision Chain',
+    title: 'Why this plan? (8-Step Decision Chain)',
     subtitle: 'End-to-end transparent reasoning path from raw telemetry to farm allocations',
     step1Title: '1. Historical Ground Truth',
     step2Title: '2. Real-Time Telemetry Observation',
@@ -232,7 +271,7 @@ export const en = {
 
   // Data Provenance Page
   trust: {
-    title: 'Data Provenance & Trust Architecture',
+    title: 'Where did this info come from? (Data Provenance)',
     subtitle: 'Verified public data sources, zero-hallucination mathematical guarantees',
     dataSources: 'Authoritative Data Sources',
     openMeteoDesc: 'High-resolution live hourly meteorological observation and ECMWF 7-day numerical forecast.',
@@ -242,33 +281,65 @@ export const en = {
     mathematicalIntegrity: 'Mathematical Integrity & Determinism',
   },
 
-  // Farm Setup Configuration Panel
+  // Farm Setup Configuration Panel (Guided Conversational Form)
   config: {
-    title: 'Farm Setup & Constraints',
-    subtitle: 'Configure farm parameters to trigger live LP optimization',
+    title: 'Tell Us About Your Farm',
+    subtitle: 'Answer a few simple questions to get your personalized crop plan',
+    qLocation: '1. Where is your farm?',
+    qLand: '2. How much land do you have?',
+    landHelper: 'Enter the total acres of land you want to farm.',
+    qBudget: '3. How much money can you invest?',
+    budgetHelper: 'Enter approximately how much you can spend on this crop season.',
+    qIrrigation: '4. How do you get water?',
+    irrigationHelper: 'Borewell, canal, rainwater, drip, etc.',
+    qReliability: 'Water Availability',
+    reliabilityHelper: 'How reliable is your water supply during the season?',
+    qSeason: '5. When are you planting?',
+    seasonHelper: 'Kharif (Monsoon), Rabi (Winter), or Zaid (Summer).',
+    qRisk: '6. How much risk are you comfortable with?',
+    riskHelper: 'Choose how much uncertainty you are comfortable with.',
+    safer: 'Safer',
+    saferDesc: 'Lower risk, more stable returns',
+    balanced: 'Balanced',
+    balancedDesc: 'Balance between safety and earnings',
+    higherReturn: 'Higher Return',
+    higherReturnDesc: 'More risk for potentially higher earnings',
     state: 'State',
     district: 'District',
-    landSize: 'Total Farm Land (Acres)',
-    budget: 'Capital Budget (₹)',
-    irrigationType: 'Irrigation System',
-    irrigationReliability: 'Irrigation Reliability',
-    season: 'Crop Season',
-    riskTolerance: 'Risk Tolerance',
-    optimizeButton: 'Recalculate Optimal Plan',
-    optimizing: 'Solving HiGHS LP Model...',
-    borewell: 'Borewell',
-    canal: 'Canal',
+    landSize: 'Farm Land (Acres)',
+    budget: 'Money Available (₹)',
+    irrigationType: 'Water Source',
+    irrigationReliability: 'Water Availability',
+    season: 'Growing Season',
+    riskTolerance: 'Risk Preference',
+    optimizeButton: '✨ Get My Farm Plan',
+    optimizing: 'Finding the best plan for your farm...',
+    borewell: 'Borewell / Tubewell',
+    canal: 'Canal System',
     drip: 'Drip Irrigation',
-    rainfed: 'Rainfed (No Irrigation)',
-    high: 'High',
-    moderate: 'Moderate',
-    low: 'Low',
-    kharif: 'Kharif',
-    rabi: 'Rabi',
-    zaid: 'Zaid',
-    conservative: 'Conservative',
-    balanced: 'Balanced',
-    aggressive: 'Aggressive',
+    rainfed: 'Rainfed (Rain Only)',
+    high: 'High Reliability',
+    moderate: 'Moderate Reliability',
+    low: 'Low Reliability',
+    kharif: 'Kharif (Monsoon)',
+    rabi: 'Rabi (Winter)',
+    zaid: 'Zaid (Summer)',
+    conservative: 'Safer (Low Risk)',
+    aggressive: 'Higher Return (High Risk)',
+  },
+
+  // Farmer-Friendly Voice Assistant
+  voice: {
+    title: '🎙️ Ask AgriOptima',
+    subtitle: 'Speak your question or tap an example below',
+    listening: 'Listening to your farm question...',
+    speakQuery: 'Speak your question',
+    tapToAsk: 'Tap to Ask',
+    queryPrompt1: 'What should I grow?',
+    queryPrompt2: 'Why this crop recommendation?',
+    queryPrompt3: 'What if there is less rain?',
+    queryPrompt4: 'How much money will I need?',
+    assistantAnswer: 'AgriOptima Farming Advisor',
   },
 
   // Multilingual Selector & Modal
@@ -290,7 +361,7 @@ export const en = {
   common: {
     loading: 'Loading...',
     error: 'Error',
-    retry: 'Retry',
+    retry: 'Try Again',
     close: 'Close',
     save: 'Save',
     cancel: 'Cancel',

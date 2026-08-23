@@ -80,14 +80,17 @@ export const hi = {
     step3: 'HiGHS लीनियर प्रोग्रामिंग इंजन द्वारा खेत आवंटन अनुकूलित हो रहा है...',
   },
 
-  // Navigation Tabs
+  // Navigation Tabs (Farmer-Friendly & Clear)
   nav: {
-    overview: 'रणनीतिक अवलोकन',
-    environmental: 'पर्यावरण व मिट्टी',
-    crops: 'फसल मूल्यांकन',
-    scenarios: '4-तरफा तनाव परीक्षण',
-    causal: '8-चरण कारण विश्लेषण',
-    trust: 'डेटा स्रोत व विश्वसनीयता',
+    overview: 'खेत की योजना',
+    environmental: 'मिट्टी और मौसम',
+    crops: 'फसल विकल्प',
+    scenarios: 'अगर ऐसा हुआ तो?',
+    causal: 'यह योजना क्यों?',
+    trust: 'यह जानकारी कहाँ से आई?',
+    simplePlan: 'खेत की योजना',
+    detailedAnalysis: 'विस्तृत तकनीकी विश्लेषण',
+    whyPlan: 'यह योजना क्यों?',
   },
 
   // Dashboard Header & Status
@@ -102,13 +105,49 @@ export const hi = {
     logout: 'लॉगआउट',
   },
 
+  // Farmer-First Primary Plan Experience (Level 1 & 2)
+  farmerPlan: {
+    title: '🌾 आपके खेत की अनुशंसित योजना',
+    subtitle: 'आपकी जमीन, बजट और पानी के साधन के अनुसार तैयार की गई सरल व लाभदायक योजना',
+    recommendationLead: 'हम उगाने की सलाह देते हैं:',
+    bestChoiceForFarm: 'आपके खेत के लिए सर्वोत्तम विकल्प',
+    expectedEarning: 'अनुमानित कमाई',
+    earningHelper: 'खेती की कुल लागत काटकर शुद्ध अनुमानित मुनाफा',
+    expectedReturn: 'अनुमानित मुनाफा',
+    returnHelper: 'प्रति ₹100 के निवेश पर शुद्ध लाभ',
+    riskLevel: 'जोखिम स्तर',
+    riskHelper: 'वर्तमान मौसम और मंडी भाव के आधार पर अनुमानित जोखिम',
+    moneyUsed: 'लागत खर्च',
+    budgetUtilized: 'आपकी उपलब्ध राशि में से खर्च',
+    waterStatus: 'पानी की उपलब्धता',
+    weatherStatus: 'मौसम का हाल',
+    whyThisPlanBtn: 'हम यह सिफारिश क्यों कर रहे हैं?',
+    whyThisPlanTitle: 'आपके खेत के लिए यही योजना क्यों?',
+    seeDetailedAnalysisBtn: '🔬 विस्तृत तकनीकी विश्लेषण व गणनाएं देखें (जज / विशेषज्ञ दृश्य)',
+    hideDetailedAnalysisBtn: '🌾 सरल किसान दृश्य पर वापस जाएं',
+    viewMode: 'दृश्य मोड',
+    farmerMode: 'किसान दृश्य (सरल)',
+    expertMode: 'विशेषज्ञ व जज दृश्य (गहन विश्लेषण)',
+    level1Title: '1. सरल निर्णय',
+    level2Title: '2. यह योजना क्यों?',
+    level3Title: '3. विस्तृत तकनीकी विश्लेषण',
+    soilCardTitle: '🌱 मिट्टी की स्थिति',
+    weatherCardTitle: '🌦️ मौसम का हाल',
+    waterCardTitle: '💧 पानी का साधन व सुरक्षा',
+    marketCardTitle: '💰 मंडी भाव बेंचमार्क',
+    fallowWarning: 'बजट सीमित होने व घाटे से बचाव के लिए कुछ जमीन खाली (परती) रखी गई है।',
+    fallowAcres: 'एकड़ परती भूमि',
+    cultivatedAcres: 'एकड़ में खेती',
+    allocatedShare: 'खेत का हिस्सा',
+  },
+
   // Strategic Overview Page
   overview: {
     title: 'स्वायत्त रणनीतिक अवलोकन',
     subtitle: 'लाइव टेलीमेट्री और आर्थिक मॉडलिंग द्वारा संचालित इष्टतम फसल आवंटन योजना',
-    netProfit: 'अनुमानित शुद्ध लाभ',
-    capitalInvested: 'निवेशित पूँजी',
-    returnOnInvestment: 'प्रतिफल दर (ROI)',
+    netProfit: 'अनुमानित कमाई',
+    capitalInvested: 'लागत खर्च',
+    returnOnInvestment: 'अनुमानित मुनाफा',
     allocatedLand: 'आवंटित रकबा',
     fallowLand: 'परती / अप्रयुक्त भूमि',
     confidenceScore: 'विश्वसनीयता स्कोर',
@@ -135,7 +174,7 @@ export const hi = {
 
   // Telemetry & Soil Page
   telemetry: {
-    title: 'पर्यावरणीय बुद्धिमत्ता',
+    title: 'मृदा एवं मौसम बुद्धिमत्ता',
     subtitle: 'लाइव टेलीमेट्री, मृदा नमी और 7-दिवसीय पूर्वानुमान जो आज के कृषि निर्णय को निर्देशित करते हैं।',
     liveWeather: 'लाइव मौसम',
     dataConfidence: 'डेटा विश्वसनीयता',
@@ -182,7 +221,7 @@ export const hi = {
 
   // Crop Evaluations Page
   crops: {
-    title: 'प्रत्याशी फसल मूल्यांकन',
+    title: 'फसल विकल्प व मूल्यांकन',
     subtitle: 'प्रत्याशी फसलों का व्यापक कृषि-वैज्ञानिक, आर्थिक और जोखिम प्रोफाइल',
     cropName: 'फसल का नाम',
     season: 'मौसम',
@@ -203,7 +242,7 @@ export const hi = {
 
   // 4-Way Stress Test Page
   scenarios: {
-    title: '4-तरफा पर्यावरणीय तनाव परीक्षण',
+    title: 'अगर ऐसा हुआ तो? 4-तरफा तनाव परीक्षण',
     subtitle: '4 अनुरूपित पर्यावरणीय चरम स्थितियों में फसल योजना की लचीलापन जाँच',
     liveConditions: 'वर्तमान मौसम (लाइव)',
     severeDrought: 'गंभीर सूखा (+35% वर्षा घाटा)',
@@ -218,7 +257,7 @@ export const hi = {
 
   // 8-Step Causality Page
   causal: {
-    title: '8-चरणीय व्याख्यात्मक निर्णय श्रृंखला',
+    title: 'यह योजना क्यों? (8-चरण निर्णय श्रृंखला)',
     subtitle: 'कच्ची टेलीमेट्री से लेकर अंतिम फसल आवंटन तक पारदर्शी वैज्ञानिक तर्क पथ',
     step1Title: '1. ऐतिहासिक आधारभूत सत्य',
     step2Title: '2. वास्तविक समय टेलीमेट्री अवलोकन',
@@ -232,7 +271,7 @@ export const hi = {
 
   // Data Provenance Page
   trust: {
-    title: 'डेटा स्रोत व विश्वसनीयता वास्तुकला',
+    title: 'यह जानकारी कहाँ से आई? (डेटा स्रोत व सत्यता)',
     subtitle: 'सत्यापित सार्वजनिक डेटा स्रोत और शून्य-भ्रम (Zero-Hallucination) गणितीय गारंटी',
     dataSources: 'प्रामाणिक डेटा स्रोत',
     openMeteoDesc: 'उच्च-रिज़ॉल्यूशन लाइव प्रति घंटा मौसम अवलोकन और ECMWF 7-दिवसीय संख्यात्मक पूर्वानुमान।',
@@ -242,33 +281,65 @@ export const hi = {
     mathematicalIntegrity: 'गणितीय अखंडता और निश्चयात्मकता',
   },
 
-  // Farm Setup Configuration Panel
+  // Farm Setup Configuration Panel (Guided Conversational Form)
   config: {
-    title: 'खेत विन्यास व बाधाएं',
-    subtitle: 'लाइव लीनियर प्रोग्रामिंग अनुकूलन चलाने के लिए खेत के पैरामीटर सेट करें',
+    title: 'अपने खेत के बारे में बताएं',
+    subtitle: 'अपने खेत के अनुसार सर्वोत्तम फसल योजना पाने के लिए सरल प्रश्नों के उत्तर दें',
+    qLocation: '1. आपकी जमीन कहाँ है?',
+    qLand: '2. आपके पास कितनी जमीन है?',
+    landHelper: 'जितनी जमीन में खेती करनी है, कुल एकड़ दर्ज करें।',
+    qBudget: '3. आप कितने पैसे लगा सकते हैं?',
+    budgetHelper: 'इस मौसम की खेती के लिए आपके पास कुल उपलब्ध राशि।',
+    qIrrigation: '4. पानी का क्या साधन है?',
+    irrigationHelper: 'ट्यूबवेल/बोरवेल, नहर, वर्षा, ड्रिप आदि।',
+    qReliability: 'पानी की उपलब्धता',
+    reliabilityHelper: 'मौसम के दौरान पानी कितनी नियमितता से मिलता है?',
+    qSeason: '5. फसल कब बो रहे हैं?',
+    seasonHelper: 'खरीफ (मानसून), रबी (सर्दियां), या ज़ायद (गर्मी)।',
+    qRisk: '6. आप कितना जोखिम ले सकते हैं?',
+    riskHelper: 'अपनी सुविधा अनुसार जोखिम स्तर चुनें।',
+    safer: 'सुरक्षित',
+    saferDesc: 'कम जोखिम, स्थिर और सुरक्षित मुनाफा',
+    balanced: 'संतुलित',
+    balancedDesc: 'सुरक्षा और कमाई के बीच सही संतुलन',
+    higherReturn: 'अधिक कमाई',
+    higherReturnDesc: 'अधिक कमाई के अवसर के साथ थोड़ा जोखिम',
     state: 'राज्य',
     district: 'ज़िला',
-    landSize: 'कुल खेत का रकबा (एकड़)',
-    budget: 'पूँजी बजट (₹)',
-    irrigationType: 'सिंचाई का साधन',
-    irrigationReliability: 'सिंचाई विश्वसनीयता',
-    season: 'फसल मौसम',
-    riskTolerance: 'जोखिम क्षमता',
-    optimizeButton: 'इष्टतम योजना की गणना करें',
-    optimizing: 'HiGHS LP मॉडल हल हो रहा है...',
+    landSize: 'खेत का रकबा (एकड़)',
+    budget: 'उपलब्ध पैसे / पूँजी (₹)',
+    irrigationType: 'पानी का साधन',
+    irrigationReliability: 'पानी की उपलब्धता',
+    season: 'फसल का मौसम',
+    riskTolerance: 'जोखिम उठाने की क्षमता',
+    optimizeButton: '✨ मेरे खेत की योजना बनाएं',
+    optimizing: 'आपके खेत के लिए सर्वोत्तम योजना खोजी जा रही है...',
     borewell: 'बोरवेल / नलकूप',
     canal: 'नहर सिंचाई',
     drip: 'ड्रिप (टपक) सिंचाई',
-    rainfed: 'वर्षा आधारित (असिंचित)',
-    high: 'उच्च',
-    moderate: 'मध्यम',
-    low: 'निम्न',
-    kharif: 'खरीफ',
-    rabi: 'रबी',
-    zaid: 'जायद',
-    conservative: 'रूढ़िवादी (सुरक्षित)',
-    balanced: 'संतुलित',
-    aggressive: 'आक्रामक (अधिकतम लाभ)',
+    rainfed: 'वर्षा आधारित (केवल बारिश)',
+    high: 'उच्च उपलब्धता (भरपूर पानी)',
+    moderate: 'मध्यम उपलब्धता',
+    low: 'सीमित उपलब्धता',
+    kharif: 'खरीफ (मानसून)',
+    rabi: 'रबी (सर्दियां)',
+    zaid: 'जायद (गर्मी)',
+    conservative: 'सुरक्षित (कम जोखिम)',
+    aggressive: 'अधिक कमाई (उच्च जोखिम)',
+  },
+
+  // Farmer-Friendly Voice Assistant
+  voice: {
+    title: '🎙️ एग्रीऑप्टिमा से पूछें',
+    subtitle: 'अपना प्रश्न बोलें या नीचे दिए गए किसी विकल्प पर टैप करें',
+    listening: 'आपकी बात सुन रहे हैं...',
+    speakQuery: 'अपना प्रश्न बोलें',
+    tapToAsk: 'पूछने के लिए टैप करें',
+    queryPrompt1: 'मुझे कौन सी फसल उगानी चाहिए?',
+    queryPrompt2: 'मुझे यही फसल क्यों उगानी चाहिए?',
+    queryPrompt3: 'अगर बारिश कम हुई तो क्या होगा?',
+    queryPrompt4: 'मुझे कितने पैसों की जरूरत होगी?',
+    assistantAnswer: 'एग्रीऑप्टिमा कृषि सलाहकार',
   },
 
   // Multilingual Selector & Modal
