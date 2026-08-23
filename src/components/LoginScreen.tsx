@@ -17,6 +17,7 @@ import {
 import { usePrefersReducedMotion } from '@/lib/hooks';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { LegalModal } from '@/components/LegalModals';
 
 interface LoginScreenProps {
   onLogin: (userName: string) => void;
@@ -36,6 +37,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
   const reduced = usePrefersReducedMotion();
   const { t } = useLanguage();
   const particles = useMemo(() => PARTICLES, []);
@@ -275,9 +277,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 <p className="mt-1 font-mono text-[10px] sm:text-xs uppercase tracking-widest text-gold-300/90 font-semibold">
                   {t('login.cardSubtitle')}
                 </p>
-                <p className="mt-2 text-xs leading-relaxed text-cream-300/70">
-                  {t('login.cardDescription')}
-                </p>
               </div>
 
               {/* Form */}
@@ -379,14 +378,29 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         </div>
         <div className="flex flex-wrap items-center gap-4 text-cream-300/50">
           <span>{t('footer.copyright')}</span>
-          <span className="hover:text-gold-300 cursor-pointer transition-colors">
+          <button
+            type="button"
+            onClick={() => setLegalModalType('privacy')}
+            className="hover:text-gold-300 cursor-pointer transition-colors focus:outline-none underline-offset-4 hover:underline"
+          >
             {t('footer.privacy')}
-          </span>
-          <span className="hover:text-gold-300 cursor-pointer transition-colors">
+          </button>
+          <button
+            type="button"
+            onClick={() => setLegalModalType('terms')}
+            className="hover:text-gold-300 cursor-pointer transition-colors focus:outline-none underline-offset-4 hover:underline"
+          >
             {t('footer.terms')}
-          </span>
+          </button>
         </div>
       </footer>
+
+      {/* Legal Modals: Privacy Policy & Terms of Service */}
+      <LegalModal
+        isOpen={legalModalType !== null}
+        onClose={() => setLegalModalType(null)}
+        type={legalModalType || 'privacy'}
+      />
     </div>
   );
 }
