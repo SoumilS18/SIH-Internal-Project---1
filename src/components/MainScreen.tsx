@@ -23,11 +23,19 @@ import { FarmSetupFlow } from '@/components/FarmSetupFlow';
 import { FarmerSimpleView } from '@/components/FarmerSimpleView';
 import { DetailedAnalysisView, DetailedTabType } from '@/components/DetailedAnalysisView';
 import { VoiceAssistantPanel } from '@/components/VoiceAssistantPanel';
+import { AutonomousSentinelPill } from '@/components/AutonomousSentinelPill';
+import { AutonomousLogModal } from '@/components/AutonomousLogModal';
+import { runAutonomousCycle } from '@/services/autonomousSentinel';
 import type {
   FarmDecisionRequest,
   FarmDecisionResponse,
   DistrictLocationItem,
 } from '@/types/farm';
+import type {
+  AutonomousCycleLog,
+  ProactiveAdvisory,
+  ActionType,
+} from '@/types/autonomous';
 
 interface MainScreenProps {
   onBack: () => void;
@@ -71,6 +79,17 @@ export function MainScreen({
   const [decision, setDecision] = useState<FarmDecisionResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Autonomous Sentinel State
+  const [sentinelLogs, setSentinelLogs] = useState<AutonomousCycleLog[]>([]);
+  const [proactiveAdvisory, setProactiveAdvisory] = useState<ProactiveAdvisory | null>(null);
+  const [isCheckingSentinel, setIsCheckingSentinel] = useState<boolean>(false);
+  const [isLogModalOpen, setIsLogModalOpen] = useState<boolean>(false);
+  const previousSentinelStateRef = React.useRef<{
+    fingerprint: string;
+    activeAdvisory: ProactiveAdvisory | null;
+    lastActionType: ActionType;
+  } | null>(null);
 
   // Load locations on mount
   useEffect(() => {
@@ -120,6 +139,20 @@ export function MainScreen({
     try {
       const response = await getFarmDecision(request);
       setDecision(response);
+
+      // Autonomous Sentinel Cycle: OBSERVE -> REASON -> DECIDE -> VALIDATE -> ACT -> VERIFY -> MONITOR
+      try {
+        const { log, advisory } = runAutonomousCycle(response, language, previousSentinelStateRef.current);
+        previousSentinelStateRef.current = {
+          fingerprint: log.fingerprint,
+          activeAdvisory: advisory,
+          lastActionType: log.action_type,
+        };
+        setSentinelLogs((prev) => [log, ...prev.slice(0, 49)]);
+        setProactiveAdvisory(advisory);
+      } catch (sentinelErr) {
+        console.warn('Autonomous Sentinel cycle fallback:', sentinelErr);
+      }
     } catch (err: any) {
       console.error('Optimization error:', err);
       setError(
@@ -139,8 +172,69 @@ export function MainScreen({
     irrigationReliability,
     season,
     riskTolerance,
+    language,
     isHi,
   ]);
+
+  // Trigger manual telemetry observation & verification cycle on demand
+  const handleRunSentinelCheck = useCallback(() => {
+    if (!decision) return;
+    setIsCheckingSentinel(true);
+    setTimeout(() => {
+      try {
+        const { log, advisory } = runAutonomousCycle(decision, language, previousSentinelStateRef.current);
+        previousSentinelStateRef.current = {
+          fingerprint: log.fingerprint,
+          activeAdvisory: advisory,
+          lastActionType: log.action_type,
+        };
+        setSentinelLogs((prev) => [log, ...prev.slice(0, 49)]);
+        setProactiveAdvisory(advisory);
+      } catch (err) {
+        console.warn('Manual Sentinel check fallback:', err);
+      } finally {
+        setIsCheckingSentinel(false);
+      }
+    }, 350);
+  }, [decision, language]);
+
+  // Update latest log language if language switches
+  useEffect(() => {
+    if (decision && sentinelLogs.length > 0) {
+      try {
+        const { log, advisory } = runAutonomousCycle(decision, language, null);
+        previousSentinelStateRef.current = {
+          fingerprint: log.fingerprint,
+          activeAdvisory: advisory,
+          lastActionType: log.action_type,
+        };
+        setSentinelLogs((prev) => [log, ...prev.slice(1, 50)]);
+        setProactiveAdvisory(advisory);
+      } catch {
+        // Safe fallback
+      }
+    }
+  }, [language]);
+
+  // Periodic background autonomous monitoring loop (OBSERVE -> REASON -> MONITOR)
+  useEffect(() => {
+    if (!decision) return;
+    const interval = setInterval(() => {
+      try {
+        const { log, advisory } = runAutonomousCycle(decision, language, previousSentinelStateRef.current);
+        previousSentinelStateRef.current = {
+          fingerprint: log.fingerprint,
+          activeAdvisory: advisory,
+          lastActionType: log.action_type,
+        };
+        setSentinelLogs((prev) => [log, ...prev.slice(0, 49)]);
+        setProactiveAdvisory(advisory);
+      } catch (err) {
+        console.warn('Background Sentinel monitor cycle fallback:', err);
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [decision, language]);
 
   // Execute initial optimization calculation on mount
   useEffect(() => {
@@ -149,7 +243,7 @@ export function MainScreen({
 
   return (
     <section
-      className="absolute inset-0 h-full w-full overflow-y-auto no-scrollbar text-cream-100 selection:bg-gold-400 selection:text-forest-950"
+      className="relative min-h-screen w-full overflow-y-auto text-cream-100 selection:bg-gold-400 selection:text-forest-950"
       aria-label="AgriOptima AI Farm Decision Dashboard"
     >
       <Atmosphere intensity="dim" />
@@ -247,6 +341,19 @@ export function MainScreen({
           </div>
         </header>
 
+        {/* Active Autonomous Sentinel Monitoring Pill */}
+        {decision && (
+          <div className="mt-3">
+            <AutonomousSentinelPill
+              latestLog={sentinelLogs[0] || null}
+              advisory={proactiveAdvisory}
+              isChecking={isCheckingSentinel}
+              onOpenLog={() => setIsLogModalOpen(true)}
+              onRunCheck={handleRunSentinelCheck}
+            />
+          </div>
+        )}
+
         {/* Active Alerts Banner */}
         {decision && (
           <div className="mt-3 space-y-2">
@@ -332,6 +439,7 @@ export function MainScreen({
               viewMode === 'farmer' ? (
                 <FarmerSimpleView
                   decision={decision}
+                  advisory={proactiveAdvisory}
                   onOpenDetailedAnalysis={() => {
                     setSelectedExpertTab('overview');
                     setViewMode('expert');
@@ -352,6 +460,17 @@ export function MainScreen({
           </main>
         </div>
       </div>
+
+      {/* Autonomous Decision & Action Log Modal */}
+      <AutonomousLogModal
+        isOpen={isLogModalOpen}
+        onClose={() => setIsLogModalOpen(false)}
+        logs={sentinelLogs}
+        advisory={proactiveAdvisory}
+        onRunCheck={handleRunSentinelCheck}
+        isChecking={isCheckingSentinel}
+      />
     </section>
   );
 }
+

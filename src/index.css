@@ -11,7 +11,13 @@
   html,
   body,
   #root {
-    height: 100%;
+    min-height: 100%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-color: rgba(255, 210, 26, 0.35) rgba(2, 21, 16, 0.6);
+    scrollbar-width: thin;
   }
 
   body {

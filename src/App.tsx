@@ -59,7 +59,7 @@ function AppContent() {
   }, [stage, handleChangeFarm]);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-forest-950 font-sans text-cream-100">
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-forest-950 font-sans text-cream-100">
       {/* Multilingual Coming Soon Modal (accessible anywhere) */}
       <LanguageComingSoonModal />
 

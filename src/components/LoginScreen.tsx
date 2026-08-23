@@ -261,8 +261,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
               {/* Brand Header */}
               <div className="mt-4 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-gold-300/35 bg-gradient-to-br from-gold-400/25 to-forest-800/90 shadow-[0_0_20px_rgba(255,210,26,0.2)]">
-                  <Leaf className="h-6 w-6 text-gold-300" />
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-gold-300/40 bg-gradient-to-br from-gold-400/20 to-forest-900/90 p-1 shadow-[0_0_20px_rgba(255,210,26,0.25)]">
+                  <img
+                    src="/logo.png"
+                    alt="AgriOptima AI Logo"
+                    className="h-full w-full rounded-xl object-contain"
+                  />
                 </div>
 
                 <h2 className="mt-3 font-serif text-2xl font-bold tracking-tight text-cream-100 sm:text-3xl">

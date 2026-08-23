@@ -18,7 +18,7 @@ export function Atmosphere({ intensity = 'full' }: AtmosphereProps) {
   const opacity = intensity === 'full' ? 'opacity-100' : 'opacity-50';
 
   return (
-    <div className={`pointer-events-none absolute inset-0 overflow-hidden ${opacity}`} aria-hidden="true">
+    <div className={`pointer-events-none fixed inset-0 overflow-hidden ${opacity}`} aria-hidden="true">
       {/* Deep forest base gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-forest-950 via-forest-900 to-forest-950" />
 

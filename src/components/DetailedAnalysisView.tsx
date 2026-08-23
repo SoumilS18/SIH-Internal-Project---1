@@ -109,8 +109,8 @@ export function DetailedAnalysisView({
       </div>
 
       {/* Tab Navigation Strip */}
-      <div className="overflow-x-auto no-scrollbar">
-        <nav className="flex space-x-1.5 rounded-2xl border border-gold-300/25 bg-forest-950/90 p-1.5 shadow-inner">
+      <div className="w-full">
+        <nav className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5 rounded-2xl border border-gold-300/25 bg-forest-950/90 p-1.5 shadow-inner">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -119,14 +119,14 @@ export function DetailedAnalysisView({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
+                className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-center text-xs font-bold transition-all duration-200 ${
                   active
                     ? 'border border-gold-300/40 bg-gradient-to-r from-gold-400/25 to-gold-500/15 text-gold-200 shadow-[0_0_14px_rgba(255,210,26,0.25)]'
                     : 'text-cream-300/70 hover:bg-forest-900/70 hover:text-cream-100'
                 }`}
               >
-                <Icon size={14} className={active ? 'text-gold-300' : 'text-cream-300/60'} />
-                <span>{tab.label}</span>
+                <Icon size={14} className={`shrink-0 ${active ? 'text-gold-300' : 'text-cream-300/60'}`} />
+                <span className="truncate">{tab.label}</span>
               </button>
             );
           })}

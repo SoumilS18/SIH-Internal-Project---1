@@ -40,9 +40,11 @@ import {
   getFarmerRecommendationHeadline,
 } from '@/i18n/semanticAdapter';
 import type { FarmDecisionResponse } from '@/types/farm';
+import type { ProactiveAdvisory } from '@/types/autonomous';
 
 interface FarmerSimpleViewProps {
   decision: FarmDecisionResponse;
+  advisory?: ProactiveAdvisory | null;
   onOpenDetailedAnalysis: () => void;
   onSelectTab?: (tabId: string) => void;
 }
@@ -70,6 +72,7 @@ function getCropIcon(cropName: string): string {
 
 export function FarmerSimpleView({
   decision,
+  advisory,
   onOpenDetailedAnalysis,
   onSelectTab,
 }: FarmerSimpleViewProps) {
@@ -437,6 +440,38 @@ export function FarmerSimpleView({
           </button>
         </div>
       </div>
+
+      {/* Autonomous Field Directive Banner (if active) */}
+      {advisory && (
+        <div className="rounded-3xl border border-amber-500/40 bg-gradient-to-r from-amber-950/60 via-forest-900/80 to-amber-950/50 p-4 sm:p-5 backdrop-blur-xl shadow-lg">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/40">
+              <Zap size={18} />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-amber-300 font-bold">
+                  {t('sentinel.advisoryTitle')} ({advisory.id})
+                </span>
+                <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 text-[9px] font-bold text-emerald-300">
+                  ✓ {t('sentinel.actionVerified')}
+                </span>
+              </div>
+              <h3 className="font-serif text-sm sm:text-base font-bold text-cream-100">
+                {advisory.headline}
+              </h3>
+              <p className="text-xs text-cream-200 leading-relaxed font-medium">
+                {advisory.recommended_action}
+              </p>
+              {advisory.crop_impact && (
+                <p className="text-[11px] text-amber-200/80 pt-0.5">
+                  <span className="font-semibold text-cream-300">{t('sentinel.targetCrops')}:</span> {advisory.crop_impact}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* LEVEL 2: "WHY THIS PLAN?" 5 SIMPLE UNDERSTANDABLE CARDS */}

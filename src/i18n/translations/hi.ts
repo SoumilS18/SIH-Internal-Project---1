@@ -367,4 +367,37 @@ export const hi = {
     cancel: 'रद्द करें',
     na: 'लागू नहीं',
   },
+
+  // Autonomous Sentinel & Guardian (Bounded Autonomous Decision Agent)
+  sentinel: {
+    badgeTitle: 'स्वायत्त प्रहरी (Sentinel)',
+    monitoring: 'लाइव निगरानी सक्रिय',
+    statusActive: 'एग्रीऑप्टिमा स्वायत्त प्रहरी सक्रिय',
+    lastCheck: 'अंतिम जांच',
+    actionExecuted: 'सुरक्षित कार्रवाई निष्पादित',
+    actionVerified: 'सत्यापित सुरक्षित',
+    stressResolved: 'तनाव समाधान सत्यापित',
+    telemetryFallback: 'क्षेत्रीय आधार रेखा सक्रिय',
+    conditionUnchanged: 'स्थिति अपरिवर्तित (सलाह प्रभावी)',
+    runCheckNow: 'स्वायत्त जांच चलाएं',
+    checking: 'खेत टेलीमेट्री का अवलोकन जारी...',
+    modalTitle: 'स्वायत्त निर्णय एवं कार्रवाई लॉग',
+    modalSubtitle: 'अवलोकन → विश्लेषण → निर्णय → सत्यापन → कार्रवाई → परिणाम',
+    stepObserve: '1. अवलोकन (टेलीमेट्री इनपुट)',
+    stepReason: '2. कृषि-आर्थिक विश्लेषण (Reasoning)',
+    stepDecide: '3. स्वायत्त निर्णय (Decision)',
+    stepValidate: '4. सुरक्षा सत्यापन (Action Validator)',
+    stepAct: '5. निष्पादित कार्रवाई (Runtime State)',
+    stepVerify: '6. सत्यापन परिणाम (Verification)',
+    securityBadge: 'कठोर सुरक्षा सीमा: 100% स्वीकृत सुरक्षित कार्रवाइयां',
+    allowedActionsTitle: 'स्वीकृत सुरक्षित स्वायत्त कार्रवाइयां (Permitted)',
+    blockedActionsTitle: 'स्थायी रूप से अवरुद्ध असुरक्षित परिचालन (Blocked)',
+    advisoryTitle: 'सक्रिय कृषि-परामर्श निर्देश',
+    targetCrops: 'लक्षित फसलें',
+    recommendedAction: 'अनुशंसित कार्रवाई',
+    emptyLogs: 'अभी तक कोई स्वायत्त घटना दर्ज नहीं हुई है।',
+    viewLog: 'निर्णय लॉग देखें',
+  },
 };
+
+

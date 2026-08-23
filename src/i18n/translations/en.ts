@@ -367,4 +367,37 @@ export const en = {
     cancel: 'Cancel',
     na: 'N/A',
   },
+
+  // Autonomous Sentinel & Guardian (Bounded Autonomous Decision Agent)
+  sentinel: {
+    badgeTitle: 'Autonomous Sentinel',
+    monitoring: 'Live Monitoring',
+    statusActive: 'AgriOptima Sentinel Active',
+    lastCheck: 'Last check',
+    actionExecuted: 'Safe Action Executed',
+    actionVerified: 'Verified Safe',
+    stressResolved: 'Stress Resolved',
+    telemetryFallback: 'Regional Baseline Active',
+    conditionUnchanged: 'Condition Unchanged (Advisory Active)',
+    runCheckNow: 'Run Autonomous Check',
+    checking: 'Observing Farm Telemetry...',
+    modalTitle: 'Autonomous Decision & Action Log',
+    modalSubtitle: 'OBSERVE → REASON → DECIDE → VALIDATE → ACT → VERIFY',
+    stepObserve: '1. Observation (Telemetry Ingestion)',
+    stepReason: '2. Agro-Economic Reasoning',
+    stepDecide: '3. Autonomous Decision',
+    stepValidate: '4. Action Safety Validator',
+    stepAct: '5. Executed Action (Runtime State)',
+    stepVerify: '6. Verification Result',
+    securityBadge: 'Hard Safety Boundary: 100% Whitelisted Non-Destructive Actions',
+    allowedActionsTitle: 'Whitelisted Safe Actions (Permitted)',
+    blockedActionsTitle: 'Permanently Blocked Operations (Rejected)',
+    advisoryTitle: 'Proactive Field Directive',
+    targetCrops: 'Target Crops',
+    recommendedAction: 'Recommended Action',
+    emptyLogs: 'No autonomous events recorded yet.',
+    viewLog: 'View Decision Log',
+  },
 };
+
+
