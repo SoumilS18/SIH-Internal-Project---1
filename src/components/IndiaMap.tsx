@@ -6,11 +6,11 @@ import { useLanguage } from '@/i18n/LanguageContext';
 import { getStateDisplayName } from '@/i18n/geoNames';
 
 interface IndiaMapProps {
-  hovered?: LanguageCode | null;
-  selected?: LanguageCode | null;
-  onHover?: (code: LanguageCode | null, stateName?: string) => void;
-  onSelect: (code: LanguageCode, stateName?: string) => void;
-  transitioning: boolean;
+  hovered?: string | null;
+  selectedStateName?: string | null;
+  onHover?: (code: string | null, stateName?: string) => void;
+  onSelect: (code: string, stateName?: string) => void;
+  transitioning?: boolean;
 }
 
 const PARTICLES = Array.from({ length: 18 }, (_, id) => ({
@@ -27,9 +27,10 @@ function parsePathStart(pathStr: string): { x: number; y: number } | null {
 }
 
 export function IndiaMap({
+  selectedStateName,
   onHover,
   onSelect,
-  transitioning,
+  transitioning = false,
 }: IndiaMapProps) {
   const reduced = usePrefersReducedMotion();
   const { language } = useLanguage();
@@ -37,15 +38,24 @@ export function IndiaMap({
   const [hoveredStateId, setHoveredStateId] = useState<string | null>(null);
   const [selectedStateId, setSelectedStateId] = useState<string | null>(null);
 
+  const effectiveSelectedStateId = useMemo(() => {
+    if (!selectedStateName) return selectedStateId;
+    const entry = Object.entries(STATE_NAMES).find(
+      ([_id, name]) => name.toLowerCase() === selectedStateName.toLowerCase()
+    );
+    return entry ? entry[0] : selectedStateId;
+  }, [selectedStateName, selectedStateId]);
+
   // Smooth zoom transition directly targeting the clicked individual state
   const zoomTransform = useMemo(() => {
-    if (!transitioning || !selectedStateId || !STATE_PATHS[selectedStateId]) return '';
-    const c = parsePathStart(STATE_PATHS[selectedStateId]);
+    const targetId = effectiveSelectedStateId;
+    if (!transitioning || !targetId || !STATE_PATHS[targetId]) return '';
+    const c = parsePathStart(STATE_PATHS[targetId]);
     if (!c) return '';
     const dx = 306 - c.x;
     const dy = 348 - c.y;
     return `translate(${dx * 0.42}px, ${dy * 0.42}px) scale(1.85)`;
-  }, [transitioning, selectedStateId]);
+  }, [transitioning, effectiveSelectedStateId]);
 
   const rawHoveredStateName = hoveredStateId ? STATE_NAMES[hoveredStateId] || null : null;
   const hoveredStateName = rawHoveredStateName ? getStateDisplayName(rawHoveredStateName, language) : null;
@@ -102,7 +112,7 @@ export function IndiaMap({
             const localizedStateName = getStateDisplayName(rawStateName, language);
             const stateLangCode = STATE_TO_LANG_MAP[id] || 'en';
             const isStateHovered = hoveredStateId === id;
-            const isStateSelected = selectedStateId === id;
+            const isStateSelected = effectiveSelectedStateId === id;
             const isActive = isStateHovered || isStateSelected;
             const isSelected = isStateSelected;
             const isGoa = id === 'ga';
@@ -111,11 +121,11 @@ export function IndiaMap({
               <path
                 key={id}
                 d={path}
-                fill={isSelected ? '#b98b10' : isActive ? '#6f631d' : 'url(#mapSurface)'}
+                fill={isSelected ? '#d9aa16' : isActive ? '#6f631d' : 'url(#mapSurface)'}
                 stroke={isActive ? '#ffe36a' : '#b89425'}
                 strokeWidth={isActive ? (isGoa ? 2.8 : 2.0) : isGoa ? 1.4 : 0.9}
                 strokeLinejoin="round"
-                opacity={transitioning && selectedStateId && !isSelected ? 0.55 : 1}
+                opacity={transitioning && effectiveSelectedStateId && !isSelected ? 0.55 : 1}
                 tabIndex={0}
                 role="button"
                 aria-label={localizedStateName}

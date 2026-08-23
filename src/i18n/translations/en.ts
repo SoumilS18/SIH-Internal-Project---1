@@ -58,8 +58,10 @@ export const en = {
 
   // Map & District Portal
   map: {
-    title: 'Autonomous Farm Decision Intelligence.',
+    title: 'Autonomous Farm Decision Intelligence',
     subtitle: 'SELECT YOUR STATE TO START REAL-TIME CROP OPTIMIZATION.',
+    heroTitle: 'Autonomous Farm Decision Intelligence',
+    heroSubtitle: 'Select your location to begin your personalized farm plan.',
     instruction: 'Select a state to enter the Farm Intelligence Portal',
     stateSelected: 'State Selected',
     districtsAvailable: 'Districts Available',
@@ -70,6 +72,53 @@ export const en = {
     pinned: 'Pinned',
     openIntelligence: 'Open Farm Intelligence',
     changeState: 'Change State',
+
+    // Capabilities
+    capWeather: 'Weather Intelligence',
+    capSoil: 'Soil Analysis',
+    capCrop: 'Crop Optimization',
+    capEcon: 'Economic Modeling',
+    capRisk: 'Risk Assessment',
+
+    // Search & Geolocation
+    searchLabel: 'Find your location',
+    searchPlaceholder: 'Search state or district...',
+    noResultsFound: 'No matching state or district found',
+    useMyLocation: 'Use my location',
+    detectingLocation: 'Detecting precise location...',
+    locationDetected: 'Nearest farm location detected:',
+    locationDenied: 'Location access was unavailable or denied. Please select your state or district from the list.',
+    popularStates: 'Popular Regions',
+    kmAway: 'km away',
+    preciseGps: 'High-Precision Geolocation',
+
+    // Selected State Card
+    stateSelectedBadge: 'STATE SELECTED',
+    districtsCount: 'districts available',
+    currentSeason: 'Current season',
+    seasonKharif: 'Kharif',
+    seasonRabi: 'Rabi',
+    seasonZaid: 'Zaid',
+    continueBtn: 'Continue to Farm Intelligence →',
+    chooseAnotherState: 'Choose another state',
+    selectStatePrompt: 'Click any state on the map or search your location to begin.',
+    selectDistrictTitle: 'Select District',
+
+    // Autonomous Agent Status Card
+    agentTitle: 'AGRIOPTIMA AI',
+    agentSubtitle: 'AUTONOMOUS DECISION ENGINE',
+    agentFeature1: 'Weather intelligence',
+    agentFeature2: 'Soil conditions',
+    agentFeature3: 'Crop economics',
+    agentFeature4: 'Risk analysis',
+    agentStatusLabel: 'STATUS:',
+    agentStatusReady: 'Ready to analyze your farm',
+
+    // Process Steps
+    step1: '01 Location',
+    step2: '02 Farm Analysis',
+    step3: '03 Crop Optimization',
+    step4: '04 Decision Plan',
   },
 
   // Initialization Stepper

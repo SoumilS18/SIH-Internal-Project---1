@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { IndiaMap } from '@/components/IndiaMap';
 import { usePrefersReducedMotion } from '@/lib/hooks';
 import { ALL_INDIAN_DISTRICTS } from '@/lib/districtsCatalog';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import type { DistrictLocationItem } from '@/types/farm';
 import {
   User,
   LogOut,
@@ -12,11 +13,16 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
+  Search,
+  Navigation,
+  CheckCircle2,
   ChevronDown,
+  AlertCircle,
+  X,
+  Crosshair,
 } from 'lucide-react';
 
 const BACKGROUND_IMAGE = '/pg2bg.png';
-
 
 interface WelcomeScreenProps {
   userName?: string;
@@ -42,12 +48,45 @@ const PARTICLES = Array.from({ length: 12 }, (_, id) => ({
   duration: 6 + Math.random() * 8,
 }));
 
-const LEAF_PATHS = [
-  'M0 0 C 30 -40 70 -50 110 -30 C 80 -20 50 -10 0 0 Z',
-  'M0 0 C 40 -55 90 -60 130 -35 C 95 -28 55 -15 0 0 Z',
-  'M0 0 C 25 -35 60 -45 95 -28 C 70 -18 40 -8 0 0 Z',
-  'M0 0 C 35 -50 85 -55 120 -32 C 88 -24 48 -12 0 0 Z',
+const POPULAR_AGRO_STATES = [
+  'Uttar Pradesh',
+  'Maharashtra',
+  'Madhya Pradesh',
+  'Punjab',
+  'Rajasthan',
+  'Karnataka',
 ];
+
+/**
+ * Haversine Great-Circle Distance on Earth (in km)
+ */
+function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth mean radius in km
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Finds the nearest Indian district centroid with high geodesic precision
+ */
+function findNearestDistrictPrecise(lat: number, lon: number): { district: DistrictLocationItem; distanceKm: number } {
+  let closest = ALL_INDIAN_DISTRICTS[0];
+  let minDistance = Infinity;
+  for (const d of ALL_INDIAN_DISTRICTS) {
+    const dist = haversineDistanceKm(lat, lon, d.latitude, d.longitude);
+    if (dist < minDistance) {
+      minDistance = dist;
+      closest = d;
+    }
+  }
+  return { district: closest, distanceKm: Math.round(minDistance * 10) / 10 };
+}
 
 export function WelcomeScreen({
   userName = 'Demo Farmer',
@@ -59,11 +98,37 @@ export function WelcomeScreen({
   const stars = useMemo(() => STARS, []);
   const particles = useMemo(() => PARTICLES, []);
 
-  const [hovered, setHovered] = useState<string | null>(null);
-
-  // State selection and District modal state
+  // State selection and District state
   const [chosenState, setChosenState] = useState<string | null>(null);
   const [chosenDistrict, setChosenDistrict] = useState<string>('');
+
+  // Location search state
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [isLocating, setIsLocating] = useState<boolean>(false);
+  const [geoNotice, setGeoNotice] = useState<string | null>(null);
+  const [geoSuccess, setGeoSuccess] = useState<string | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close search suggestions on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsSearchOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Unique list of states
+  const allStates = useMemo(() => {
+    const set = new Set(ALL_INDIAN_DISTRICTS.map((d) => d.state_name));
+    return Array.from(set).sort();
+  }, []);
 
   // Get districts for chosen state
   const stateDistricts = useMemo(() => {
@@ -74,11 +139,40 @@ export function WelcomeScreen({
     return Array.from(new Set(list)).sort();
   }, [chosenState]);
 
-  // When a state is clicked on the map
+  // Search autocomplete results
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+
+    const matchedStates = allStates
+      .filter((s) => {
+        const localized = getStateDisplayName(s, language).toLowerCase();
+        return s.toLowerCase().includes(q) || localized.includes(q);
+      })
+      .map((s) => ({ type: 'state' as const, name: s, label: getStateDisplayName(s, language) }));
+
+    const matchedDistricts = ALL_INDIAN_DISTRICTS.filter((d) => {
+      const localized = getDistrictDisplayName(d.district_name, language).toLowerCase();
+      return (
+        d.district_name.toLowerCase().includes(q) ||
+        localized.includes(q)
+      );
+    })
+      .slice(0, 10)
+      .map((d) => ({
+        type: 'district' as const,
+        name: d.district_name,
+        stateName: d.state_name,
+        label: `${getDistrictDisplayName(d.district_name, language)}, ${getStateDisplayName(d.state_name, language)}`,
+      }));
+
+    return [...matchedStates, ...matchedDistricts].slice(0, 12);
+  }, [searchQuery, allStates, language]);
+
+  // Handle map state click
   const handleMapStateSelect = (_code: string, stateName?: string) => {
     if (stateName) {
       setChosenState(stateName);
-      // Pick first district of this state as initial default
       const districts = ALL_INDIAN_DISTRICTS.filter(
         (d) => d.state_name.toLowerCase() === stateName.toLowerCase()
       ).map((d) => d.district_name);
@@ -87,10 +181,99 @@ export function WelcomeScreen({
       } else {
         setChosenDistrict('');
       }
+      setGeoNotice(null);
+      setGeoSuccess(null);
     }
   };
 
-  // Submit the selected state & district
+  // Handle selecting from search
+  const handleSelectSearchResult = (result: (typeof searchResults)[0]) => {
+    if (result.type === 'state') {
+      handleMapStateSelect('en', result.name);
+    } else {
+      setChosenState(result.stateName);
+      setChosenDistrict(result.name);
+      setGeoNotice(null);
+      setGeoSuccess(null);
+    }
+    setSearchQuery('');
+    setIsSearchOpen(false);
+  };
+
+  // High-accuracy browser geolocation with geodesic fallback
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoNotice(t('map.locationDenied'));
+      return;
+    }
+
+    setIsLocating(true);
+    setGeoNotice(null);
+    setGeoSuccess(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        let matchedDistrict: DistrictLocationItem | null = null;
+        let distKm = 0;
+
+        // 1. Attempt reverse geocoding for exact administrative district
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3500);
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+            { signal: controller.signal, headers: { 'Accept-Language': 'en' } }
+          );
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address || {};
+            const revDistrict = (addr.state_district || addr.county || addr.city || addr.district || '').toLowerCase().trim();
+
+            if (revDistrict) {
+              const exact = ALL_INDIAN_DISTRICTS.find(
+                (d) =>
+                  d.district_name.toLowerCase().includes(revDistrict) ||
+                  revDistrict.includes(d.district_name.toLowerCase())
+              );
+              if (exact) {
+                matchedDistrict = exact;
+                distKm = Math.round(haversineDistanceKm(latitude, longitude, exact.latitude, exact.longitude) * 10) / 10;
+              }
+            }
+          }
+        } catch {
+          // Geocoding network timeout/error: proceed seamlessly with geodesic Haversine
+        }
+
+        // 2. High-precision Haversine fallback over all 786+ Indian district centroids
+        if (!matchedDistrict) {
+          const result = findNearestDistrictPrecise(latitude, longitude);
+          matchedDistrict = result.district;
+          distKm = result.distanceKm;
+        }
+
+        setIsLocating(false);
+        setChosenState(matchedDistrict.state_name);
+        setChosenDistrict(matchedDistrict.district_name);
+
+        const accuracyStr = accuracy && accuracy < 1000 ? ` (±${Math.round(accuracy)}m)` : '';
+        const distStr = distKm > 0 ? ` • ~${distKm} ${t('map.kmAway')}` : '';
+        setGeoSuccess(
+          `${t('map.locationDetected')} ${getDistrictDisplayName(matchedDistrict.district_name, language)}, ${getStateDisplayName(matchedDistrict.state_name, language)}${distStr}${accuracyStr}`
+        );
+      },
+      (err) => {
+        setIsLocating(false);
+        console.warn('Geolocation access failed/denied:', err);
+        setGeoNotice(t('map.locationDenied'));
+      },
+      { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
+    );
+  };
+
+  // Submit the selected state & district to enter farm intelligence
   const handleProceedToFarm = () => {
     if (!chosenState) return;
     const finalDistrict = chosenDistrict || stateDistricts[0] || 'Center';
@@ -99,60 +282,22 @@ export function WelcomeScreen({
 
   return (
     <section
-      className="absolute inset-0 h-full w-full overflow-hidden"
+      className="relative min-h-screen w-full overflow-x-hidden bg-forest-950 text-cream-100 flex flex-col justify-between selection:bg-gold-400 selection:text-forest-950"
       role="region"
-      aria-label="Choose a state or language for AgriOptima AI"
+      aria-label="AgriOptima AI State Selection"
     >
-      {/* Atmospheric background layers */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Background aesthetic layers */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
         <img
           src={BACKGROUND_IMAGE}
           alt="Agricultural landscape"
-          className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none"
-          style={{
-            transform: 'scale(1.12)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-          }}
-          loading="eager"
+          className="absolute inset-0 h-full w-full object-cover object-center opacity-85 brightness-95 select-none"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,21,16,0.5)_0%,rgba(4,43,29,0.35)_50%,rgba(2,21,16,0.72)_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(2,21,16,0.85)_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,21,16,0.35),transparent_45%,rgba(2,21,16,0.4))]" />
-        {/* Palm silhouettes */}
-        <div
-          className="absolute bottom-0 left-0"
-          style={{
-            transformOrigin: 'bottom left',
-            animation: reduced ? undefined : 'sway1 8s ease-in-out infinite',
-          }}
-        >
-          <PalmLeaf variant={0} />
-        </div>
-        <div
-          className="absolute bottom-0 left-[12%]"
-          style={{
-            transformOrigin: 'bottom left',
-            animation: reduced ? undefined : 'sway2 11s ease-in-out 1.5s infinite',
-          }}
-        >
-          <PalmLeaf variant={1} />
-        </div>
-        <div
-          className="absolute bottom-0 right-0"
-          style={{
-            transformOrigin: 'bottom right',
-            animation: reduced ? undefined : 'sway3 14s ease-in-out 0.8s infinite',
-          }}
-        >
-          <PalmLeaf variant={2} flip />
-        </div>
-      </div>
-
-      {/* Stars and particles */}
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="absolute inset-0 bg-gradient-to-b from-forest-950/80 via-forest-950/60 to-forest-950/90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-forest-950/60 via-transparent to-forest-950/60" />
         <div className="absolute inset-0 grid-texture radial-fade opacity-15" />
+
+        {/* Ambient stars and particles */}
         {stars.map((star) => (
           <span
             key={star.id}
@@ -162,7 +307,9 @@ export function WelcomeScreen({
               left: `${star.left}%`,
               width: star.size,
               height: star.size,
-              animation: reduced ? undefined : `twinkle ${star.duration}s ease-in-out ${star.delay}s infinite`,
+              animation: reduced
+                ? undefined
+                : `twinkle ${star.duration}s ease-in-out ${star.delay}s infinite`,
               boxShadow: '0 0 4px rgba(255,249,232,0.6)',
             }}
           />
@@ -176,31 +323,44 @@ export function WelcomeScreen({
               left: `${particle.left}%`,
               width: particle.size,
               height: particle.size,
-              animation: reduced ? undefined : `drift ${particle.duration}s ease-in-out ${particle.delay}s infinite`,
+              animation: reduced
+                ? undefined
+                : `drift ${particle.duration}s ease-in-out ${particle.delay}s infinite`,
             }}
           />
         ))}
       </div>
 
-      {/* Main content */}
-      <div className="relative z-10 flex h-full flex-col">
-        {/* Top Header with User Session Strip & Language Selector */}
-        <header className="flex shrink-0 items-center justify-between px-5 pt-4 sm:px-10 sm:pt-6">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-cream-100/90">
-              AgriOptima AI
-            </span>
-            <span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-cream-200/70 sm:inline-block">
-              · SIH 2026
-            </span>
+      {/* Main Content Container */}
+      <div className="relative z-10 flex min-h-screen flex-col justify-between">
+        
+        {/* ===================================================================== */}
+        {/* 1. TOP NAVIGATION BAR */}
+        {/* ===================================================================== */}
+        <header className="flex shrink-0 items-center justify-between px-5 py-3 sm:px-8 lg:px-12 border-b border-gold-300/10 bg-forest-950/60 backdrop-blur-md">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="AgriOptima AI"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-full object-contain border border-gold-300/40 bg-forest-900/90 shadow-sm"
+            />
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-serif text-base font-bold text-cream-100">
+                  AgriOptima AI
+                </span>
+                <span className="font-mono text-[10px] text-gold-300 sm:inline">
+                  • SIH 2026
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* User Session Chip, Language Selector & Logout */}
+          {/* User Session, Language & Logout */}
           <div className="flex items-center gap-2.5">
-            {/* Multilingual Selector */}
             <LanguageSelector />
 
-            <div className="flex items-center gap-1.5 rounded-full border border-gold-300/30 bg-forest-900/70 px-3 py-1 text-xs text-cream-100 backdrop-blur-md">
+            <div className="flex items-center gap-1.5 rounded-full border border-gold-300/25 bg-forest-900/80 px-3 py-1 text-xs text-cream-100 shadow-sm">
               <User size={13} className="text-gold-300" />
               <span className="font-medium">{userName}</span>
             </div>
@@ -208,7 +368,7 @@ export function WelcomeScreen({
             <button
               type="button"
               onClick={onLogout}
-              className="inline-flex items-center gap-1 rounded-full border border-forest-700/50 bg-forest-950/60 px-2.5 py-1 text-xs font-mono text-cream-300/70 transition-colors hover:border-pink-500/50 hover:bg-pink-950/40 hover:text-pink-300 focus:outline-none"
+              className="inline-flex items-center gap-1 rounded-full border border-forest-700/60 bg-forest-950/70 p-1.5 sm:px-3 sm:py-1 text-xs font-mono text-cream-300/70 hover:border-pink-500/50 hover:bg-pink-950/40 hover:text-pink-300 transition-colors"
               title={t('login.logout')}
             >
               <LogOut size={12} />
@@ -217,41 +377,181 @@ export function WelcomeScreen({
           </div>
         </header>
 
-        {/* Hero Title */}
-        <div className="flex shrink-0 flex-col items-center pt-1 text-center">
-          <h1 className="font-serif text-base font-medium text-cream-100 sm:text-lg md:text-xl">
+        {/* ===================================================================== */}
+        {/* 2. HERO HEADER (CLEAN) */}
+        {/* ===================================================================== */}
+        <div className="flex shrink-0 flex-col items-center px-4 pt-2.5 sm:pt-3 text-center">
+          <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-cream-100">
             {t('map.title')}
           </h1>
-          <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.2em] text-cream-300/60 sm:text-[10px]">
+          <p className="mt-1 max-w-xl text-[11px] sm:text-xs font-mono uppercase tracking-wider text-cream-300/80">
             {t('map.subtitle')}
           </p>
         </div>
 
-        {/* Map Area */}
-        <div className="relative flex min-h-0 flex-1 items-center justify-center px-1 py-1 sm:px-4 sm:py-1">
-          <div className="relative h-full w-full max-w-5xl">
-            <IndiaMap
-              hovered={hovered as any}
-              selected={null}
-              onHover={setHovered as any}
-              onSelect={handleMapStateSelect as any}
-              transitioning={false}
-            />
+        {/* ===================================================================== */}
+        {/* 3. MAIN WORKSPACE: COMPACT SEARCH PANEL & CENTERED/LEFT-ALIGNED MAP */}
+        {/* ===================================================================== */}
+        <main className="flex-1 flex items-center justify-center px-4 py-2 sm:px-8">
+          <div className="mx-auto w-full max-w-5xl flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-10">
+            
+            {/* LEFT: Compact Location Search Panel */}
+            <div className="w-full max-w-[310px] shrink-0 order-2 lg:order-1">
+              <div
+                ref={searchContainerRef}
+                className="relative rounded-2xl border border-gold-300/25 bg-forest-950/90 p-4 shadow-xl backdrop-blur-xl space-y-3"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-gold-300/15 pb-2">
+                  <label className="font-serif text-sm font-bold text-cream-100 flex items-center gap-1.5">
+                    <MapPin size={15} className="text-gold-300 shrink-0" />
+                    <span>{t('map.searchLabel')}</span>
+                  </label>
+                  <span className="font-mono text-[9px] text-cream-300/60">
+                    {ALL_INDIAN_DISTRICTS.length}+ {t('map.districtsCount')}
+                  </span>
+                </div>
+
+                {/* Search Input */}
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-cream-300/50 pointer-events-none">
+                    <Search size={13} />
+                  </span>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsSearchOpen(true);
+                    }}
+                    onFocus={() => setIsSearchOpen(true)}
+                    placeholder={t('map.searchPlaceholder')}
+                    className="w-full rounded-xl border border-gold-300/30 bg-forest-900/90 py-2 pl-8 pr-8 text-xs text-cream-100 placeholder:text-cream-300/40 focus:border-gold-300 focus:outline-none focus:ring-1 focus:ring-gold-300/50 transition-all shadow-inner"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setIsSearchOpen(false);
+                      }}
+                      className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-cream-300/50 hover:text-cream-100"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+
+                  {/* Autocomplete Dropdown List */}
+                  {isSearchOpen && searchResults.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full z-40 mt-1 max-h-52 overflow-y-auto rounded-xl border border-gold-300/40 bg-forest-950/98 p-1 shadow-2xl backdrop-blur-2xl divide-y divide-gold-300/5">
+                      {searchResults.map((item, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectSearchResult(item)}
+                          className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs text-cream-200 hover:bg-forest-800/90 hover:text-gold-200 transition-colors"
+                        >
+                          <span className="font-medium truncate pr-2 text-[11px]">{item.label}</span>
+                          <span className="shrink-0 font-mono text-[8px] uppercase px-1 py-0.5 rounded bg-forest-900 border border-forest-700/50 text-gold-300">
+                            {item.type === 'state' ? t('map.stateLabel') : t('map.districtLabel')}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {isSearchOpen && searchQuery.trim().length > 1 && searchResults.length === 0 && (
+                    <div className="absolute left-0 right-0 top-full z-40 mt-1 rounded-xl border border-forest-800 bg-forest-950/98 p-2.5 text-center text-[11px] text-cream-300/60 shadow-2xl backdrop-blur-2xl">
+                      {t('map.noResultsFound')}
+                    </div>
+                  )}
+                </div>
+
+                {/* Popular Agro Regions Quick Selection */}
+                <div className="space-y-1 pt-0.5">
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-cream-300/60 block">
+                    {t('map.popularStates')}
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {POPULAR_AGRO_STATES.map((st) => (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => handleMapStateSelect('en', st)}
+                        className={`rounded-md border px-2 py-0.5 text-[10px] font-mono transition-all duration-200 ${
+                          chosenState?.toLowerCase() === st.toLowerCase()
+                            ? 'border-gold-300 bg-gold-400/20 text-gold-200 font-bold shadow-sm'
+                            : 'border-gold-300/20 bg-forest-900/60 text-cream-300/80 hover:border-gold-300/50 hover:bg-forest-900 hover:text-cream-100'
+                        }`}
+                      >
+                        {getStateDisplayName(st, language)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* High-Accuracy GPS Action: Use My Location */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleUseMyLocation}
+                    disabled={isLocating}
+                    className="group relative flex w-full items-center justify-center gap-1.5 rounded-xl border border-gold-300/35 bg-gradient-to-r from-forest-900 via-forest-850 to-forest-900 py-2.5 font-mono text-xs text-gold-200 hover:border-gold-300/70 hover:text-white hover:shadow-[0_0_12px_rgba(255,210,26,0.2)] transition-all duration-200 disabled:opacity-50"
+                  >
+                    {isLocating ? (
+                      <Crosshair size={13} className="animate-spin text-gold-300" />
+                    ) : (
+                      <Navigation size={13} className="text-gold-300 transition-transform group-hover:scale-110" />
+                    )}
+                    <span className="font-semibold text-[11px]">
+                      {isLocating ? t('map.detectingLocation') : t('map.useMyLocation')}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Geolocation Feedback Notifications */}
+                {geoSuccess && (
+                  <div className="flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/60 p-2.5 text-[11px] text-emerald-200 animate-in fade-in">
+                    <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{geoSuccess}</span>
+                  </div>
+                )}
+
+                {geoNotice && (
+                  <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-950/60 p-2.5 text-[11px] text-amber-200 animate-in fade-in">
+                    <AlertCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{geoNotice}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT: Shifted-Left Interactive India Map */}
+            <div className="w-full max-w-[500px] flex items-center justify-center order-1 lg:order-2 shrink-0 lg:-ml-3">
+              <div className="relative w-full max-w-[480px] aspect-[612/696] flex items-center justify-center">
+                <IndiaMap
+                  selectedStateName={chosenState}
+                  onSelect={handleMapStateSelect}
+                  transitioning={false}
+                />
+              </div>
+            </div>
+
           </div>
 
-          {/* District Selection Overlay Modal */}
+          {/* District Selection Overlay Modal (Appears when a State is selected) */}
           {chosenState && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-forest-950/80 px-4 backdrop-blur-md transition-all duration-300">
-              <div className="w-full max-w-md rounded-2xl border border-gold-300/30 bg-forest-900/90 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.7)] backdrop-blur-md sm:p-7 animate-in fade-in zoom-in-95 duration-200">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-forest-950/85 px-4 backdrop-blur-md transition-all duration-300 animate-in fade-in">
+              <div className="w-full max-w-md rounded-2xl border border-gold-300/40 bg-gradient-to-b from-forest-900/95 to-forest-950/98 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:p-7 animate-in fade-in zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gold-300/15 pb-3">
                   <div className="flex items-center gap-2 text-gold-300">
                     <MapPin size={16} />
-                    <span className="font-mono text-[10px] uppercase tracking-wider">
+                    <span className="font-mono text-[10px] uppercase tracking-wider font-bold">
                       {t('map.stateSelected')}
                     </span>
                   </div>
-                  <span className="font-mono text-[10px] text-cream-300/50">
+                  <span className="font-mono text-[10px] text-cream-300/60">
                     {stateDistricts.length} {t('map.districtsAvailable')}
                   </span>
                 </div>
@@ -308,7 +608,7 @@ export function WelcomeScreen({
                   <button
                     type="button"
                     onClick={handleProceedToFarm}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-gold-300/50 bg-gradient-to-r from-gold-400 to-gold-500 py-3 font-serif text-xs font-semibold text-forest-950 shadow-[0_0_20px_rgba(255,210,26,0.25)] transition-all duration-200 hover:brightness-110 focus:outline-none"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-gold-300/50 bg-gradient-to-r from-gold-400 to-gold-500 py-3 font-serif text-xs font-bold text-forest-950 shadow-[0_0_20px_rgba(255,210,26,0.3)] transition-all duration-200 hover:brightness-110 focus:outline-none"
                   >
                     <Sparkles size={14} />
                     <span>{t('map.openIntelligence')}</span>
@@ -327,36 +627,21 @@ export function WelcomeScreen({
               </div>
             </div>
           )}
-        </div>
+        </main>
 
-        {/* Bottom Instruction Bar */}
-        <div className="flex shrink-0 items-center justify-between px-5 pb-3 sm:px-10 sm:pb-5">
+        {/* ===================================================================== */}
+        {/* 4. BOTTOM INSTRUCTION & HASHTAG BAR */}
+        {/* ===================================================================== */}
+        <footer className="flex shrink-0 items-center justify-between px-5 py-3 border-t border-gold-300/10 bg-forest-950/80 backdrop-blur-md sm:px-10">
           <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-gold-300/55">
             {t('brand.portalHashtag')}
           </span>
           <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-cream-300/75">
             {t('map.instruction')}
           </span>
-        </div>
+        </footer>
+
       </div>
     </section>
-  );
-}
-
-function PalmLeaf({ variant, flip }: { variant: number; flip?: boolean }) {
-  const path = LEAF_PATHS[variant % LEAF_PATHS.length];
-  const width = 200 + variant * 30;
-  const height = 120 + variant * 20;
-  return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 ${-height} ${width} ${height}`}
-      fill="none"
-      style={flip ? { transform: 'scaleX(-1)' } : undefined}
-      aria-hidden="true"
-    >
-      <path d={path} fill="rgba(2,21,16,0.92)" />
-    </svg>
   );
 }

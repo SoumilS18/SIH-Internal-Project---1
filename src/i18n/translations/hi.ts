@@ -58,8 +58,10 @@ export const hi = {
 
   // Map & District Portal
   map: {
-    title: 'स्वायत्त कृषि निर्णय बुद्धिमत्ता।',
+    title: 'स्वायत्त कृषि निर्णय बुद्धिमत्ता',
     subtitle: 'वास्तविक समय में फसल अनुकूलन शुरू करने के लिए अपना राज्य चुनें।',
+    heroTitle: 'स्वायत्त कृषि निर्णय बुद्धिमत्ता',
+    heroSubtitle: 'अपनी व्यक्तिगत कृषि योजना शुरू करने के लिए अपना स्थान चुनें।',
     instruction: 'फार्म इंटेलिजेंस पोर्टल में प्रवेश करने के लिए राज्य चुनें',
     stateSelected: 'चयनित राज्य',
     districtsAvailable: 'उपलब्ध ज़िले',
@@ -70,6 +72,53 @@ export const hi = {
     pinned: 'पिन किया गया',
     openIntelligence: 'फार्म इंटेलिजेंस खोलें',
     changeState: 'राज्य बदलें',
+
+    // Capabilities
+    capWeather: 'मौसम विश्लेषण',
+    capSoil: 'मृदा विश्लेषण',
+    capCrop: 'फसल अनुकूलन',
+    capEcon: 'आर्थिक मॉडलिंग',
+    capRisk: 'जोखिम मूल्यांकन',
+
+    // Search & Geolocation
+    searchLabel: 'अपना स्थान खोजें',
+    searchPlaceholder: 'राज्य या जिला खोजें...',
+    noResultsFound: 'कोई मेल खाता राज्य या जिला नहीं मिला',
+    useMyLocation: 'मेरा स्थान पहचानें',
+    detectingLocation: 'सटीक स्थान की पहचान की जा रही है...',
+    locationDetected: 'निकटतम कृषि स्थान पहचाना गया:',
+    locationDenied: 'स्थान अनुमति अनुपलब्ध या अस्वीकृत रही। कृपया सूची से अपना राज्य या जिला चुनें।',
+    popularStates: 'प्रमुख कृषि क्षेत्र',
+    kmAway: 'किमी दूर',
+    preciseGps: 'सटीक जीपीएस सेंट्रोइड',
+
+    // Selected State Card
+    stateSelectedBadge: 'राज्य चुना गया',
+    districtsCount: 'जिले उपलब्ध',
+    currentSeason: 'वर्तमान मौसम',
+    seasonKharif: 'खरीफ',
+    seasonRabi: 'रबी',
+    seasonZaid: 'जायद',
+    continueBtn: 'कृषि निर्णय योजना शुरू करें →',
+    chooseAnotherState: 'दूसरा राज्य चुनें',
+    selectStatePrompt: 'शुरू करने के लिए मानचित्र पर किसी भी राज्य पर क्लिक करें या खोजें।',
+    selectDistrictTitle: 'जिला चुनें',
+
+    // Autonomous Agent Status Card
+    agentTitle: 'एग्रीऑप्टिमा AI',
+    agentSubtitle: 'स्वायत्त निर्णय इंजन',
+    agentFeature1: 'मौसम विश्लेषण',
+    agentFeature2: 'मिट्टी की स्थिति',
+    agentFeature3: 'फसल अर्थशास्त्र',
+    agentFeature4: 'जोखिम विश्लेषण',
+    agentStatusLabel: 'स्थिति:',
+    agentStatusReady: 'आपके खेत का विश्लेषण करने के लिए तैयार',
+
+    // Process Steps
+    step1: '01 स्थान',
+    step2: '02 खेत विश्लेषण',
+    step3: '03 फसल अनुकूलन',
+    step4: '04 निर्णय योजना',
   },
 
   // Initialization Stepper
