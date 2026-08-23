@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   ArrowLeft,
   Compass,
@@ -48,6 +48,38 @@ interface MainScreenProps {
 
 type ViewMode = 'farmer' | 'expert';
 
+const FARM_PARAMS_STORAGE_KEY = 'agrioptima_farm_params_v1';
+const FARM_DECISION_STORAGE_KEY = 'agrioptima_farm_decision_v1';
+
+function loadStoredFarmParams() {
+  try {
+    const raw = localStorage.getItem(FARM_PARAMS_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function loadStoredDecision(targetState: string, targetDistrict: string): FarmDecisionResponse | null {
+  try {
+    const raw = localStorage.getItem(FARM_DECISION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (
+      parsed &&
+      parsed.request &&
+      parsed.request.state_name?.toLowerCase() === targetState.toLowerCase() &&
+      parsed.request.district_name?.toLowerCase() === targetDistrict.toLowerCase()
+    ) {
+      return parsed as FarmDecisionResponse;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export function MainScreen({
   onBack,
   onLogout,
@@ -57,26 +89,52 @@ export function MainScreen({
 }: MainScreenProps) {
   const { language, t } = useLanguage();
   const isHi = language === 'hi';
+  const savedParams = useMemo(() => loadStoredFarmParams(), []);
 
   // Primary View Mode: farmer (Simple on Surface) vs expert (Intelligent & Deep Underneath)
-  const [viewMode, setViewMode] = useState<ViewMode>('farmer');
-  const [selectedExpertTab, setSelectedExpertTab] = useState<DetailedTabType>('overview');
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    savedParams?.viewMode || 'farmer'
+  );
+  const [selectedExpertTab, setSelectedExpertTab] = useState<DetailedTabType>(
+    savedParams?.selectedExpertTab || 'overview'
+  );
 
   // Location Catalog State
   const [locations, setLocations] = useState<DistrictLocationItem[]>(ALL_INDIAN_DISTRICTS);
 
   // Farm Setup Form State
-  const [selectedState, setSelectedState] = useState<string>(initialState);
-  const [selectedDistrict, setSelectedDistrict] = useState<string>(initialDistrict);
-  const [landAcres, setLandAcres] = useState<number>(5.0);
-  const [budgetInr, setBudgetInr] = useState<number>(120000);
-  const [irrigationType, setIrrigationType] = useState<'Borewell' | 'Rainfed' | 'Canal' | 'Drip' | 'Sprinkler'>('Borewell');
-  const [irrigationReliability, setIrrigationReliability] = useState<'High' | 'Medium' | 'Low'>('High');
-  const [season, setSeason] = useState<'Kharif' | 'Rabi' | 'Zaid'>('Kharif');
-  const [riskTolerance, setRiskTolerance] = useState<'Conservative' | 'Balanced' | 'Aggressive'>('Balanced');
+  const [selectedState, setSelectedState] = useState<string>(
+    initialState || savedParams?.selectedState || 'Madhya Pradesh'
+  );
+  const [selectedDistrict, setSelectedDistrict] = useState<string>(
+    initialDistrict || savedParams?.selectedDistrict || 'Bhopal'
+  );
+  const [landAcres, setLandAcres] = useState<number>(
+    typeof savedParams?.landAcres === 'number' ? savedParams.landAcres : 5.0
+  );
+  const [budgetInr, setBudgetInr] = useState<number>(
+    typeof savedParams?.budgetInr === 'number' ? savedParams.budgetInr : 120000
+  );
+  const [irrigationType, setIrrigationType] = useState<'Borewell' | 'Rainfed' | 'Canal' | 'Drip' | 'Sprinkler'>(
+    savedParams?.irrigationType || 'Borewell'
+  );
+  const [irrigationReliability, setIrrigationReliability] = useState<'High' | 'Medium' | 'Low'>(
+    savedParams?.irrigationReliability || 'High'
+  );
+  const [season, setSeason] = useState<'Kharif' | 'Rabi' | 'Zaid'>(
+    savedParams?.season || 'Kharif'
+  );
+  const [riskTolerance, setRiskTolerance] = useState<'Conservative' | 'Balanced' | 'Aggressive'>(
+    savedParams?.riskTolerance || 'Balanced'
+  );
 
-  // Decision & Execution State
-  const [decision, setDecision] = useState<FarmDecisionResponse | null>(null);
+  // Decision & Execution State: pre-populated from cached decision if available
+  const [decision, setDecision] = useState<FarmDecisionResponse | null>(() => {
+    return loadStoredDecision(
+      initialState || savedParams?.selectedState || 'Madhya Pradesh',
+      initialDistrict || savedParams?.selectedDistrict || 'Bhopal'
+    );
+  });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,6 +148,38 @@ export function MainScreen({
     activeAdvisory: ProactiveAdvisory | null;
     lastActionType: ActionType;
   } | null>(null);
+
+  // Save farm parameters whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        FARM_PARAMS_STORAGE_KEY,
+        JSON.stringify({
+          selectedState,
+          selectedDistrict,
+          landAcres,
+          budgetInr,
+          irrigationType,
+          irrigationReliability,
+          season,
+          riskTolerance,
+          viewMode,
+          selectedExpertTab,
+        })
+      );
+    } catch {}
+  }, [
+    selectedState,
+    selectedDistrict,
+    landAcres,
+    budgetInr,
+    irrigationType,
+    irrigationReliability,
+    season,
+    riskTolerance,
+    viewMode,
+    selectedExpertTab,
+  ]);
 
   // Load locations on mount
   useEffect(() => {
@@ -139,6 +229,9 @@ export function MainScreen({
     try {
       const response = await getFarmDecision(request);
       setDecision(response);
+      try {
+        localStorage.setItem(FARM_DECISION_STORAGE_KEY, JSON.stringify(response));
+      } catch {}
 
       // Autonomous Sentinel Cycle: OBSERVE -> REASON -> DECIDE -> VALIDATE -> ACT -> VERIFY -> MONITOR
       try {
@@ -236,9 +329,24 @@ export function MainScreen({
     return () => clearInterval(interval);
   }, [decision, language]);
 
-  // Execute initial optimization calculation on mount
+  // Execute initial optimization calculation on mount if no cached decision exists
   useEffect(() => {
-    runOptimization();
+    if (!decision) {
+      runOptimization();
+    } else {
+      try {
+        const { log, advisory } = runAutonomousCycle(decision, language, null);
+        previousSentinelStateRef.current = {
+          fingerprint: log.fingerprint,
+          activeAdvisory: advisory,
+          lastActionType: log.action_type,
+        };
+        setSentinelLogs([log]);
+        setProactiveAdvisory(advisory);
+      } catch (err) {
+        console.warn('Initial cached Sentinel cycle fallback:', err);
+      }
+    }
   }, []);
 
   return (

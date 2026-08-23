@@ -74,7 +74,15 @@ function validateLanguageCompleteness() {
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<string>('en');
+  const [language, setLanguageState] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('agrioptima_language_v1');
+      if (saved && (saved === 'en' || saved === 'hi')) return saved;
+    } catch {
+      // localStorage unavailable or restricted
+    }
+    return 'en';
+  });
   const [comingSoonModalTarget, setComingSoonModalTarget] = useState<LanguageOption | null>(null);
 
   // Run completeness check once on development mount
@@ -86,6 +94,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const opt = getLanguageByCode(code);
     if (opt.status === 'available') {
       setLanguageState(opt.code);
+      try {
+        localStorage.setItem('agrioptima_language_v1', opt.code);
+      } catch {}
       setComingSoonModalTarget(null);
     } else {
       setComingSoonModalTarget(opt);
