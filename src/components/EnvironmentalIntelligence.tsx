@@ -31,33 +31,33 @@ function getRiskColorClass(label: string) {
   switch (label?.toUpperCase()) {
     case 'LOW':
       return {
-        badge: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-        bar: 'bg-emerald-500',
-        text: 'text-emerald-400',
+        badge: 'border-[#D4E7DC] bg-[#EAF3ED] text-[#2D5A43]',
+        bar: 'bg-[#2D5A43]',
+        text: 'text-[#2D5A43]',
       };
     case 'MODERATE':
       return {
-        badge: 'border-gold-400/30 bg-gold-400/10 text-gold-300',
-        bar: 'bg-gold-400',
-        text: 'text-gold-300',
+        badge: 'border-[#FDEEE9] bg-[#FAF7F2] text-[#B54832]',
+        bar: 'bg-[#E2725B]',
+        text: 'text-[#B54832]',
       };
     case 'HIGH':
       return {
-        badge: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-        bar: 'bg-amber-500',
-        text: 'text-amber-300',
+        badge: 'border-[#FED7AA] bg-[#FFF7ED] text-[#C2410C]',
+        bar: 'bg-[#EA580C]',
+        text: 'text-[#C2410C]',
       };
     case 'CRITICAL':
       return {
-        badge: 'border-pink-500/30 bg-pink-500/10 text-pink-300',
-        bar: 'bg-pink-500',
-        text: 'text-pink-400',
+        badge: 'border-[#FECDD3] bg-[#FFF1F2] text-[#BE123C]',
+        bar: 'bg-[#E11D48]',
+        text: 'text-[#BE123C]',
       };
     default:
       return {
-        badge: 'border-forest-600/30 bg-forest-900/40 text-cream-200',
-        bar: 'bg-forest-400',
-        text: 'text-cream-200',
+        badge: 'border-[#EDE4D5] bg-[#FAF7F2] text-[#6B7280]',
+        bar: 'bg-[#6B7280]',
+        text: 'text-[#6B7280]',
       };
   }
 }
@@ -154,17 +154,17 @@ export function EnvironmentalIntelligence({
     risk.overall_risk_score > 0.75;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-[#1F2937]">
       {/* --------------------------------------------------------------------- */}
       {/* 1. PAGE HEADER */}
       {/* --------------------------------------------------------------------- */}
-      <div className="rounded-xl border border-gold-300/20 bg-forest-900/60 p-4 backdrop-blur-sm">
-        <h2 className="font-serif text-lg font-bold tracking-wide text-gold-100 sm:text-xl">
+      <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 shadow-sm">
+        <h2 className="font-serif text-base font-bold text-[#1F2937] sm:text-lg">
           {t('telemetry.title')}
         </h2>
-        <p className="mt-1 text-xs text-cream-300/70">
+        <p className="mt-0.5 text-xs text-[#6B7280]">
           {t('telemetry.subtitle')}{' '}
-          <span className="font-semibold text-gold-300">
+          <span className="font-semibold text-[#E2725B]">
             {getDistrictDisplayName(location.district_name, language)},{' '}
             {getStateDisplayName(location.state_name, language)}
           </span>
@@ -174,30 +174,30 @@ export function EnvironmentalIntelligence({
       {/* --------------------------------------------------------------------- */}
       {/* 2. TELEMETRY STATUS STRIP (4 Key Metadata Chips) */}
       {/* --------------------------------------------------------------------- */}
-      <div className="grid grid-cols-2 gap-2 rounded-xl border border-gold-300/10 bg-forest-950/80 p-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-3 sm:grid-cols-4">
         <div>
-          <span className="block font-mono text-[9px] uppercase tracking-wider text-cream-300/50">
+          <span className="block text-[9px] uppercase font-bold tracking-wider text-[#6B7280]">
             {t('telemetry.dataProvider')}
           </span>
-          <span className="font-mono text-xs font-semibold text-cream-100">
+          <span className="text-xs font-bold text-[#1F2937]">
             {weather.data_provider || 'Open-Meteo & ERA5'}
           </span>
         </div>
 
         <div>
-          <span className="block font-mono text-[9px] uppercase tracking-wider text-cream-300/50">
+          <span className="block text-[9px] uppercase font-bold tracking-wider text-[#6B7280]">
             {t('telemetry.confidenceScore')}
           </span>
-          <span className="font-mono text-xs font-semibold text-emerald-300">
+          <span className="text-xs font-bold text-[#2D5A43]">
             {translateConfidence(weather.confidence_score, language)}
           </span>
         </div>
 
         <div>
-          <span className="block font-mono text-[9px] uppercase tracking-wider text-cream-300/50">
+          <span className="block text-[9px] uppercase font-bold tracking-wider text-[#6B7280]">
             {t('telemetry.lastUpdated')}
           </span>
-          <span className="font-mono text-xs text-cream-200">
+          <span className="text-xs font-semibold text-[#4B5563]">
             {weather.weather_timestamp
               ? weather.weather_timestamp.replace('T', ' ').slice(0, 16)
               : isHindi
@@ -207,10 +207,10 @@ export function EnvironmentalIntelligence({
         </div>
 
         <div>
-          <span className="block font-mono text-[9px] uppercase tracking-wider text-cream-300/50">
+          <span className="block text-[9px] uppercase font-bold tracking-wider text-[#6B7280]">
             {t('telemetry.soilStatus')}
           </span>
-          <span className="font-mono text-xs font-semibold text-gold-300">
+          <span className="text-xs font-bold text-[#E2725B]">
             {translateMoistureStatus(risk.soil_moisture_status, language)}
           </span>
         </div>
@@ -219,73 +219,73 @@ export function EnvironmentalIntelligence({
       {/* --------------------------------------------------------------------- */}
       {/* 3. CURRENT ENVIRONMENTAL CONDITIONS (5 Primary Metrics Grid) */}
       {/* --------------------------------------------------------------------- */}
-      <div className="rounded-xl border border-gold-300/15 bg-forest-900/40 p-4 backdrop-blur-sm">
-        <h3 className="mb-3 font-serif text-sm font-semibold text-gold-100">
+      <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 shadow-sm">
+        <h3 className="mb-3 font-serif text-sm font-bold text-[#1F2937]">
           {t('telemetry.currentConditions')}
         </h3>
 
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
           {/* Temperature */}
-          <div className="rounded-lg border border-gold-300/10 bg-forest-950/60 p-3">
-            <div className="flex items-center gap-1.5 text-amber-300">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
+            <div className="flex items-center gap-1.5 text-[#E2725B]">
               <Thermometer size={14} />
-              <span className="font-mono text-[10px] uppercase text-cream-300/60">
+              <span className="text-[10px] uppercase font-bold text-[#6B7280]">
                 {t('telemetry.temperature')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-bold text-cream-100">
+            <div className="mt-1.5 font-serif text-lg font-bold text-[#1F2937]">
               {formatTemperature(weather.current_temperature_c, language)}
             </div>
           </div>
 
           {/* Humidity */}
-          <div className="rounded-lg border border-gold-300/10 bg-forest-950/60 p-3">
-            <div className="flex items-center gap-1.5 text-emerald-300">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
+            <div className="flex items-center gap-1.5 text-[#2D5A43]">
               <Droplets size={14} />
-              <span className="font-mono text-[10px] uppercase text-cream-300/60">
+              <span className="text-[10px] uppercase font-bold text-[#6B7280]">
                 {t('telemetry.humidity')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-bold text-cream-100">
+            <div className="mt-1.5 font-serif text-lg font-bold text-[#1F2937]">
               {weather.current_humidity_pct !== null ? `${weather.current_humidity_pct}%` : '73%'}
             </div>
           </div>
 
           {/* Wind Velocity */}
-          <div className="rounded-lg border border-gold-300/10 bg-forest-950/60 p-3">
-            <div className="flex items-center gap-1.5 text-cream-200">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
+            <div className="flex items-center gap-1.5 text-[#4B5563]">
               <Wind size={14} />
-              <span className="font-mono text-[10px] uppercase text-cream-300/60">
+              <span className="text-[10px] uppercase font-bold text-[#6B7280]">
                 {t('telemetry.wind')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-bold text-cream-100">
+            <div className="mt-1.5 font-serif text-lg font-bold text-[#1F2937]">
               {formatWind(weather.current_wind_kmh, language)}
             </div>
           </div>
 
           {/* Precipitation */}
-          <div className="rounded-lg border border-gold-300/10 bg-forest-950/60 p-3">
-            <div className="flex items-center gap-1.5 text-blue-300">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
+            <div className="flex items-center gap-1.5 text-[#2563EB]">
               <CloudRain size={14} />
-              <span className="font-mono text-[10px] uppercase text-cream-300/60">
+              <span className="text-[10px] uppercase font-bold text-[#6B7280]">
                 {t('telemetry.rainfall')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-bold text-blue-200">
+            <div className="mt-1.5 font-serif text-lg font-bold text-[#2563EB]">
               {formatRainfall(weather.current_precipitation_mm, language)}
             </div>
           </div>
 
           {/* VPD */}
-          <div className="rounded-lg border border-gold-300/10 bg-forest-950/60 p-3">
-            <div className="flex items-center gap-1.5 text-gold-300">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
+            <div className="flex items-center gap-1.5 text-[#B54832]">
               <Activity size={14} />
-              <span className="font-mono text-[10px] uppercase text-cream-300/60">
+              <span className="text-[10px] uppercase font-bold text-[#6B7280]">
                 {t('telemetry.vpd')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-bold text-gold-200">
+            <div className="mt-1.5 font-serif text-lg font-bold text-[#1F2937]">
               {formatVpd(weather.vapour_pressure_deficit_kpa)}
             </div>
           </div>
@@ -295,53 +295,53 @@ export function EnvironmentalIntelligence({
       {/* --------------------------------------------------------------------- */}
       {/* 4. SOIL MOISTURE SECTION (Visual Centerpiece) */}
       {/* --------------------------------------------------------------------- */}
-      <div className="rounded-xl border border-gold-300/20 bg-forest-900/60 p-5 backdrop-blur-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold-300/10 pb-3">
-          <h3 className="font-serif text-base font-semibold text-cream-100">
+      <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-5 shadow-sm space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EDE4D5] pb-2.5">
+          <h3 className="font-serif text-sm font-bold text-[#1F2937]">
             {t('telemetry.rootZoneTitle')}
           </h3>
-          <span className="rounded-full border border-gold-300/30 bg-gold-300/10 px-3 py-0.5 font-mono text-[11px] font-semibold text-gold-200">
+          <span className="rounded-full border border-[#D4E7DC] bg-[#EAF3ED] px-3 py-0.5 text-[11px] font-bold text-[#2D5A43]">
             {translateMoistureStatus(risk.soil_moisture_status, language)}
           </span>
         </div>
 
         {/* Moisture Metrics Row */}
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-gold-300/10 bg-forest-950/70 p-3.5">
-            <span className="block font-mono text-[10px] uppercase text-cream-300/60">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3.5">
+            <span className="block text-[10px] uppercase font-bold text-[#6B7280]">
               {t('telemetry.surfaceSoilMoisture')}
             </span>
-            <div className="mt-1 font-serif text-xl font-bold text-cream-100">
+            <div className="mt-1 font-serif text-xl font-bold text-[#1F2937]">
               {formatSoilMoisture(weather.surface_soil_moisture_m3m3)}
             </div>
           </div>
 
-          <div className="rounded-lg border border-gold-300/15 bg-forest-950/70 p-3.5">
-            <span className="block font-mono text-[10px] uppercase text-cream-300/60">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3.5">
+            <span className="block text-[10px] uppercase font-bold text-[#6B7280]">
               {t('telemetry.rootZoneSoilMoisture')}
             </span>
-            <div className="mt-1 font-serif text-xl font-bold text-gold-200">
+            <div className="mt-1 font-serif text-xl font-bold text-[#E2725B]">
               {formatSoilMoisture(weather.root_zone_soil_moisture_m3m3)}
             </div>
           </div>
         </div>
 
         {/* Continuous Horizontal Moisture Gauge */}
-        <div className="mt-5">
-          <div className="mb-2 flex justify-between font-mono text-[10px] text-cream-300/60">
+        <div className="pt-2">
+          <div className="mb-1.5 flex justify-between text-[10px] font-bold text-[#6B7280]">
             <span>{t('telemetry.distributionScale')}</span>
-            <span className="text-gold-300 font-semibold">
+            <span className="text-[#1F2937]">
               {t('telemetry.current')}: {formatSoilMoisture(weather.root_zone_soil_moisture_m3m3 ?? 0.468)}
             </span>
           </div>
 
           <div className="relative">
             {/* Multi-tier Gradient Bar */}
-            <div className="flex h-3.5 w-full overflow-hidden rounded-full border border-gold-300/20 bg-forest-950 p-[1px]">
-              <div className="w-1/4 bg-amber-600/70 border-r border-forest-950" title="Dry" />
-              <div className="w-1/4 bg-amber-400/80 border-r border-forest-950" title="Deficit" />
-              <div className="w-1/4 bg-emerald-500/90 border-r border-forest-950" title="Optimal" />
-              <div className="w-1/4 bg-blue-500/90" title="Saturated" />
+            <div className="flex h-3 w-full overflow-hidden rounded-full border border-[#EDE4D5] bg-[#F5EFE6]">
+              <div className="w-1/4 bg-[#D97706]/70" title="Dry" />
+              <div className="w-1/4 bg-[#F59E0B]/80" title="Deficit" />
+              <div className="w-1/4 bg-[#10B981]/90" title="Optimal" />
+              <div className="w-1/4 bg-[#3B82F6]/90" title="Saturated" />
             </div>
 
             {/* Dynamic Marker Pointer */}
@@ -349,25 +349,25 @@ export function EnvironmentalIntelligence({
               className="absolute -top-1 -bottom-1 -translate-x-1/2 flex flex-col items-center pointer-events-none transition-all duration-500"
               style={{ left: `${gaugePercent}%` }}
             >
-              <div className="h-5 w-1 rounded-full bg-cream-100 shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
+              <div className="h-5 w-1.5 rounded-full bg-[#1F2937] shadow-sm" />
             </div>
           </div>
 
           {/* Scale Labels */}
-          <div className="mt-2 grid grid-cols-4 text-center font-mono text-[10px]">
-            <span className="text-amber-400">{t('telemetry.dry')}</span>
-            <span className="text-amber-300">{t('telemetry.deficit')}</span>
-            <span className="text-emerald-400 font-semibold">{t('telemetry.optimal')}</span>
-            <span className="text-blue-400">{t('telemetry.saturated')}</span>
+          <div className="mt-1.5 grid grid-cols-4 text-center text-[10px] font-semibold text-[#6B7280]">
+            <span>{t('telemetry.dry')}</span>
+            <span>{t('telemetry.deficit')}</span>
+            <span className="text-[#2D5A43] font-bold">{t('telemetry.optimal')}</span>
+            <span>{t('telemetry.saturated')}</span>
           </div>
         </div>
 
         {/* Soil Type & Explanation */}
-        <div className="mt-4 rounded-lg bg-forest-950/60 p-3 text-xs">
-          <div className="font-mono text-[11px] font-semibold text-gold-300">
+        <div className="rounded-xl bg-[#FAF7F2] border border-[#EDE4D5] p-3 text-xs">
+          <div className="text-[11px] font-bold text-[#1F2937]">
             {t('telemetry.soilType')}: {location.major_soil_type || 'Medium Black Soil'}
           </div>
-          <p className="mt-1 leading-relaxed text-cream-200/80">
+          <p className="mt-0.5 leading-relaxed text-[#4B5563]">
             {risk.soil_moisture_status.toLowerCase().includes('optimal')
               ? t('telemetry.optimalExplanation')
               : risk.soil_moisture_status.toLowerCase().includes('deficit')
@@ -380,27 +380,27 @@ export function EnvironmentalIntelligence({
       {/* --------------------------------------------------------------------- */}
       {/* 5. 7-DAY WEATHER TRAJECTORY */}
       {/* --------------------------------------------------------------------- */}
-      <div className="rounded-xl border border-gold-300/15 bg-forest-900/40 p-4 backdrop-blur-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold-300/10 pb-3">
-          <h3 className="font-serif text-sm font-semibold text-cream-100">
+      <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 shadow-sm space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EDE4D5] pb-2.5">
+          <h3 className="font-serif text-sm font-bold text-[#1F2937]">
             {t('telemetry.forecast7dTitle')}
           </h3>
 
-          <div className="flex items-center gap-3 font-mono text-xs">
+          <div className="flex items-center gap-3 text-xs">
             <div className="text-right">
-              <span className="block text-[9px] uppercase text-cream-300/50">
+              <span className="block text-[9px] uppercase font-bold text-[#6B7280]">
                 {t('telemetry.forecastRainfall7d')}
               </span>
-              <span className="font-bold text-blue-200">
+              <span className="font-bold text-[#2563EB]">
                 {formatRainfall(weather.forecast_rain_7d_total_mm, language)}
               </span>
             </div>
 
-            <div className="border-l border-gold-300/10 pl-3 text-right">
-              <span className="block text-[9px] uppercase text-cream-300/50">
+            <div className="border-l border-[#EDE4D5] pl-3 text-right">
+              <span className="block text-[9px] uppercase font-bold text-[#6B7280]">
                 {t('telemetry.peakRainProb')}
               </span>
-              <span className="font-bold text-gold-300">
+              <span className="font-bold text-[#E2725B]">
                 {weather.max_rain_probability_7d_pct ?? 95}%
               </span>
             </div>
@@ -409,30 +409,30 @@ export function EnvironmentalIntelligence({
 
         {/* Trajectory Daily Cards */}
         {series.length > 0 ? (
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
             {series.map((day) => (
               <div
                 key={day.date}
-                className="rounded-lg border border-gold-300/10 bg-forest-950/70 p-2.5 text-center text-xs transition-colors hover:border-gold-300/30"
+                className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-2.5 text-center text-xs"
               >
-                <span className="block font-mono text-[10px] text-cream-300/50">
+                <span className="block text-[10px] font-bold text-[#6B7280]">
                   {day.date.slice(5)}
                 </span>
-                <span className="mt-1 block font-serif text-sm font-bold text-cream-100">
+                <span className="mt-1 block font-serif text-xs font-bold text-[#1F2937]">
                   {day.t_max.toFixed(0)}° / {day.t_min.toFixed(0)}°
                 </span>
-                <div className="mt-1.5 flex items-center justify-center gap-1 font-mono text-[11px] text-blue-300">
+                <div className="mt-1 flex items-center justify-center gap-1 text-[11px] text-[#2563EB] font-bold">
                   <Droplets size={10} />
                   <span>{formatRainfall(day.rain_mm, language)}</span>
                 </div>
-                <span className="mt-0.5 block font-mono text-[9px] text-cream-300/50">
+                <span className="mt-0.5 block text-[9px] text-[#6B7280]">
                   {day.rain_prob}% {t('telemetry.rain')}
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="mt-3 text-xs text-cream-300/60">
+          <p className="text-xs text-[#6B7280]">
             {isHindi
               ? 'दैनिक संख्यात्मक मौसम प्रक्षेपवक्र अनुपलब्ध है।'
               : 'Daily numerical weather trajectory unavailable.'}
@@ -440,8 +440,8 @@ export function EnvironmentalIntelligence({
         )}
 
         {/* Trajectory Direction Footer */}
-        <div className="mt-3 flex items-center gap-2 rounded-lg bg-forest-950/50 px-3 py-2 text-xs text-cream-300/80">
-          <Info size={13} className="shrink-0 text-gold-300" />
+        <div className="flex items-center gap-2 rounded-xl bg-[#FAF7F2] border border-[#EDE4D5] px-3 py-2 text-xs text-[#4B5563]">
+          <Info size={13} className="shrink-0 text-[#E2725B]" />
           <span>{weatherTrend}</span>
         </div>
       </div>
@@ -449,32 +449,32 @@ export function EnvironmentalIntelligence({
       {/* --------------------------------------------------------------------- */}
       {/* 6. ENVIRONMENTAL RISK (4 Horizontal Risk Indicators) */}
       {/* --------------------------------------------------------------------- */}
-      <div className="rounded-xl border border-gold-300/15 bg-forest-900/40 p-4 backdrop-blur-sm">
-        <h3 className="mb-3 font-serif text-sm font-semibold text-cream-100">
+      <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 shadow-sm space-y-3">
+        <h3 className="font-serif text-sm font-bold text-[#1F2937]">
           {t('telemetry.environmentalRisk')}
         </h3>
 
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {/* Drought Risk */}
-          <div className="rounded-lg border border-gold-300/10 bg-forest-950/70 p-3">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-cream-200">
+              <span className="text-xs font-semibold text-[#1F2937]">
                 {t('telemetry.droughtRisk')}
               </span>
               <div className="flex items-center gap-2">
                 <span
-                  className={`rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold ${
+                  className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${
                     getRiskColorClass(risk.drought_risk_label).badge
                   }`}
                 >
                   {translateRiskLevel(risk.drought_risk_label, language)}
                 </span>
-                <span className="font-mono text-xs font-bold text-cream-100">
+                <span className="text-xs font-bold text-[#1F2937]">
                   {risk.drought_risk_score.toFixed(2)}
                 </span>
               </div>
             </div>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-forest-900 overflow-hidden">
+            <div className="mt-2 h-1.5 w-full rounded-full bg-[#EDE4D5] overflow-hidden">
               <div
                 className={`h-full rounded-full ${getRiskColorClass(risk.drought_risk_label).bar}`}
                 style={{ width: `${Math.min(100, risk.drought_risk_score * 100)}%` }}
@@ -483,25 +483,25 @@ export function EnvironmentalIntelligence({
           </div>
 
           {/* Waterlogging Risk */}
-          <div className="rounded-lg border border-gold-300/10 bg-forest-950/70 p-3">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-cream-200">
+              <span className="text-xs font-semibold text-[#1F2937]">
                 {t('telemetry.waterloggingRisk')}
               </span>
               <div className="flex items-center gap-2">
                 <span
-                  className={`rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold ${
+                  className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${
                     getRiskColorClass(risk.waterlogging_risk_label).badge
                   }`}
                 >
                   {translateRiskLevel(risk.waterlogging_risk_label, language)}
                 </span>
-                <span className="font-mono text-xs font-bold text-cream-100">
+                <span className="text-xs font-bold text-[#1F2937]">
                   {risk.waterlogging_risk_score.toFixed(2)}
                 </span>
               </div>
             </div>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-forest-900 overflow-hidden">
+            <div className="mt-2 h-1.5 w-full rounded-full bg-[#EDE4D5] overflow-hidden">
               <div
                 className={`h-full rounded-full ${getRiskColorClass(risk.waterlogging_risk_label).bar}`}
                 style={{ width: `${Math.min(100, risk.waterlogging_risk_score * 100)}%` }}
@@ -510,25 +510,25 @@ export function EnvironmentalIntelligence({
           </div>
 
           {/* Heat Risk */}
-          <div className="rounded-lg border border-gold-300/10 bg-forest-950/70 p-3">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-cream-200">
+              <span className="text-xs font-semibold text-[#1F2937]">
                 {t('telemetry.heatRisk')}
               </span>
               <div className="flex items-center gap-2">
                 <span
-                  className={`rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold ${
+                  className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${
                     getRiskColorClass(risk.heat_risk_label).badge
                   }`}
                 >
                   {translateRiskLevel(risk.heat_risk_label, language)}
                 </span>
-                <span className="font-mono text-xs font-bold text-cream-100">
+                <span className="text-xs font-bold text-[#1F2937]">
                   {risk.heat_risk_score.toFixed(2)}
                 </span>
               </div>
             </div>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-forest-900 overflow-hidden">
+            <div className="mt-2 h-1.5 w-full rounded-full bg-[#EDE4D5] overflow-hidden">
               <div
                 className={`h-full rounded-full ${getRiskColorClass(risk.heat_risk_label).bar}`}
                 style={{ width: `${Math.min(100, risk.heat_risk_score * 100)}%` }}
@@ -537,25 +537,25 @@ export function EnvironmentalIntelligence({
           </div>
 
           {/* Atmospheric Water Stress */}
-          <div className="rounded-lg border border-gold-300/10 bg-forest-950/70 p-3">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-cream-200">
+              <span className="text-xs font-semibold text-[#1F2937]">
                 {t('telemetry.atmosphericWaterStress')}
               </span>
               <div className="flex items-center gap-2">
                 <span
-                  className={`rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold ${
+                  className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${
                     getRiskColorClass(risk.atmospheric_water_stress_label).badge
                   }`}
                 >
                   {translateRiskLevel(risk.atmospheric_water_stress_label, language)}
                 </span>
-                <span className="font-mono text-xs font-bold text-cream-100">
+                <span className="text-xs font-bold text-[#1F2937]">
                   {risk.atmospheric_water_stress_score.toFixed(2)}
                 </span>
               </div>
             </div>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-forest-900 overflow-hidden">
+            <div className="mt-2 h-1.5 w-full rounded-full bg-[#EDE4D5] overflow-hidden">
               <div
                 className={`h-full rounded-full ${getRiskColorClass(risk.atmospheric_water_stress_label).bar}`}
                 style={{ width: `${Math.min(100, risk.atmospheric_water_stress_score * 100)}%` }}
@@ -569,18 +569,18 @@ export function EnvironmentalIntelligence({
       {/* 7. IMPORTANT ALERT */}
       {/* --------------------------------------------------------------------- */}
       {hasWaterlogAlert || hasHeatAlert || hasCriticalRisk ? (
-        <div className="rounded-xl border border-pink-500/40 bg-pink-950/40 p-4">
+        <div className="rounded-2xl border border-[#FECDD3] bg-[#FFF1F2] p-4">
           <div className="flex items-start gap-3">
-            <ShieldAlert size={18} className="mt-0.5 shrink-0 text-pink-400" />
+            <ShieldAlert size={18} className="mt-0.5 shrink-0 text-[#E11D48]" />
             <div>
-              <h4 className="font-serif text-sm font-semibold tracking-wide text-pink-200">
+              <h4 className="font-serif text-sm font-bold text-[#9F1239]">
                 {hasWaterlogAlert
                   ? t('telemetry.waterloggingAlert')
                   : hasHeatAlert
                   ? t('telemetry.heatAlert')
                   : t('telemetry.criticalRiskAlert')}
               </h4>
-              <p className="mt-1 text-xs leading-relaxed text-pink-100/90">
+              <p className="mt-0.5 text-xs leading-relaxed text-[#9F1239]">
                 {risk.waterlogging_alert ||
                   risk.heat_alert ||
                   (isHindi
@@ -591,40 +591,40 @@ export function EnvironmentalIntelligence({
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-2 rounded-xl border border-forest-600/30 bg-forest-950/60 px-4 py-3 text-xs text-forest-300">
-          <CheckCircle2 size={16} className="shrink-0 text-forest-400" />
-          <span>{t('telemetry.acceptableLimitsBanner')}</span>
+        <div className="flex items-center gap-2 rounded-2xl border border-[#D4E7DC] bg-[#EAF3ED] px-4 py-3 text-xs text-[#2D5A43]">
+          <CheckCircle2 size={16} className="shrink-0 text-[#3F7253]" />
+          <span className="font-medium">{t('telemetry.acceptableLimitsBanner')}</span>
         </div>
       )}
 
       {/* --------------------------------------------------------------------- */}
       {/* 8. SIMPLE "WHAT THIS MEANS" SECTION (Environmental Interpretation) */}
       {/* --------------------------------------------------------------------- */}
-      <div className="rounded-xl border border-gold-300/15 bg-forest-900/50 p-4 backdrop-blur-sm">
-        <h3 className="mb-3 font-serif text-sm font-semibold text-gold-100">
+      <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 shadow-sm space-y-2.5 text-xs">
+        <h3 className="font-serif text-sm font-bold text-[#1F2937]">
           {t('telemetry.interpretationTitle')}
         </h3>
 
-        <div className="space-y-2.5 text-xs">
+        <div className="space-y-2">
           <div className="flex items-start gap-2.5">
-            <span className="w-24 shrink-0 font-mono text-[10px] uppercase tracking-wider text-gold-300/70">
+            <span className="w-24 shrink-0 text-[10px] uppercase font-bold text-[#6B7280]">
               {t('telemetry.currentLabel')}
             </span>
-            <p className="text-cream-100">{currentStatement}</p>
+            <p className="text-[#1F2937]">{currentStatement}</p>
           </div>
 
           <div className="flex items-start gap-2.5">
-            <span className="w-24 shrink-0 font-mono text-[10px] uppercase tracking-wider text-gold-300/70">
+            <span className="w-24 shrink-0 text-[10px] uppercase font-bold text-[#6B7280]">
               {t('telemetry.forecastLabel')}
             </span>
-            <p className="text-cream-100">{forecastStatement}</p>
+            <p className="text-[#1F2937]">{forecastStatement}</p>
           </div>
 
           <div className="flex items-start gap-2.5">
-            <span className="w-24 shrink-0 font-mono text-[10px] uppercase tracking-wider text-gold-300/70">
+            <span className="w-24 shrink-0 text-[10px] uppercase font-bold text-[#6B7280]">
               {t('telemetry.implicationLabel')}
             </span>
-            <p className="text-cream-200/90">{implicationStatement}</p>
+            <p className="text-[#4B5563]">{implicationStatement}</p>
           </div>
         </div>
       </div>

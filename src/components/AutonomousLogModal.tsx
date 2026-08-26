@@ -45,20 +45,20 @@ export function AutonomousLogModal({
   const currentLog = logs[selectedLogIndex] || logs[0] || null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-forest-950/80 p-4 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-gold-300/30 bg-gradient-to-b from-forest-900/95 via-forest-950/95 to-forest-950 p-5 sm:p-6 text-cream-100 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-[#EDE4D5] bg-[#FAF7F2] p-5 sm:p-6 text-[#1F2937] shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-gold-300/15 pb-4">
+        <div className="flex items-start justify-between border-b border-[#EDE4D5] pb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+              <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#EAF3ED] text-[#2D5A43] border border-[#D4E7DC]">
                 <ShieldCheck size={16} />
               </span>
-              <h2 className="font-serif text-lg font-bold text-gold-100">
+              <h2 className="font-serif text-lg font-bold text-[#1F2937]">
                 {t('sentinel.modalTitle')}
               </h2>
             </div>
-            <p className="text-xs font-medium text-cream-300/70 font-mono tracking-wide">
+            <p className="text-xs font-medium text-[#6B7280]">
               {t('sentinel.modalSubtitle')}
             </p>
           </div>
@@ -66,20 +66,20 @@ export function AutonomousLogModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-forest-700/60 bg-forest-950/80 p-1.5 text-cream-300/80 hover:bg-forest-800 hover:text-white transition-colors"
+            className="rounded-full border border-[#EDE4D5] bg-[#FFFFFF] p-2 text-[#6B7280] hover:bg-[#F5EFE6] hover:text-[#1F2937] transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Action Safety Boundary Banner */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-3 py-2 text-[11px] text-emerald-200">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#D4E7DC] bg-[#EAF3ED] px-3.5 py-2 text-xs text-[#2D5A43]">
           <button
             type="button"
             onClick={() => setShowSecurityDetails((prev) => !prev)}
-            className="flex items-center gap-1.5 font-medium hover:underline text-left"
+            className="flex items-center gap-1.5 font-bold hover:underline text-left cursor-pointer"
           >
-            <Lock size={13} className="text-emerald-400 shrink-0" />
+            <Lock size={13} className="text-[#3F7253] shrink-0" />
             <span>{t('sentinel.securityBadge')}</span>
           </button>
 
@@ -87,29 +87,29 @@ export function AutonomousLogModal({
             type="button"
             onClick={onRunCheck}
             disabled={isChecking}
-            className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-800/60 px-2.5 py-0.5 text-[11px] font-bold text-white hover:bg-emerald-700 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#2D5A43] px-3 py-1 text-xs font-bold text-white shadow-xs hover:bg-[#224432] transition-all disabled:opacity-50 cursor-pointer"
           >
-            <Activity size={11} className={isChecking ? 'animate-spin' : ''} />
+            <Activity size={12} className={isChecking ? 'animate-spin' : ''} />
             <span>{isChecking ? t('sentinel.checking') : t('sentinel.runCheckNow')}</span>
           </button>
         </div>
 
         {/* Security Whitelist Details Drawer */}
         {showSecurityDetails && (
-          <div className="mt-2.5 rounded-2xl border border-forest-800 bg-forest-950/90 p-3.5 space-y-2 text-[11px] font-mono animate-in slide-in-from-top-2 duration-150">
-            <div className="text-emerald-300 font-bold flex items-center gap-1">
-              <ShieldCheck size={12} /> {t('sentinel.allowedActionsTitle')}
+          <div className="mt-2.5 rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 space-y-2.5 text-xs animate-in slide-in-from-top-2 duration-150">
+            <div className="text-[#2D5A43] font-bold flex items-center gap-1.5">
+              <ShieldCheck size={14} /> {t('sentinel.allowedActionsTitle')}
             </div>
-            <ul className="list-disc pl-4 text-emerald-200/90 space-y-0.5">
+            <ul className="list-disc pl-5 text-[#374151] space-y-0.5 text-[11px]">
               <li>APPLY_PROACTIVE_ADVISORY (Field directives, irrigation/drainage alerts)</li>
               <li>UPDATE_ACTION_PRIORITY (Dynamic prioritization of seasonal operations)</li>
               <li>RECORD_OPTIMAL_STATUS (Verification clearance logging)</li>
             </ul>
 
-            <div className="text-pink-300 font-bold flex items-center gap-1 pt-1">
-              <ShieldAlert size={12} /> {t('sentinel.blockedActionsTitle')}
+            <div className="text-[#B54832] font-bold flex items-center gap-1.5 pt-1">
+              <ShieldAlert size={14} /> {t('sentinel.blockedActionsTitle')}
             </div>
-            <ul className="list-disc pl-4 text-pink-200/90 space-y-0.5">
+            <ul className="list-disc pl-5 text-[#374151] space-y-0.5 text-[11px]">
               <li>Purchasing agricultural inputs (Chemicals, pesticides, seeds)</li>
               <li>Financial transfers, budget modifications, or mandi orders</li>
               <li>Arbitrary code/shell execution or deleting farmer telemetry records</li>
@@ -119,19 +119,19 @@ export function AutonomousLogModal({
 
         {/* Event Selector Strip (if multiple logs in bounded buffer) */}
         {logs.length > 1 && (
-          <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[10px]">
-            <span className="text-cream-300/60 flex items-center gap-1 shrink-0 font-mono">
-              <History size={11} /> History ({logs.length}):
+          <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            <span className="text-[#6B7280] font-semibold flex items-center gap-1 shrink-0 text-[11px]">
+              <History size={12} /> {isHi ? 'इतिहास' : 'History'} ({logs.length}):
             </span>
             {logs.slice(0, 8).map((logItem, idx) => (
               <button
                 key={logItem.cycle_id + idx}
                 type="button"
                 onClick={() => setSelectedLogIndex(idx)}
-                className={`rounded-lg px-2 py-0.5 font-mono shrink-0 transition-colors ${
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-medium shrink-0 transition-colors cursor-pointer ${
                   selectedLogIndex === idx
-                    ? 'bg-gold-400 text-forest-950 font-bold'
-                    : 'bg-forest-900/80 text-cream-300/70 hover:text-white'
+                    ? 'bg-[#E2725B] text-white font-bold shadow-xs'
+                    : 'bg-[#FFFFFF] border border-[#EDE4D5] text-[#6B7280] hover:text-[#1F2937]'
                 }`}
               >
                 {logItem.timestamp}
@@ -141,21 +141,21 @@ export function AutonomousLogModal({
         )}
 
         {/* Scrollable Lifecycle Content */}
-        <div className="mt-3 flex-1 space-y-3.5 overflow-y-auto pr-1 text-xs">
+        <div className="mt-3 flex-1 space-y-3 overflow-y-auto pr-1 text-xs">
           {currentLog ? (
             <div className="space-y-3">
               {/* Event Provenance Header */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-forest-800/80 pb-2 text-[11px] text-cream-300/60">
-                <span className="flex items-center gap-1 font-mono">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EDE4D5] pb-2 text-[11px] text-[#6B7280]">
+                <span className="flex items-center gap-1">
                   <Clock size={12} /> {currentLog.timestamp} • {currentLog.district}, {currentLog.state} (ID: {currentLog.cycle_id})
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-bold border ${
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[10px] ${
                     currentLog.verification_status === 'VERIFIED'
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      ? 'bg-[#EAF3ED] text-[#2D5A43] border-[#D4E7DC]'
                       : currentLog.verification_status === 'FAILED'
-                      ? 'bg-pink-500/20 text-pink-300 border-pink-500/40'
-                      : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      ? 'bg-[#FFF1F2] text-[#BE123C] border-[#FECDD3]'
+                      : 'bg-[#FFFBEB] text-[#B45309] border-[#FEF3C7]'
                   }`}
                 >
                   <CheckCircle2 size={11} />
@@ -164,30 +164,30 @@ export function AutonomousLogModal({
               </div>
 
               {/* 1. OBSERVE */}
-              <div className="rounded-2xl border border-forest-800 bg-forest-900/60 p-3.5 space-y-2">
-                <div className="flex items-center justify-between text-gold-300 font-bold text-[11px] uppercase tracking-wider">
+              <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 space-y-2 shadow-xs">
+                <div className="flex items-center justify-between text-[#E2725B] font-bold text-xs uppercase tracking-wider">
                   <span className="flex items-center gap-1.5">
-                    <Activity size={13} className="text-gold-400" />
+                    <Activity size={14} className="text-[#E2725B]" />
                     {t('sentinel.stepObserve')}
                   </span>
                 </div>
-                <p className="text-cream-200 leading-relaxed">{currentLog.observation}</p>
-                {/* Telemetry Pills (Honest declaration of verified numbers) */}
-                <div className="flex flex-wrap gap-2 pt-1 font-mono text-[11px]">
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-forest-950/80 border border-forest-700/50 px-2 py-1 text-cyan-300">
-                    <Droplets size={11} />
+                <p className="text-[#374151] leading-relaxed">{currentLog.observation}</p>
+                {/* Telemetry Pills */}
+                <div className="flex flex-wrap gap-2 pt-1 text-[11px]">
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-[#FAF7F2] border border-[#EDE4D5] px-2.5 py-1 font-semibold text-[#2D5A43]">
+                    <Droplets size={12} />
                     {currentLog.telemetry.soil_moisture_m3m3 !== null
                       ? `${currentLog.telemetry.soil_moisture_m3m3.toFixed(2)} m³/m³`
                       : 'Soil Moisture: N/A'}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-forest-950/80 border border-forest-700/50 px-2 py-1 text-blue-300">
-                    <CloudRain size={11} />
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-[#FAF7F2] border border-[#EDE4D5] px-2.5 py-1 font-semibold text-[#2563EB]">
+                    <CloudRain size={12} />
                     {currentLog.telemetry.forecast_rain_7d_mm !== null
                       ? `${formatRainfall(currentLog.telemetry.forecast_rain_7d_mm, language)} (7d)`
                       : 'Rain 7d: N/A'}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-forest-950/80 border border-forest-700/50 px-2 py-1 text-amber-300">
-                    <Sun size={11} />
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-[#FAF7F2] border border-[#EDE4D5] px-2.5 py-1 font-semibold text-[#D97706]">
+                    <Sun size={12} />
                     {currentLog.telemetry.max_temp_c !== null
                       ? `${formatTemperature(currentLog.telemetry.max_temp_c, language)} max`
                       : 'Temp: N/A'}
@@ -196,64 +196,64 @@ export function AutonomousLogModal({
               </div>
 
               {/* 2. REASON */}
-              <div className="rounded-2xl border border-forest-800 bg-forest-900/60 p-3.5 space-y-1.5">
-                <div className="text-amber-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles size={13} className="text-amber-400" />
+              <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 space-y-1.5 shadow-xs">
+                <div className="text-[#2D5A43] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-[#3F7253]" />
                   {t('sentinel.stepReason')}
                 </div>
-                <p className="text-cream-200 leading-relaxed">{currentLog.reason}</p>
+                <p className="text-[#374151] leading-relaxed">{currentLog.reason}</p>
               </div>
 
               {/* 3. DECIDE & 4. VALIDATE */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-forest-800 bg-forest-900/60 p-3.5 space-y-1.5">
-                  <div className="text-gold-200 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                    <Zap size={13} className="text-gold-300" />
+                <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 space-y-1.5 shadow-xs">
+                  <div className="text-[#B54832] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <Zap size={14} className="text-[#E2725B]" />
                     {t('sentinel.stepDecide')}
                   </div>
-                  <p className="text-cream-100 font-medium">{currentLog.decision}</p>
+                  <p className="text-[#1F2937] font-semibold">{currentLog.decision}</p>
                 </div>
 
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-3.5 space-y-1.5">
-                  <div className="text-emerald-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                    <ShieldCheck size={13} className="text-emerald-400" />
+                <div className="rounded-2xl border border-[#D4E7DC] bg-[#EAF3ED] p-4 space-y-1.5 shadow-xs">
+                  <div className="text-[#2D5A43] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck size={14} className="text-[#3F7253]" />
                     {t('sentinel.stepValidate')}
                   </div>
-                  <p className="text-emerald-200 text-[11px] font-mono">
+                  <p className="text-[#2D5A43] text-xs font-bold">
                     ✓ {currentLog.action_validated ? 'APPROVED: Whitelisted Safe' : 'REJECTED: Security Boundary'}
                   </p>
                 </div>
               </div>
 
               {/* 5. ACT */}
-              <div className="rounded-2xl border border-forest-800 bg-forest-900/60 p-3.5 space-y-1.5">
-                <div className="text-cyan-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                  <Zap size={13} className="text-cyan-400" />
+              <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 space-y-1.5 shadow-xs">
+                <div className="text-[#2A7575] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                  <Zap size={14} className="text-[#2A7575]" />
                   {t('sentinel.stepAct')}
                 </div>
-                <p className="text-cream-100 font-semibold">{currentLog.action_name}</p>
-                <p className="text-cream-300/80 text-[11px]">{currentLog.action_detail}</p>
+                <p className="text-[#1F2937] font-bold">{currentLog.action_name}</p>
+                <p className="text-[#6B7280] text-xs">{currentLog.action_detail}</p>
               </div>
 
               {/* 6. VERIFY */}
               <div
-                className={`rounded-2xl border p-3.5 space-y-1.5 ${
+                className={`rounded-2xl border p-4 space-y-1.5 shadow-xs ${
                   currentLog.verification_status === 'VERIFIED'
-                    ? 'border-emerald-500/40 bg-emerald-950/40'
-                    : 'border-pink-500/40 bg-pink-950/40'
+                    ? 'border-[#D4E7DC] bg-[#EAF3ED]'
+                    : 'border-[#FECDD3] bg-[#FFF1F2]'
                 }`}
               >
                 <div
-                  className={`font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 ${
-                    currentLog.verification_status === 'VERIFIED' ? 'text-emerald-300' : 'text-pink-300'
+                  className={`font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 ${
+                    currentLog.verification_status === 'VERIFIED' ? 'text-[#2D5A43]' : 'text-[#BE123C]'
                   }`}
                 >
-                  <CheckCircle2 size={13} />
+                  <CheckCircle2 size={14} />
                   {t('sentinel.stepVerify')}
                 </div>
                 <p
-                  className={`leading-relaxed font-medium ${
-                    currentLog.verification_status === 'VERIFIED' ? 'text-emerald-100' : 'text-pink-200'
+                  className={`leading-relaxed font-semibold ${
+                    currentLog.verification_status === 'VERIFIED' ? 'text-[#1F2937]' : 'text-[#9F1239]'
                   }`}
                 >
                   {currentLog.result}
@@ -261,18 +261,18 @@ export function AutonomousLogModal({
               </div>
             </div>
           ) : (
-            <div className="py-8 text-center text-cream-300/60">
+            <div className="py-8 text-center text-[#6B7280]">
               {t('sentinel.emptyLogs')}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="mt-3 flex justify-end border-t border-gold-300/15 pt-3">
+        <div className="mt-4 flex justify-end border-t border-[#EDE4D5] pt-3">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-gold-300/30 bg-forest-900 px-5 py-1.5 text-xs font-bold text-cream-100 hover:bg-forest-800 transition-colors"
+            className="rounded-xl bg-[#2D5A43] px-5 py-2 text-xs font-bold text-white hover:bg-[#224432] transition-colors cursor-pointer"
           >
             {t('common.close')}
           </button>

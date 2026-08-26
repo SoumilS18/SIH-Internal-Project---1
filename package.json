@@ -4,8 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "bun scripts/dev-runner.mjs",
     "build": "vite build",
+    "dev:build": "vite build",
+    "dev:run": "bun scripts/dev-runner.mjs",
+    "dev build": "vite build",
+    "dev run": "bun scripts/dev-runner.mjs",
+    "start": "bun scripts/dev-runner.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json"

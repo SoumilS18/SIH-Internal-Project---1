@@ -7,25 +7,38 @@ import {
 } from '@/i18n/languages';
 import { useLanguage } from '@/i18n/LanguageContext';
 
-export function LanguageSelector({ className = '' }: { className?: string }) {
+export function LanguageSelector({ className = '', align = 'auto' }: { className?: string; align?: 'left' | 'right' | 'auto' }) {
   const [isOpen, setIsOpen] = useState(false);
   const { language, setLanguage, languageOption } = useLanguage();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [computedAlign, setComputedAlign] = useState<'left' | 'right'>('right');
 
-  // Close dropdown on click outside
+  // Close dropdown on click outside and compute optimal alignment
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
-    if (isOpen) {
+
+    if (isOpen && dropdownRef.current) {
       document.addEventListener('mousedown', handleClickOutside);
+      if (align === 'auto') {
+        const rect = dropdownRef.current.getBoundingClientRect();
+        // If button is close to the left edge (< 290px from left), anchor left; otherwise anchor right
+        if (rect.left < 290) {
+          setComputedAlign('left');
+        } else {
+          setComputedAlign('right');
+        }
+      } else {
+        setComputedAlign(align);
+      }
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, align]);
 
   const handleSelect = (lang: LanguageOption) => {
     setIsOpen(false);
@@ -42,53 +55,55 @@ export function LanguageSelector({ className = '' }: { className?: string }) {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="inline-flex items-center gap-1.5 rounded-full border border-gold-300/30 bg-forest-900/80 px-3 py-1.5 text-xs font-medium text-cream-100 shadow-sm backdrop-blur-md transition-all duration-200 hover:border-gold-300/60 hover:bg-forest-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-300"
+        className="inline-flex items-center gap-1.5 rounded-full border border-[#EDE4D5] bg-[#FFFFFF] px-3 py-1.5 text-xs font-semibold text-[#1F2937] shadow-xs transition-all hover:border-[#D1D5DB] hover:bg-[#FAF7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E2725B]/40 cursor-pointer"
       >
-        <Globe size={13} className="text-gold-300" />
+        <Globe size={13} className="text-[#E2725B]" />
         <span className="font-sans font-medium">{languageOption.label}</span>
-        <ChevronDown size={11} className={`text-cream-300/60 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={11} className={`text-[#6B7280] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {/* Popover Menu */}
+      {/* Popover Menu (Guaranteed Viewport Safe) */}
       {isOpen && (
         <div
-          className="absolute right-0 top-full z-50 mt-2 max-h-[420px] w-72 overflow-y-auto rounded-2xl border border-gold-300/25 bg-forest-900/95 p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 no-scrollbar"
+          className={`absolute ${
+            computedAlign === 'left' ? 'left-0' : 'right-0'
+          } top-full z-50 mt-2 max-h-[min(420px,75vh)] w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-2.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-[#1F2937] overscroll-contain`}
           role="listbox"
           aria-label="Select Language"
         >
           {/* Header */}
-          <div className="border-b border-gold-300/15 px-2.5 pb-2 pt-1">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-gold-300/80">
-              {isHindi ? 'भाषा' : 'Language'}
+          <div className="border-b border-[#EDE4D5] px-2.5 pb-2 pt-1">
+            <span className="font-serif text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">
+              {isHindi ? 'भाषा चयन' : 'Select Language'}
             </span>
           </div>
 
           {/* SECTION 1: AVAILABLE LANGUAGES */}
           <div className="mt-2">
-            <div className="px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider text-emerald-400">
-              {isHindi ? 'उपलब्ध' : 'AVAILABLE'}
+            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#2D5A43]">
+              {isHindi ? 'उपलब्ध भाषाएं' : 'AVAILABLE NOW'}
             </div>
 
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {/* English */}
               <button
                 type="button"
                 onClick={() => handleSelect(ENGLISH_LANGUAGE)}
                 className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors ${
                   language === 'en'
-                    ? 'bg-gold-300/15 font-semibold text-gold-200'
-                    : 'text-cream-100 hover:bg-forest-800/60'
+                    ? 'bg-[#FDEEE9] font-bold text-[#E2725B] border border-[#F9D0C5]'
+                    : 'text-[#1F2937] hover:bg-[#FAF7F2]'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span>English</span>
-                  <span className="font-mono text-[10px] text-cream-300/50">(English)</span>
+                  <span className="font-medium">English</span>
+                  <span className="text-[10px] text-[#6B7280]">(English)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 font-mono text-[9px] text-emerald-300">
+                  <span className="rounded-md bg-[#EAF3ED] px-1.5 py-0.5 text-[9px] font-semibold text-[#2D5A43] border border-[#D4E7DC]">
                     AVAILABLE
                   </span>
-                  {language === 'en' && <Check size={13} className="text-gold-300" />}
+                  {language === 'en' && <Check size={13} className="text-[#E2725B]" />}
                 </div>
               </button>
 
@@ -100,19 +115,19 @@ export function LanguageSelector({ className = '' }: { className?: string }) {
                   onClick={() => handleSelect(l)}
                   className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors ${
                     language === 'hi'
-                      ? 'bg-gold-300/15 font-semibold text-gold-200'
-                      : 'text-cream-100 hover:bg-forest-800/60'
+                      ? 'bg-[#FDEEE9] font-bold text-[#E2725B] border border-[#F9D0C5]'
+                      : 'text-[#1F2937] hover:bg-[#FAF7F2]'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">{l.label}</span>
-                    <span className="font-mono text-[10px] text-cream-300/50">({l.english})</span>
+                    <span className="font-bold">{l.label}</span>
+                    <span className="text-[10px] text-[#6B7280]">({l.english})</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 font-mono text-[9px] text-emerald-300">
+                    <span className="rounded-md bg-[#EAF3ED] px-1.5 py-0.5 text-[9px] font-semibold text-[#2D5A43] border border-[#D4E7DC]">
                       AVAILABLE
                     </span>
-                    {language === 'hi' && <Check size={13} className="text-gold-300" />}
+                    {language === 'hi' && <Check size={13} className="text-[#E2725B]" />}
                   </div>
                 </button>
               ))}
@@ -120,11 +135,11 @@ export function LanguageSelector({ className = '' }: { className?: string }) {
           </div>
 
           {/* DIVIDER */}
-          <div className="my-2 border-t border-gold-300/15" />
+          <div className="my-2.5 border-t border-[#EDE4D5]" />
 
           {/* SECTION 2: 22 INDIAN LANGUAGES (EIGHTH SCHEDULE) */}
           <div>
-            <div className="px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider text-gold-300/80">
+            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B7280]">
               {isHindi ? '22 भारतीय भाषाएं' : '22 INDIAN LANGUAGES'}
             </div>
 
@@ -140,20 +155,20 @@ export function LanguageSelector({ className = '' }: { className?: string }) {
                     onClick={() => handleSelect(l)}
                     className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-left text-xs transition-colors ${
                       isSelected
-                        ? 'bg-gold-300/15 font-semibold text-gold-200'
-                        : 'text-cream-200/90 hover:bg-forest-800/60'
+                        ? 'bg-[#FDEEE9] font-bold text-[#E2725B] border border-[#F9D0C5]'
+                        : 'text-[#374151] hover:bg-[#FAF7F2]'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <span>{l.label}</span>
-                      <span className="font-mono text-[10px] text-cream-300/50">({l.english})</span>
+                      <span className="text-[10px] text-[#6B7280]">({l.english})</span>
                     </div>
 
                     <span
-                      className={`rounded px-1.5 py-0.5 font-mono text-[8px] font-medium tracking-wide ${
+                      className={`rounded px-1.5 py-0.5 text-[8px] font-medium tracking-wide ${
                         isAvail
-                          ? 'bg-emerald-500/20 text-emerald-300'
-                          : 'bg-forest-950/80 text-cream-300/60 border border-gold-300/10'
+                          ? 'bg-[#EAF3ED] text-[#2D5A43] border border-[#D4E7DC]'
+                          : 'bg-[#FAF7F2] text-[#9CA3AF] border border-[#EDE4D5]'
                       }`}
                     >
                       {isAvail ? 'AVAILABLE' : 'COMING SOON'}

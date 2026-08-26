@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { STATE_PATHS, STATE_NAMES, STATE_TO_LANG_MAP } from '@/lib/indiaMap';
-import { type LanguageCode } from '@/lib/languages';
 import { usePrefersReducedMotion } from '@/lib/hooks';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { getStateDisplayName } from '@/i18n/geoNames';
@@ -12,13 +11,6 @@ interface IndiaMapProps {
   onSelect: (code: string, stateName?: string) => void;
   transitioning?: boolean;
 }
-
-const PARTICLES = Array.from({ length: 18 }, (_, id) => ({
-  id,
-  cx: 90 + Math.random() * 420,
-  cy: 70 + Math.random() * 570,
-  r: 0.7 + Math.random() * 1.2,
-}));
 
 function parsePathStart(pathStr: string): { x: number; y: number } | null {
   const m = pathStr.match(/m\s+([-\d.]+),([-\d.]+)/i);
@@ -32,9 +24,7 @@ export function IndiaMap({
   onSelect,
   transitioning = false,
 }: IndiaMapProps) {
-  const reduced = usePrefersReducedMotion();
   const { language } = useLanguage();
-  const particles = useMemo(() => PARTICLES, []);
   const [hoveredStateId, setHoveredStateId] = useState<string | null>(null);
   const [selectedStateId, setSelectedStateId] = useState<string | null>(null);
 
@@ -69,72 +59,169 @@ export function IndiaMap({
     >
       <svg
         viewBox="0 0 612 696"
-        className="h-full w-full overflow-visible"
+        className="h-full w-full overflow-visible select-none"
         preserveAspectRatio="xMidYMid meet"
         role="group"
         aria-label="Interactive India State Selection Map"
       >
         <defs>
-          <filter id="stateGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="5" result="blur" />
+          <filter id="stateGlowWarm" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <filter id="mapShadow" x="-30%" y="-20%" width="160%" height="160%">
-            <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="#01130e" floodOpacity="0.8" />
+          
+          <filter id="mapShadowWarm" x="-15%" y="-10%" width="130%" height="130%">
+            <feDropShadow dx="0" dy="5" stdDeviation="9" floodColor="#183848" floodOpacity="0.16" />
           </filter>
-          <linearGradient id="mapSurface" x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#0b3a2a" />
-            <stop offset="0.5" stopColor="#021b13" />
-            <stop offset="1" stopColor="#010d0a" />
+
+          <linearGradient id="mapSurfaceWarm" x1="0" y1="0" x2="0.6" y2="1">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="100%" stopColor="#F9F7F2" />
           </linearGradient>
-          <pattern id="mapTexture" width="18" height="18" patternUnits="userSpaceOnUse">
-            <path
-              d="M0 18L18 0M-4 4L4-4M14 22L22 14"
-              stroke="#d9aa16"
-              strokeOpacity="0.045"
-              strokeWidth="1"
-            />
-          </pattern>
-          <clipPath id="indiaClip">
-            {Object.values(STATE_PATHS).map((path, index) => (
-              <path key={index} d={path} />
-            ))}
-          </clipPath>
         </defs>
 
-        <g filter="url(#mapShadow)">
-          {/* Each state rendered and selected strictly individually / ungrouped */}
+        {/* =================================================================== */}
+        {/* BACKGROUND CARTOGRAPHIC ELEMENTS (Deeper Ocean Blue Atmosphere) */}
+        {/* =================================================================== */}
+        <g className="pointer-events-none" opacity="0.95">
+          {/* Subtle Grid Crosses (+) */}
+          <g stroke="#6491A6" strokeWidth="1.1" opacity="0.55">
+            {/* Top-Left Cross */}
+            <path d="M 60 140 L 70 140 M 65 135 L 65 145" />
+            {/* Arabian Sea Crosses */}
+            <path d="M 95 380 L 105 380 M 100 375 L 100 385" />
+            <path d="M 80 520 L 90 520 M 85 515 L 85 525" />
+            {/* Bay of Bengal Crosses */}
+            <path d="M 480 390 L 490 390 M 485 385 L 485 395" />
+            <path d="M 520 500 L 530 500 M 525 495 L 525 505" />
+            {/* South Cross */}
+            <path d="M 300 640 L 310 640 M 305 635 L 305 645" />
+          </g>
+
+          {/* Coordinate Micro Labels */}
+          <text x="68" y="132" fill="#4B778D" fontSize="7.5" fontFamily="monospace" opacity="0.75">28°N 72°E</text>
+          <text x="98" y="372" fill="#4B778D" fontSize="7.5" fontFamily="monospace" opacity="0.75">18°N 68°E</text>
+          <text x="488" y="382" fill="#4B778D" fontSize="7.5" fontFamily="monospace" opacity="0.75">17°N 88°E</text>
+
+          {/* Subtle Ocean Wave Lines in Arabian Sea */}
+          <g fill="none" stroke="#729EAF" strokeWidth="1.1" opacity="0.5" strokeDasharray="3 4">
+            <path d="M 45 420 Q 75 415, 105 422 T 140 418" />
+            <path d="M 40 450 Q 70 445, 110 453" />
+            <path d="M 50 480 Q 80 475, 120 482" />
+          </g>
+
+          {/* Subtle Ocean Wave Lines in Bay of Bengal */}
+          <g fill="none" stroke="#729EAF" strokeWidth="1.1" opacity="0.5" strokeDasharray="3 4">
+            <path d="M 460 420 Q 495 415, 540 422" />
+            <path d="M 470 455 Q 510 448, 555 456" />
+            <path d="M 460 490 Q 500 482, 545 492" />
+          </g>
+
+          {/* Subtle Ocean Labels */}
+          <text
+            x="65"
+            y="460"
+            fill="#3B6B80"
+            fontSize="8.5"
+            fontWeight="600"
+            letterSpacing="0.28em"
+            fontFamily="sans-serif"
+            opacity="0.7"
+          >
+            ARABIAN SEA
+          </text>
+
+          <text
+            x="465"
+            y="460"
+            fill="#3B6B80"
+            fontSize="8.5"
+            fontWeight="600"
+            letterSpacing="0.28em"
+            fontFamily="sans-serif"
+            opacity="0.7"
+          >
+            BAY OF BENGAL
+          </text>
+
+          <text
+            x="240"
+            y="655"
+            fill="#3B6B80"
+            fontSize="8"
+            fontWeight="600"
+            letterSpacing="0.28em"
+            fontFamily="sans-serif"
+            opacity="0.65"
+          >
+            INDIAN OCEAN
+          </text>
+
+          {/* Minimalist Compass Rose (North Arrow) in Top-Right */}
+          <g transform="translate(530, 60)" opacity="0.75">
+            <circle cx="0" cy="0" r="14" fill="none" stroke="#6491A6" strokeWidth="0.9" strokeDasharray="2 2" />
+            {/* North pointer arrow */}
+            <polygon points="0,-12 3,2 0,0 -3,2" fill="#E2725B" />
+            <polygon points="0,12 3,0 0,0 -3,0" fill="#6491A6" />
+            <text x="0" y="-15" textAnchor="middle" fill="#B54832" fontSize="8" fontWeight="bold" fontFamily="sans-serif">N</text>
+          </g>
+        </g>
+
+        {/* =================================================================== */}
+        {/* INDIA STATES PATHS */}
+        {/* =================================================================== */}
+        <g filter="url(#mapShadowWarm)">
           {Object.entries(STATE_PATHS).map(([id, path]) => {
             const rawStateName = STATE_NAMES[id] || id;
             const localizedStateName = getStateDisplayName(rawStateName, language);
             const stateLangCode = STATE_TO_LANG_MAP[id] || 'en';
             const isStateHovered = hoveredStateId === id;
             const isStateSelected = effectiveSelectedStateId === id;
-            const isActive = isStateHovered || isStateSelected;
-            const isSelected = isStateSelected;
             const isGoa = id === 'ga';
+
+            // Clean Cartography: Selected (Terracotta), Hovered (Peach), Default (Crisp White/Cream)
+            const fill = isStateSelected
+              ? '#E2725B'
+              : isStateHovered
+              ? '#FDEEE9'
+              : 'url(#mapSurfaceWarm)';
+
+            const stroke = isStateSelected
+              ? '#B54832'
+              : isStateHovered
+              ? '#E2725B'
+              : '#D6CABE';
+
+            const strokeWidth = isStateSelected
+              ? (isGoa ? 2.6 : 1.8)
+              : isStateHovered
+              ? (isGoa ? 2.0 : 1.4)
+              : (isGoa ? 1.2 : 0.85);
 
             return (
               <path
                 key={id}
                 d={path}
-                fill={isSelected ? '#d9aa16' : isActive ? '#6f631d' : 'url(#mapSurface)'}
-                stroke={isActive ? '#ffe36a' : '#b89425'}
-                strokeWidth={isActive ? (isGoa ? 2.8 : 2.0) : isGoa ? 1.4 : 0.9}
+                fill={fill}
+                stroke={stroke}
+                strokeWidth={strokeWidth}
                 strokeLinejoin="round"
-                opacity={transitioning && effectiveSelectedStateId && !isSelected ? 0.55 : 1}
+                opacity={transitioning && effectiveSelectedStateId && !isStateSelected ? 0.55 : 1}
                 tabIndex={0}
                 role="button"
                 aria-label={localizedStateName}
-                aria-pressed={isSelected}
+                aria-pressed={isStateSelected}
+                className="outline-none focus:outline-none focus-visible:outline-none"
                 style={{
                   cursor: 'pointer',
+                  outline: 'none',
+                  WebkitTapHighlightColor: 'transparent',
                   transition:
-                    'fill 260ms ease, stroke 260ms ease, stroke-width 260ms ease, opacity 500ms ease',
-                  filter: isActive ? 'url(#stateGlow)' : undefined,
+                    'fill 200ms ease, stroke 200ms ease, stroke-width 200ms ease, opacity 350ms ease',
+                  filter: isStateSelected ? 'url(#stateGlowWarm)' : undefined,
                 }}
                 onMouseEnter={() => {
                   setHoveredStateId(id);
@@ -162,46 +249,13 @@ export function IndiaMap({
               </path>
             );
           })}
-
-          {/* Internal texture clipped to India */}
-          <rect
-            x="0"
-            y="0"
-            width="612"
-            height="696"
-            fill="url(#mapTexture)"
-            clipPath="url(#indiaClip)"
-            pointerEvents="none"
-          />
-
-          {/* Gold particles inside India */}
-          <g clipPath="url(#indiaClip)" opacity="0.45" pointerEvents="none">
-            {particles.map((particle) => (
-              <circle
-                key={particle.id}
-                cx={particle.cx}
-                cy={particle.cy}
-                r={particle.r}
-                fill="#ffe36a"
-                style={
-                  reduced
-                    ? undefined
-                    : {
-                        animation: `twinkle ${3 + (particle.id % 4)}s ease-in-out ${
-                          particle.id / 5
-                        }s infinite`,
-                      }
-                }
-              />
-            ))}
-          </g>
         </g>
       </svg>
 
       {/* Floating tooltip showing ONLY the Localized State Name on hover */}
       {hoveredStateName && (
-        <div className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 rounded-full border border-gold-300/40 bg-forest-950/95 px-5 py-1.5 text-center shadow-[0_0_24px_rgba(255,210,26,0.3)] backdrop-blur-md">
-          <span className="font-serif text-sm font-semibold tracking-wide text-gold-100">
+        <div className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 rounded-full border border-[#EDE4D5] bg-[#FFFFFF] px-4 py-1 text-center shadow-lg backdrop-blur-md">
+          <span className="font-serif text-xs font-bold tracking-wide text-[#1F2937]">
             {hoveredStateName}
           </span>
         </div>

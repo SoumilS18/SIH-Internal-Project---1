@@ -6,31 +6,19 @@ import {
   Activity,
   Cpu,
   ShieldCheck,
-  RotateCcw,
   CheckCircle2,
-  AlertTriangle,
-  ExternalLink,
-  ChevronRight,
   Sparkles,
-  ArrowRight,
-  TrendingUp,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { EnvironmentalIntelligence } from '@/components/EnvironmentalIntelligence';
 import { getCropDisplayName } from '@/i18n/cropNames';
-import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
 import {
   formatCurrency,
-  formatCurrencyWords,
   formatArea,
   formatYield,
   formatRatePerAcre,
-  formatTemperature,
-  formatRainfall,
 } from '@/i18n/formatters';
 import {
-  translateRiskLevel,
-  translateConfidence,
   translateScenarioName,
 } from '@/i18n/enums';
 import {
@@ -38,7 +26,6 @@ import {
   getCausalStepDetail,
   getScenarioDescription,
   getScenarioAdaptationShift,
-  getCropReasonTag,
 } from '@/i18n/semanticAdapter';
 import type { FarmDecisionResponse } from '@/types/farm';
 
@@ -66,43 +53,43 @@ export function DetailedAnalysisView({
 
   const [activeTab, setActiveTab] = useState<DetailedTabType>(initialTab);
 
-  const { farm_totals, allocated_crops, crop_evaluations, scenarios, explanation, weather, location } = decision;
+  const { farm_totals, allocated_crops, crop_evaluations, scenarios } = decision;
 
   const tabs: { id: DetailedTabType; label: string; icon: any }[] = [
-    { id: 'overview', label: isHi ? 'इष्टतम आवंटन (LP सॉल्वर)' : 'Optimal Plan (LP Simplex)', icon: BarChart3 },
-    { id: 'environmental', label: isHi ? 'मौसम व मृदा टेलीमेट्री' : 'Soil & Weather Telemetry', icon: Droplets },
-    { id: 'crops', label: isHi ? 'सभी फसल मूल्यांकन' : 'All Crop Evaluations', icon: Layers },
-    { id: 'scenarios', label: isHi ? '4-तरफा तनाव परीक्षण' : '4-Way Stress Test', icon: Activity },
-    { id: 'causal', label: isHi ? '8-चरणीय AI तर्क शृंखला' : '8-Step AI Causality', icon: Cpu },
-    { id: 'trust', label: isHi ? 'डेटा स्रोत व प्रमाणन' : 'Data Provenance & Trust', icon: ShieldCheck },
+    { id: 'overview', label: isHi ? 'इष्टतम आवंटन (LP)' : 'Optimal Plan (LP)', icon: BarChart3 },
+    { id: 'environmental', label: isHi ? 'मौसम व मृदा' : 'Soil & Weather', icon: Droplets },
+    { id: 'crops', label: isHi ? 'फसल मूल्यांकन' : 'All Crops', icon: Layers },
+    { id: 'scenarios', label: isHi ? 'तनाव परीक्षण' : 'Stress Tests', icon: Activity },
+    { id: 'causal', label: isHi ? 'AI तर्क शृंखला' : '8-Step Causality', icon: Cpu },
+    { id: 'trust', label: isHi ? 'डेटा स्रोत' : 'Data Provenance', icon: ShieldCheck },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 text-[#1F2937]">
       {/* Top Banner with Return Button */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-gold-300/30 bg-gradient-to-r from-forest-900/95 via-forest-900/80 to-forest-950/95 p-5 backdrop-blur-xl shadow-lg">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gold-400/20 text-lg border border-gold-300/30">
-              🔬
-            </span>
-            <h3 className="font-serif text-base sm:text-lg font-bold text-gold-100">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-4 sm:p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FDEEE9] text-[#E2725B] text-lg">
+            🔬
+          </span>
+          <div>
+            <h3 className="font-serif text-sm sm:text-base font-bold text-[#1F2937]">
               {isHi
-                ? 'विशेषज्ञ व निर्णायक तकनीकी विश्लेषण कार्यक्षेत्र'
-                : 'Expert & Judge Technical Analytics Workspace'}
+                ? 'विशेषज्ञ एवं निर्णायक तकनीकी विश्लेषण'
+                : 'Expert & Technical Decision Analytics'}
             </h3>
+            <p className="text-xs text-[#6B7280] mt-0.5">
+              {isHi
+                ? 'HiGHS गणितीय रैखिक अनुकूलन, पैदावार पेनाल्टी और 8-चरणीय कारणता विश्लेषण'
+                : 'Deterministic HiGHS linear programming, yield penalties, and causal reasoning'}
+            </p>
           </div>
-          <p className="text-xs text-cream-300/70 mt-1 pl-10.5">
-            {isHi
-              ? 'गणितीय रैखिक अनुकूलन, गैर-रेखीय पैदावार पेनाल्टी, और 8-चरणीय कारणता विश्लेषण'
-              : 'Deterministic HiGHS linear optimization, physiological stress penalties, and causal reasoning'}
-          </p>
         </div>
 
         <button
           type="button"
           onClick={onReturnToFarmerView}
-          className="inline-flex items-center gap-2 rounded-xl border border-gold-300/50 bg-gradient-to-r from-gold-400/20 to-gold-500/20 px-4 py-2 text-xs font-bold text-gold-200 transition-all hover:border-gold-300 hover:bg-gold-400/30 hover:text-white shadow-md hover:scale-[1.02]"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[#2D5A43] px-3.5 py-2 text-xs font-bold text-[#FFFFFF] shadow-sm hover:bg-[#224432] transition-colors cursor-pointer"
         >
           <span>🌾 {t('farmerPlan.hideDetailedAnalysisBtn')}</span>
         </button>
@@ -110,7 +97,7 @@ export function DetailedAnalysisView({
 
       {/* Tab Navigation Strip */}
       <div className="w-full">
-        <nav className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5 rounded-2xl border border-gold-300/25 bg-forest-950/90 p-1.5 shadow-inner">
+        <nav className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5 rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-1.5 shadow-xs">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -119,13 +106,13 @@ export function DetailedAnalysisView({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-center text-xs font-bold transition-all duration-200 ${
+                className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-center text-xs font-bold transition-all ${
                   active
-                    ? 'border border-gold-300/40 bg-gradient-to-r from-gold-400/25 to-gold-500/15 text-gold-200 shadow-[0_0_14px_rgba(255,210,26,0.25)]'
-                    : 'text-cream-300/70 hover:bg-forest-900/70 hover:text-cream-100'
+                    ? 'bg-[#E2725B] text-[#FFFFFF] shadow-xs'
+                    : 'text-[#6B7280] hover:bg-[#FAF7F2] hover:text-[#1F2937]'
                 }`}
               >
-                <Icon size={14} className={`shrink-0 ${active ? 'text-gold-300' : 'text-cream-300/60'}`} />
+                <Icon size={14} className="shrink-0" />
                 <span className="truncate">{tab.label}</span>
               </button>
             );
@@ -139,65 +126,65 @@ export function DetailedAnalysisView({
       {activeTab === 'overview' && (
         <div className="space-y-4">
           {/* Mathematical Model Header */}
-          <div className="rounded-3xl border border-gold-300/25 bg-forest-900/80 p-5 sm:p-6 backdrop-blur-xl shadow-md">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold-300/10 pb-3 mb-3">
-              <span className="font-mono text-xs text-gold-300 font-bold flex items-center gap-1.5">
-                <Sparkles size={13} /> HiGHS Linear Programming Solver (Dual-Simplex / Interior-Point)
+          <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-5 shadow-sm space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EDE4D5] pb-2.5">
+              <span className="text-xs font-bold text-[#1F2937] flex items-center gap-1.5">
+                <Sparkles size={14} className="text-[#E2725B]" /> HiGHS Linear Programming Solver (Dual-Simplex / Interior-Point)
               </span>
-              <span className="rounded-full bg-emerald-950/90 px-3 py-1 font-mono text-[10px] text-emerald-300 border border-emerald-500/40 font-bold shadow-sm">
+              <span className="rounded-full bg-[#EAF3ED] px-2.5 py-0.5 text-[10px] text-[#2D5A43] border border-[#D4E7DC] font-bold">
                 STATUS: OPTIMAL_FOUND (Primal Feasible)
               </span>
             </div>
-            <p className="font-mono text-xs text-cream-200/90 leading-relaxed bg-forest-950/70 p-3.5 rounded-2xl border border-gold-300/15">
-              Maximize Z = ∑ (Yield_i × Price_i - Cost_i) × Area_i subject to: ∑ Area_i ≤ {farm_totals.total_land_acres} Ac, ∑ Cost_i × Area_i ≤ ₹{farm_totals.budget_capital_inr.toLocaleString('en-IN')}, and crop risk bounds.
-            </p>
+            <div className="font-mono text-xs text-[#4B5563] leading-relaxed bg-[#FAF7F2] p-3.5 rounded-xl border border-[#EDE4D5]">
+              Maximize Z = ∑ (Yield_i × Price_i - Cost_i) × Area_i subject to: ∑ Area_i ≤ {farm_totals.total_land_acres} Ac, ∑ Cost_i × Area_i ≤ ₹{farm_totals.budget_capital_inr.toLocaleString('en-IN')}, and agronomic risk bounds.
+            </div>
           </div>
 
           {/* Allocated Crops Table */}
-          <div className="rounded-3xl border border-gold-300/25 bg-forest-900/80 p-5 sm:p-6 backdrop-blur-xl shadow-md">
-            <h3 className="font-serif text-base font-bold text-cream-100 mb-4">
+          <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-5 shadow-sm space-y-3">
+            <h3 className="font-serif text-sm font-bold text-[#1F2937]">
               {t('overview.optimalAllocation')} (HiGHS LP Simplex Solution)
             </h3>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-gold-300/15 font-mono text-[10px] uppercase text-cream-300/60">
-                    <th className="pb-3">{t('overview.crop')}</th>
-                    <th className="pb-3">{t('overview.acres')}</th>
-                    <th className="pb-3">{t('overview.percentage')}</th>
-                    <th className="pb-3">{t('overview.expYield')}</th>
-                    <th className="pb-3">{isHi ? 'मंडी भाव' : 'Mandi Price'}</th>
-                    <th className="pb-3">{t('overview.prodCost')}</th>
-                    <th className="pb-3">{t('overview.netMargin')}</th>
-                    <th className="pb-3">ROI</th>
+                  <tr className="border-b border-[#EDE4D5] text-[10px] uppercase font-bold text-[#6B7280]">
+                    <th className="pb-2.5">{t('overview.crop')}</th>
+                    <th className="pb-2.5">{t('overview.acres')}</th>
+                    <th className="pb-2.5">{t('overview.percentage')}</th>
+                    <th className="pb-2.5">{t('overview.expYield')}</th>
+                    <th className="pb-2.5">{isHi ? 'मंडी भाव' : 'Mandi Price'}</th>
+                    <th className="pb-2.5">{t('overview.prodCost')}</th>
+                    <th className="pb-2.5">{t('overview.netMargin')}</th>
+                    <th className="pb-2.5">ROI</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gold-300/10 font-mono text-[11px]">
+                <tbody className="divide-y divide-[#EDE4D5] text-[11px]">
                   {allocated_crops.map((crop) => (
-                    <tr key={crop.crop_name} className="hover:bg-forest-800/40 transition-colors">
-                      <td className="py-3.5 font-serif text-xs font-bold text-gold-200">
+                    <tr key={crop.crop_name} className="hover:bg-[#FAF7F2] transition-colors">
+                      <td className="py-3 font-serif text-xs font-bold text-[#1F2937]">
                         {getCropDisplayName(crop.crop_name, language)}
                       </td>
-                      <td className="py-3.5 text-cream-100 font-bold">
+                      <td className="py-3 text-[#1F2937] font-bold">
                         {formatArea(crop.allocated_acres, language)}
                       </td>
-                      <td className="py-3.5 text-gold-300 font-semibold">
+                      <td className="py-3 text-[#E2725B] font-bold">
                         {crop.acre_share_pct.toFixed(1)}%
                       </td>
-                      <td className="py-3.5 text-cream-200">
+                      <td className="py-3 text-[#4B5563]">
                         {formatYield(crop.expected_yield_qtl_acre, language)}
                       </td>
-                      <td className="py-3.5 text-cream-200">
+                      <td className="py-3 text-[#4B5563]">
                         {formatCurrency(crop.modal_price_per_qtl, language)}/Q
                       </td>
-                      <td className="py-3.5 text-cream-300/70">
+                      <td className="py-3 text-[#6B7280]">
                         {formatCurrency(crop.total_cost_inr, language)}
                       </td>
-                      <td className="py-3.5 text-forest-300 font-bold">
+                      <td className="py-3 text-[#2D5A43] font-bold">
                         {formatCurrency(crop.net_profit_inr, language)}
                       </td>
-                      <td className="py-3.5 text-emerald-300 font-bold">
+                      <td className="py-3 text-[#2D5A43] font-bold">
                         +{crop.roi_pct.toFixed(1)}%
                       </td>
                     </tr>
@@ -224,12 +211,12 @@ export function DetailedAnalysisView({
       {/* TAB 3: CROP EVALUATIONS MATRIX */}
       {/* ========================================================================= */}
       {activeTab === 'crops' && (
-        <div className="rounded-3xl border border-gold-300/25 bg-forest-900/80 p-5 sm:p-6 backdrop-blur-xl space-y-4 shadow-md">
-          <div className="border-b border-gold-300/10 pb-3">
-            <h3 className="font-serif text-base font-bold text-cream-100">
+        <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-5 shadow-sm space-y-3">
+          <div className="border-b border-[#EDE4D5] pb-2.5">
+            <h3 className="font-serif text-sm font-bold text-[#1F2937]">
               {t('crops.title')}
             </h3>
-            <p className="font-mono text-[11px] text-cream-300/60">
+            <p className="text-[11px] text-[#6B7280]">
               {t('crops.subtitle')}
             </p>
           </div>
@@ -237,59 +224,59 @@ export function DetailedAnalysisView({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-gold-300/15 font-mono text-[10px] uppercase text-cream-300/60">
-                  <th className="pb-3">{t('crops.cropName')}</th>
-                  <th className="pb-3">{isHi ? 'ऐतिहासिक उपज' : 'Hist. Baseline'}</th>
-                  <th className="pb-3">{isHi ? 'मौसम गुणक' : 'Multiplier'}</th>
-                  <th className="pb-3">{t('crops.expectedYield')}</th>
-                  <th className="pb-3">{t('crops.marketPrice')}</th>
-                  <th className="pb-3">{t('crops.costPerAcre')}</th>
-                  <th className="pb-3">{t('crops.netProfitPerAcre')}</th>
-                  <th className="pb-3">{t('crops.compositeRisk')}</th>
-                  <th className="pb-3">{t('crops.status')}</th>
+                <tr className="border-b border-[#EDE4D5] text-[10px] uppercase font-bold text-[#6B7280]">
+                  <th className="pb-2.5">{t('crops.cropName')}</th>
+                  <th className="pb-2.5">{isHi ? 'ऐतिहासिक उपज' : 'Hist. Baseline'}</th>
+                  <th className="pb-2.5">{isHi ? 'मौसम गुणक' : 'Multiplier'}</th>
+                  <th className="pb-2.5">{t('crops.expectedYield')}</th>
+                  <th className="pb-2.5">{t('crops.marketPrice')}</th>
+                  <th className="pb-2.5">{t('crops.costPerAcre')}</th>
+                  <th className="pb-2.5">{t('crops.netProfitPerAcre')}</th>
+                  <th className="pb-2.5">{t('crops.compositeRisk')}</th>
+                  <th className="pb-2.5">{t('crops.status')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gold-300/10 font-mono text-[11px]">
+              <tbody className="divide-y divide-[#EDE4D5] text-[11px]">
                 {crop_evaluations.map((evalItem) => (
                   <tr
                     key={evalItem.crop_name}
-                    className={`hover:bg-forest-800/40 transition-colors ${
-                      evalItem.is_allocated ? 'bg-gold-400/10 font-semibold' : ''
+                    className={`hover:bg-[#FAF7F2] transition-colors ${
+                      evalItem.is_allocated ? 'bg-[#EAF3ED]/50 font-semibold' : ''
                     }`}
                   >
-                    <td className="py-3.5 font-serif text-xs font-bold text-gold-200">
+                    <td className="py-3 font-serif text-xs font-bold text-[#1F2937]">
                       {getCropDisplayName(evalItem.crop_name, language)}
                     </td>
-                    <td className="py-3.5 text-cream-300/70">
+                    <td className="py-3 text-[#6B7280]">
                       {formatYield(evalItem.hist_yield_qtl_acre, language)}
                     </td>
-                    <td className="py-3.5 text-cream-200 font-bold">
+                    <td className="py-3 text-[#1F2937] font-bold">
                       {evalItem.weather_multiplier.toFixed(2)}x
                     </td>
-                    <td className="py-3.5 text-cream-100 font-bold">
+                    <td className="py-3 text-[#1F2937] font-bold">
                       {formatYield(evalItem.expected_yield_qtl_acre, language)}
                     </td>
-                    <td className="py-3.5 text-cream-200">
+                    <td className="py-3 text-[#4B5563]">
                       {formatCurrency(evalItem.modal_price_per_qtl, language)}/Q
                     </td>
-                    <td className="py-3.5 text-cream-300/70">
+                    <td className="py-3 text-[#6B7280]">
                       {formatRatePerAcre(evalItem.cost_c2_per_acre, language)}
                     </td>
-                    <td className="py-3.5 text-forest-300 font-bold">
+                    <td className="py-3 text-[#2D5A43] font-bold">
                       {formatRatePerAcre(evalItem.risk_adjusted_profit_per_acre, language)}
                     </td>
-                    <td className="py-3.5">
-                      <span className="rounded-full bg-forest-800 px-2.5 py-0.5 text-[10px] text-cream-200 font-bold border border-forest-600/30">
+                    <td className="py-3">
+                      <span className="rounded-full bg-[#FAF7F2] border border-[#EDE4D5] px-2 py-0.5 text-[10px] text-[#4B5563] font-bold">
                         {evalItem.risk_score.toFixed(2)}
                       </span>
                     </td>
-                    <td className="py-3.5">
+                    <td className="py-3">
                       {evalItem.is_allocated ? (
-                        <span className="rounded-full border border-emerald-500/40 bg-emerald-950/90 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 shadow-sm">
+                        <span className="rounded-full border border-[#D4E7DC] bg-[#EAF3ED] px-2 py-0.5 text-[10px] font-bold text-[#2D5A43]">
                           {t('crops.recommended')}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-cream-300/50">
+                        <span className="text-[10px] text-[#9CA3AF]">
                           {t('crops.candidate')}
                         </span>
                       )}
@@ -306,44 +293,44 @@ export function DetailedAnalysisView({
       {/* TAB 4: 4-WAY ENVIRONMENTAL STRESS TESTING */}
       {/* ========================================================================= */}
       {activeTab === 'scenarios' && (
-        <div className="rounded-3xl border border-gold-300/25 bg-forest-900/80 p-5 sm:p-6 backdrop-blur-xl space-y-5 shadow-md">
-          <div className="border-b border-gold-300/10 pb-3">
-            <h3 className="font-serif text-base font-bold text-cream-100">
+        <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-5 shadow-sm space-y-4">
+          <div className="border-b border-[#EDE4D5] pb-2.5">
+            <h3 className="font-serif text-sm font-bold text-[#1F2937]">
               {t('scenarios.title')}
             </h3>
-            <p className="font-mono text-[11px] text-cream-300/60">
+            <p className="text-[11px] text-[#6B7280]">
               {t('scenarios.subtitle')}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
             {Object.entries(scenarios).map(([key, sc]) => (
               <div
                 key={key}
-                className="rounded-2xl border border-gold-300/25 bg-forest-950/85 p-5 space-y-3.5 shadow-sm hover:border-gold-300/50 transition-all"
+                className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-4 space-y-2.5 shadow-xs hover:border-[#D1D5DB] transition-all"
               >
-                <div className="flex items-center justify-between border-b border-gold-300/10 pb-2.5">
-                  <h4 className="font-serif text-sm font-bold text-gold-200 flex items-center gap-1.5">
+                <div className="flex items-center justify-between border-b border-[#EDE4D5] pb-2">
+                  <h4 className="font-serif text-xs font-bold text-[#1F2937] flex items-center gap-1.5">
                     <span>{key === 'live' ? '☀️' : key === 'drought' ? '🏜️' : key === 'waterlogging' ? '🌧️' : '🔥'}</span>
                     <span>{translateScenarioName(key, sc.scenario_name, language)}</span>
                   </h4>
-                  <span className="font-mono text-sm font-bold text-emerald-300">
+                  <span className="text-xs font-bold text-[#2D5A43]">
                     {formatCurrency(sc.total_profit_inr, language)}
                   </span>
                 </div>
 
-                <p className="text-xs text-cream-200/90 leading-relaxed">
+                <p className="text-xs text-[#4B5563] leading-relaxed">
                   {getScenarioDescription(key, sc, language)}
                 </p>
 
-                <div className="rounded-xl bg-forest-900/70 p-3 text-[11px] text-cream-300/80 space-y-1.5 font-mono border border-gold-300/15">
+                <div className="rounded-lg bg-[#FFFFFF] p-2.5 text-[11px] text-[#4B5563] space-y-1 border border-[#EDE4D5]">
                   <div>
-                    <span className="text-gold-300 font-bold">{isHi ? 'प्रणाली अनुकूलन:' : 'Adaptation:'} </span>
+                    <span className="text-[#1F2937] font-bold">{isHi ? 'प्रणाली अनुकूलन:' : 'Adaptation:'} </span>
                     {getScenarioAdaptationShift(key, sc, language)}
                   </div>
                   <div>
-                    <span className="text-gold-300 font-bold">{isHi ? 'लाभ विचलन:' : 'Profit Delta:'} </span>
-                    <span className={sc.profit_delta_from_live_inr >= 0 ? 'text-forest-400 font-bold' : 'text-pink-400 font-bold'}>
+                    <span className="text-[#1F2937] font-bold">{isHi ? 'लाभ विचलन:' : 'Profit Delta:'} </span>
+                    <span className={sc.profit_delta_from_live_inr >= 0 ? 'text-[#2D5A43] font-bold' : 'text-[#B54832] font-bold'}>
                       {sc.profit_delta_from_live_inr >= 0 ? '+' : ''}
                       {formatCurrency(sc.profit_delta_from_live_inr, language)}
                     </span>
@@ -359,30 +346,30 @@ export function DetailedAnalysisView({
       {/* TAB 5: 8-STEP CAUSAL REASONING CHAIN */}
       {/* ========================================================================= */}
       {activeTab === 'causal' && (
-        <div className="rounded-3xl border border-gold-300/25 bg-forest-900/80 p-5 sm:p-6 backdrop-blur-xl space-y-5 shadow-md">
-          <div className="border-b border-gold-300/10 pb-3">
-            <h3 className="font-serif text-base font-bold text-cream-100">
+        <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-5 shadow-sm space-y-4">
+          <div className="border-b border-[#EDE4D5] pb-2.5">
+            <h3 className="font-serif text-sm font-bold text-[#1F2937]">
               {t('causal.title')}
             </h3>
-            <p className="font-mono text-[11px] text-cream-300/60">
+            <p className="text-[11px] text-[#6B7280]">
               {t('causal.subtitle')}
             </p>
           </div>
 
-          <div className="relative space-y-3 pl-2">
+          <div className="space-y-2.5">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((stepNum) => (
               <div
                 key={stepNum}
-                className="group flex items-start gap-4 rounded-2xl border border-gold-300/20 bg-forest-950/85 p-4.5 transition-all hover:border-gold-300/50 hover:bg-forest-900/80 shadow-sm"
+                className="flex items-start gap-3.5 rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3.5 transition-all hover:bg-[#FFFFFF] hover:border-[#D4E7DC] shadow-xs"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gold-400/20 font-mono text-xs font-bold text-gold-300 border border-gold-300/30 group-hover:scale-110 transition-transform">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E2725B] text-xs font-bold text-white">
                   {stepNum}
                 </div>
-                <div className="space-y-1">
-                  <h4 className="font-serif text-sm font-bold text-gold-200">
+                <div className="space-y-0.5">
+                  <h4 className="font-serif text-xs font-bold text-[#1F2937]">
                     {getCausalStepTitle(stepNum, language)}
                   </h4>
-                  <p className="text-xs text-cream-200/90 leading-relaxed font-mono">
+                  <p className="text-xs text-[#4B5563] leading-relaxed">
                     {getCausalStepDetail(stepNum, decision, language)}
                   </p>
                 </div>
@@ -396,17 +383,17 @@ export function DetailedAnalysisView({
       {/* TAB 6: DATA PROVENANCE & TRUST MATRIX */}
       {/* ========================================================================= */}
       {activeTab === 'trust' && (
-        <div className="rounded-3xl border border-gold-300/25 bg-forest-900/80 p-5 sm:p-6 backdrop-blur-xl space-y-5 shadow-md">
-          <div className="border-b border-gold-300/10 pb-3">
-            <h3 className="font-serif text-base font-bold text-cream-100">
+        <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-5 shadow-sm space-y-4">
+          <div className="border-b border-[#EDE4D5] pb-2.5">
+            <h3 className="font-serif text-sm font-bold text-[#1F2937]">
               {t('trust.title')}
             </h3>
-            <p className="font-mono text-[11px] text-cream-300/60">
+            <p className="text-[11px] text-[#6B7280]">
               {t('trust.subtitle')}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {[
               {
                 source: 'Open-Meteo & ECMWF IFS',
@@ -443,28 +430,28 @@ export function DetailedAnalysisView({
             ].map((item, idx) => (
               <div
                 key={idx}
-                className="rounded-2xl border border-gold-300/20 bg-forest-950/85 p-4.5 space-y-2.5 shadow-sm"
+                className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-4 space-y-2 shadow-xs"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-serif text-xs font-bold text-gold-200">
+                  <span className="font-serif text-xs font-bold text-[#1F2937]">
                     {item.source}
                   </span>
-                  <span className="rounded-full bg-emerald-950/90 px-2.5 py-0.5 text-[9px] font-bold text-emerald-300 border border-emerald-500/40">
+                  <span className="rounded-full bg-[#EAF3ED] px-2 py-0.5 text-[9px] font-bold text-[#2D5A43] border border-[#D4E7DC]">
                     {item.badge}
                   </span>
                 </div>
-                <span className="text-[10px] text-cream-300/60 block font-mono">
+                <span className="text-[10px] text-[#6B7280] block font-mono">
                   {item.category}
                 </span>
-                <p className="text-xs text-cream-200/90 leading-relaxed font-mono">
+                <p className="text-xs text-[#4B5563] leading-relaxed">
                   {item.desc}
                 </p>
               </div>
             ))}
           </div>
 
-          <div className="rounded-2xl border border-gold-300/25 bg-forest-950/90 p-4.5 text-xs font-mono text-cream-300/90 leading-relaxed shadow-inner">
-            <span className="text-gold-300 font-bold block mb-1">
+          <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-4 text-xs text-[#4B5563] leading-relaxed">
+            <span className="text-[#1F2937] font-bold block mb-1">
               Zero-Hallucination Architectural Guarantee:
             </span>
             All crop yield baselines, weather multipliers, cost C2 constants, and linear programming calculations are computed deterministically. The LLM/AI layer is strictly constrained to natural language synthesis and translation without performing numerical estimation.

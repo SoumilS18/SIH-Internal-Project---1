@@ -18,6 +18,25 @@ from typing import Dict, Any, Optional
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+def load_env_file():
+    """Loads key-value pairs from .env file into os.environ if not already set."""
+    env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env"))
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip("\"'")
+                        if k and not os.environ.get(k):
+                            os.environ[k] = v
+        except Exception:
+            pass
+
+load_env_file()
+
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     try:
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -27,6 +46,7 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
 from src.farm_service import FarmDecisionService
 from src.api_models import FarmDecisionRequest, FarmDecisionResponse
 from src.db_manager import DatabaseManager
+from src.voice_ai_service import FarmerVoiceService, SarvamVoiceService, GeminiFarmAdvisor
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Multi-threaded HTTP Server for handling concurrent requests."""
@@ -94,6 +114,13 @@ class FarmDecisionApiHandler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
             return
 
+        elif url_path in ("/api/voice/status", "/api/agent/status"):
+            payload = FarmerVoiceService.get_status()
+            body = json.dumps(payload).encode("utf-8")
+            self._set_cors_headers(200)
+            self.wfile.write(body)
+            return
+
         else:
             self._set_cors_headers(404)
             self.wfile.write(json.dumps({"error": "Endpoint not found"}).encode("utf-8"))
@@ -139,6 +166,106 @@ class FarmDecisionApiHandler(BaseHTTPRequestHandler):
                 }
                 body = json.dumps(err_payload).encode("utf-8")
                 self._set_cors_headers(500)
+                self.wfile.write(body)
+            return
+
+        elif url_path in ("/api/voice/status", "/api/agent/status"):
+            payload = FarmerVoiceService.get_status()
+            body = json.dumps(payload).encode("utf-8")
+            self._set_cors_headers(200)
+            self.wfile.write(body)
+            return
+
+        elif url_path in ("/api/voice/assistant", "/api/voice/query", "/api/agent/voice-query"):
+            try:
+                content_length = int(self.headers.get("Content-Length", 0))
+                if content_length == 0:
+                    self._set_cors_headers(400)
+                    self.wfile.write(json.dumps({"status": "error", "message": "Empty query body"}).encode("utf-8"))
+                    return
+
+                raw_body = self.rfile.read(content_length).decode("utf-8")
+                data = json.loads(raw_body)
+                query_text = data.get("query", "")
+                language = data.get("language", "en")
+                farm_context = data.get("farm_context") or data.get("decision") or {}
+                conversation_history = data.get("conversation_history", [])
+
+                response_payload = FarmerVoiceService.process_query(
+                    query=query_text,
+                    language=language,
+                    farm_context=farm_context,
+                    conversation_history=conversation_history
+                )
+
+                body = json.dumps(response_payload, ensure_ascii=False).encode("utf-8")
+                self._set_cors_headers(200)
+                self.wfile.write(body)
+            except Exception as e:
+                err_payload = {"status": "error", "message": f"Voice advisory error: {str(e)}"}
+                body = json.dumps(err_payload).encode("utf-8")
+                self._set_cors_headers(500)
+                self.wfile.write(body)
+            return
+
+        elif url_path in ("/api/voice/tts", "/api/agent/tts"):
+            try:
+                content_length = int(self.headers.get("Content-Length", 0))
+                raw_body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+                data = json.loads(raw_body)
+                text = data.get("text", "")
+                language = data.get("language", "en")
+                speaker = data.get("speaker", "anushka")
+
+                tts_res = SarvamVoiceService.synthesize_speech(
+                    text=text,
+                    language=language,
+                    speaker=speaker
+                )
+
+                body = json.dumps(tts_res).encode("utf-8")
+                self._set_cors_headers(200)
+                self.wfile.write(body)
+            except Exception as e:
+                err_payload = {"status": "fallback_needed", "error": str(e)}
+                body = json.dumps(err_payload).encode("utf-8")
+                self._set_cors_headers(200)
+                self.wfile.write(body)
+            return
+
+        elif url_path in ("/api/voice/stt", "/api/agent/stt"):
+            try:
+                content_length = int(self.headers.get("Content-Length", 0))
+                raw_body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+                data = json.loads(raw_body)
+                audio_base64 = data.get("audio_base64", "")
+                language = data.get("language", "hi")
+
+                import base64
+                if not audio_base64:
+                    self._set_cors_headers(200)
+                    self.wfile.write(json.dumps({
+                        "status": "error",
+                        "message": "Missing audio data"
+                    }).encode("utf-8"))
+                    return
+
+                if "," in audio_base64:
+                    audio_base64 = audio_base64.split(",", 1)[1]
+                audio_bytes = base64.b64decode(audio_base64)
+
+                stt_res = SarvamVoiceService.transcribe_audio(
+                    audio_bytes=audio_bytes,
+                    language=language
+                )
+
+                body = json.dumps(stt_res, ensure_ascii=False).encode("utf-8")
+                self._set_cors_headers(200)
+                self.wfile.write(body)
+            except Exception as e:
+                err_payload = {"status": "error", "error": str(e)}
+                body = json.dumps(err_payload).encode("utf-8")
+                self._set_cors_headers(200)
                 self.wfile.write(body)
             return
 

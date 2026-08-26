@@ -119,7 +119,17 @@ function AppContent() {
   }, [stage, handleChangeFarm]);
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-forest-950 font-sans text-cream-100">
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#FAF7F2] font-sans text-[#1F2937]">
+      {/* Atmospheric Seafoam / Mint-Aqua Ambient Glow from Right & Bottom-Right */}
+      <div
+        className="pointer-events-none fixed -bottom-24 -right-24 z-0 h-[600px] w-[600px] sm:h-[800px] sm:w-[800px] lg:h-[1050px] lg:w-[1050px] rounded-full bg-[radial-gradient(circle_at_bottom_right,_rgba(142,219,206,0.68)_0%,_rgba(168,230,219,0.48)_32%,_rgba(198,240,232,0.28)_55%,_rgba(228,248,243,0.12)_75%,_transparent_90%)] blur-3xl animate-ambient-bloom"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none fixed top-1/3 -right-24 z-0 h-[450px] w-[450px] sm:h-[650px] sm:w-[650px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(160,226,215,0.36)_0%,_rgba(195,239,231,0.18)_45%,_transparent_75%)] blur-3xl"
+        aria-hidden="true"
+      />
+
       {/* Multilingual Coming Soon Modal (accessible anywhere) */}
       <LanguageComingSoonModal />
 

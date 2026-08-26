@@ -10,9 +10,11 @@ import {
   CheckCircle2,
   Copy,
   Check,
+  Globe,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { getFarmerVoiceAnswer } from '@/i18n/semanticAdapter';
+import { askFarmerVoiceAssistant, speakVoiceAgentAudio } from '@/services/voiceAgentService';
 import type { FarmDecisionResponse } from '@/types/farm';
 
 interface VoiceAssistantPanelProps {
@@ -22,6 +24,7 @@ interface VoiceAssistantPanelProps {
 export function VoiceAssistantPanel({ decision }: VoiceAssistantPanelProps) {
   const { language, t } = useLanguage();
   const isHi = language === 'hi';
+  const isLanguageSupported = language === 'en' || language === 'hi' || language === 'en-IN' || language === 'hi-IN';
 
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
@@ -33,54 +36,54 @@ export function VoiceAssistantPanel({ decision }: VoiceAssistantPanelProps) {
 
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(typeof window !== 'undefined' ? window.speechSynthesis : null);
+  const speakerRef = useRef<{ stop: () => void } | null>(null);
 
   // Set default initial prompt and answer
   useEffect(() => {
+    if (!isLanguageSupported) {
+      setVoiceQuery('');
+      setVoiceAnswer(t('sentinel.voiceComingSoonNotice') || 'Voice assistance in this language is coming soon.');
+      return;
+    }
     if (decision) {
       const defaultQ = isHi ? 'मुझे कौन सी फसल उगानी चाहिए?' : 'What should I grow this season?';
       setVoiceQuery(defaultQ);
       setVoiceAnswer(getFarmerVoiceAnswer(defaultQ, decision, language));
     }
-  }, [decision, language, isHi]);
+  }, [decision, language, isHi, isLanguageSupported, t]);
 
   // Voice synthesis speaker
   const speakText = useCallback(
-    (textToSpeak: string) => {
-      if (!synthRef.current) return;
+    async (textToSpeak: string) => {
+      if (!isLanguageSupported || !textToSpeak) return;
 
-      try {
-        synthRef.current.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = isHi ? 'hi-IN' : 'en-IN';
-        utterance.rate = 0.95;
-
-        // Try selecting Indian English or Hindi voice
-        const voices = synthRef.current.getVoices();
-        const targetLangPrefix = isHi ? 'hi' : 'en';
-        const matchVoice = voices.find(
-          (v) => v.lang.toLowerCase().startsWith(targetLangPrefix) && (v.name.includes('India') || isHi)
-        ) || voices.find((v) => v.lang.toLowerCase().startsWith(targetLangPrefix));
-
-        if (matchVoice) {
-          utterance.voice = matchVoice;
-        }
-
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-
-        synthRef.current.speak(utterance);
-      } catch (err) {
-        console.warn('Speech synthesis error:', err);
+      if (speakerRef.current) {
+        speakerRef.current.stop();
         setIsSpeaking(false);
       }
+
+      const handle = await speakVoiceAgentAudio(
+        textToSpeak,
+        language,
+        () => setIsSpeaking(true),
+        () => setIsSpeaking(false),
+        (err) => {
+          console.warn('Speech synthesis error:', err);
+          setIsSpeaking(false);
+        }
+      );
+      speakerRef.current = handle;
     },
-    [isHi]
+    [isLanguageSupported, language]
   );
 
   // Handle Query Submission
-  const handleQuerySelect = (queryText: string) => {
+  const handleQuerySelect = async (queryText: string) => {
+    if (!isLanguageSupported) {
+      setVoiceAnswer(t('sentinel.voiceComingSoonNotice') || 'Voice assistance in this language is coming soon.');
+      return;
+    }
+
     setVoiceQuery(queryText);
     setSpeechError(null);
 
@@ -95,10 +98,11 @@ export function VoiceAssistantPanel({ decision }: VoiceAssistantPanelProps) {
       }
     }, 80);
 
-    const answer = getFarmerVoiceAnswer(queryText, decision, language);
+    const res = await askFarmerVoiceAssistant(queryText, decision, language);
+    const answer = res.display_text || res.spoken_text;
     setVoiceAnswer(answer);
 
-    // Optional audio readout
+    // Audio readout
     speakText(answer);
   };
 
