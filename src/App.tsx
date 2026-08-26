@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { LoginScreen } from '@/components/LoginScreen';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
-import { InitializingScreen } from '@/components/InitializingScreen';
 import { MainScreen } from '@/components/MainScreen';
 import { LanguageProvider } from '@/i18n/LanguageContext';
 import { LanguageComingSoonModal } from '@/components/LanguageComingSoonModal';
+import { WorldBackground } from '@/components/WorldBackground';
 
 type AppStage = 'login' | 'map' | 'initializing' | 'dashboard';
 
@@ -87,21 +87,19 @@ function AppContent() {
   }, []);
 
   // 3. Handle Location Confirmation from Map & District Modal
+  //    → jumps straight to the dashboard, whose guided flow now begins on the
+  //    farm-details entry page (Page 3). The cinematic analysis has moved inside
+  //    the dashboard and plays after the farmer taps “Generate”.
   const handleConfirmLocation = useCallback(
     (stateName: string, districtName: string) => {
       setSelectedState(stateName);
       setSelectedDistrict(districtName);
-      setStage('initializing');
+      setStage('dashboard');
     },
     []
   );
 
-  // 4. Handle Initialization Ready
-  const handleInitializationReady = useCallback(() => {
-    setStage('dashboard');
-  }, []);
-
-  // 5. Handle Change Farm (Return to Map)
+  // 4. Handle Change Farm (Return to Map)
   const handleChangeFarm = useCallback(() => {
     setWelcomeKey((k) => k + 1);
     setStage('map');
@@ -119,16 +117,9 @@ function AppContent() {
   }, [stage, handleChangeFarm]);
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#FAF7F2] font-sans text-[#1F2937]">
-      {/* Atmospheric Seafoam / Mint-Aqua Ambient Glow from Right & Bottom-Right */}
-      <div
-        className="pointer-events-none fixed -bottom-24 -right-24 z-0 h-[600px] w-[600px] sm:h-[800px] sm:w-[800px] lg:h-[1050px] lg:w-[1050px] rounded-full bg-[radial-gradient(circle_at_bottom_right,_rgba(142,219,206,0.68)_0%,_rgba(168,230,219,0.48)_32%,_rgba(198,240,232,0.28)_55%,_rgba(228,248,243,0.12)_75%,_transparent_90%)] blur-3xl animate-ambient-bloom"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none fixed top-1/3 -right-24 z-0 h-[450px] w-[450px] sm:h-[650px] sm:w-[650px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(160,226,215,0.36)_0%,_rgba(195,239,231,0.18)_45%,_transparent_75%)] blur-3xl"
-        aria-hidden="true"
-      />
+    <div className="relative min-h-screen w-full overflow-x-hidden font-sans text-[var(--ink)]">
+      {/* Persistent living-world atmosphere (adapts to Daylight / Nightfall) */}
+      <WorldBackground variant="ambient" />
 
       {/* Multilingual Coming Soon Modal (accessible anywhere) */}
       <LanguageComingSoonModal />
@@ -146,16 +137,7 @@ function AppContent() {
         />
       )}
 
-      {/* 3. INITIALIZING TRANSITION SCREEN */}
-      {stage === 'initializing' && (
-        <InitializingScreen
-          stateName={selectedState}
-          districtName={selectedDistrict}
-          onReady={handleInitializationReady}
-        />
-      )}
-
-      {/* 4. MAIN FARM INTELLIGENCE DASHBOARD */}
+      {/* 3. MAIN FARM INTELLIGENCE DASHBOARD (guided Pages 3–5 live inside) */}
       {stage === 'dashboard' && (
         <MainScreen
           userName={userName}

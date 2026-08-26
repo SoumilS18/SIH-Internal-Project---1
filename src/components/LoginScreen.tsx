@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Sparkles,
   ArrowRight,
   ShieldCheck,
   Lock,
@@ -9,21 +8,30 @@ import {
   Sprout,
   CloudRain,
   Bot,
-  Volume2,
-  CheckCircle2,
   Eye,
   EyeOff,
   Phone,
 } from 'lucide-react';
-import { usePrefersReducedMotion } from '@/lib/hooks';
+import { usePrefersReducedMotion, useMouseParallax, useMounted } from '@/lib/hooks';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { LegalModal } from '@/components/LegalModals';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { FarmDigitalTwin } from '@/components/FarmDigitalTwin';
+import { AIAgentOrb } from '@/components/AIAgentOrb';
+import { MagneticButton } from '@/components/ui/motion';
 
 interface LoginScreenProps {
   onLogin: (userName: string) => void;
 }
 
+/**
+ * DISCOVER + ENTER — the first beat of the connected flow.
+ * The living farm digital-twin is the hero (the promise: "your farm"), the
+ * intelligence core hovers within the sign-in panel (the promise: "powered by
+ * intelligence"). Auth contract is preserved verbatim; only the presentation
+ * is rebuilt around the design system.
+ */
 export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -31,8 +39,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
   const reduced = usePrefersReducedMotion();
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const isHi = language === 'hi';
+  const mounted = useMounted(60);
+  const twinParallax = useMouseParallax<HTMLDivElement>(10, 3);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,311 +59,303 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     }, reduced ? 50 : 200);
   };
 
+  // staggered entrance helper
+  const rise = (i: number): React.CSSProperties =>
+    reduced
+      ? {}
+      : {
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'none' : 'translateY(18px)',
+          transition: `opacity 0.7s var(--ease-out) ${i * 90}ms, transform 0.8s var(--ease-out) ${i * 90}ms`,
+        };
+
+  const capabilities = [
+    { icon: Sprout, en: 'AI crop plan', hi: 'AI फसल योजना' },
+    { icon: CloudRain, en: 'Live weather & mandi', hi: 'लाइव मौसम व मंडी' },
+    { icon: Bot, en: '24/7 Sentinel', hi: '24/7 सेंटीनेल' },
+  ];
+
   return (
-    <div className="relative min-h-screen w-full bg-transparent text-[#1F2937] flex flex-col justify-between selection:bg-[#E2725B]/20 selection:text-[#873322]">
-      {/* ========================================================================= */}
-      {/* 1. TOP HEADER BAR WITH CAPABILITY PILLS */}
-      {/* ========================================================================= */}
-      <header className="sticky top-0 z-30 border-b border-[#EDE4D5] bg-[#FAF7F2]/90 backdrop-blur-md px-4 sm:px-8 py-3">
-        <div className="mx-auto max-w-7xl flex items-center justify-between gap-3">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EAF3ED] border border-[#D4E7DC] text-[#2D5A43] shadow-sm">
-              <Leaf size={20} className="text-[#3F7253]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[#1F2937]">
-                  AgriOptima AI
-                </span>
-              </div>
-              <p className="text-[11px] text-[#6B7280] font-medium hidden sm:block">
-                {isHi ? 'सटीक निर्णय • समृद्ध किसान' : 'Smart Decisions. Stronger Farms.'}
-              </p>
-            </div>
-          </div>
+    <div className="relative flex min-h-screen w-full flex-col overflow-hidden text-[var(--ink)] selection:bg-[var(--field-tint)] selection:text-[var(--field-deep)]">
+      {/* ================================================================= */}
+      {/* FLOATING TOP CHROME (transparent — keeps the hero immersive)      */}
+      {/* ================================================================= */}
+      <header className="relative z-30 flex items-center justify-between gap-3 px-5 py-5 sm:px-8">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--field-tint)] text-[var(--field)] leaf-radius">
+            <Leaf size={19} />
+          </span>
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-lg font-extrabold tracking-tight text-[var(--ink)]">
+              AgriOptima<span className="text-[var(--field)]"> AI</span>
+            </span>
+            <span className="mt-1 hidden text-[10px] font-medium tracking-wide text-[var(--ink-faint)] sm:block">
+              {isHi ? 'सटीक निर्णय • समृद्ध किसान' : 'Smart decisions. Stronger farms.'}
+            </span>
+          </span>
+        </div>
 
-          {/* Capability Highlights Strip (Desktop) */}
-          <div className="hidden xl:flex items-center gap-2 text-xs">
-            <div className="flex items-center gap-2 rounded-full border border-[#EDE4D5] bg-[#FFFFFF] px-3 py-1.5 shadow-sm">
-              <Sprout size={14} className="text-[#3F7253]" />
-              <div>
-                <span className="font-semibold text-[#1F2937]">{isHi ? 'AI योजना' : 'AI-Powered Plans'}</span>
-                <span className="text-[10px] text-[#6B7280] ml-1.5">{isHi ? 'डेटा-आधारित फसल आवंटन' : 'Data-driven crop mix'}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 rounded-full border border-[#EDE4D5] bg-[#FFFFFF] px-3 py-1.5 shadow-sm">
-              <CloudRain size={14} className="text-[#2A7575]" />
-              <div>
-                <span className="font-semibold text-[#1F2937]">{isHi ? 'लाइव मौसम' : 'Real-time Intel'}</span>
-                <span className="text-[10px] text-[#6B7280] ml-1.5">{isHi ? '7-दिवसीय वर्षा व मंडी भाव' : 'Weather & mandi rates'}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 rounded-full border border-[#EDE4D5] bg-[#FFFFFF] px-3 py-1.5 shadow-sm">
-              <Bot size={14} className="text-[#E2725B]" />
-              <div>
-                <span className="font-semibold text-[#1F2937]">{isHi ? 'सेंटीनेल एजेंट' : 'Autonomous Agent'}</span>
-                <span className="text-[10px] text-[#6B7280] ml-1.5">{isHi ? 'निरंतर निगरानी' : '24/7 proactive checks'}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 rounded-full border border-[#EDE4D5] bg-[#FFFFFF] px-3 py-1.5 shadow-sm">
-              <Volume2 size={14} className="text-[#7C3AED]" />
-              <div>
-                <span className="font-semibold text-[#1F2937]">{isHi ? 'ध्वनि सहायक' : 'Farmer Voice'}</span>
-                <span className="text-[10px] text-[#6B7280] ml-1.5">{isHi ? 'सरवम व जेमिनी AI' : 'Sarvam + Gemini AI'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Language Selector */}
-          <div className="flex items-center gap-3">
-            <LanguageSelector />
-          </div>
+        <div className="flex items-center gap-2.5">
+          <LanguageSelector />
+          <ThemeToggle />
         </div>
       </header>
 
-      {/* ========================================================================= */}
-      {/* 2. MAIN TWO-COLUMN BODY WITH FULL-SCREEN PANORAMIC FARM BACKGROUND */}
-      {/* ========================================================================= */}
-      <main className="relative flex-1 flex items-center px-4 sm:px-8 pt-3 pb-8 sm:pt-5 sm:pb-10 overflow-hidden">
-        {/* Full-Screen Panoramic Wallpaper (Extends edge-to-edge behind the whole page) */}
-        <div
-          className="pointer-events-none absolute inset-0 w-full h-full z-0 select-none overflow-hidden"
-          aria-hidden="true"
-        >
-          <img
-            src="/assets/farmer_illustration_bg.jpg"
-            alt=""
-            className="h-full w-full object-cover object-bottom"
-          />
-        </div>
-
-        <div className="relative z-10 mx-auto w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          
-          {/* ======================================================================= */}
-          {/* LEFT HERO SECTION (58% width) */}
-          {/* ======================================================================= */}
-          <div className="lg:col-span-7 flex flex-col justify-start self-start pt-0 space-y-3.5 max-w-xl">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#F9D0C5] bg-[#FDEEE9]/95 backdrop-blur-xs px-3 py-0.5 text-[11px] font-semibold text-[#B54832]">
-                <Sparkles size={12} className="text-[#E2725B]" />
-                <span>{isHi ? 'कृषि निर्णय का आधुनिक मंच' : 'Modern Agricultural Decision Platform'}</span>
+      {/* ================================================================= */}
+      {/* HERO STAGE                                                        */}
+      {/* ================================================================= */}
+      <main className="relative z-10 flex flex-1 items-center px-5 pb-4 sm:px-8">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">
+          {/* ---------------------------------------------------------- */}
+          {/* LEFT — thesis headline + living twin                        */}
+          {/* ---------------------------------------------------------- */}
+          <div className="lg:col-span-7">
+            <div className="max-w-xl" style={rise(0)}>
+              <div className="t-eyebrow flex items-center gap-2.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-[var(--field)]" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--field)]" />
+                </span>
+                {isHi ? 'स्वायत्त कृषि बुद्धिमत्ता' : 'Autonomous farm intelligence'}
               </div>
 
-              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F2937] leading-tight">
+              <h1 className="t-display mt-4 text-[var(--ink)]">
                 {isHi ? (
                   <>
-                    सटीक योजना बनाएं। <br />
-                    <span className="text-[#E2725B]">बेहतर और समृद्ध खेती करें।</span>
+                    आपका खेत।
+                    <br />
+                    <span className="text-field">बुद्धिमत्ता से</span>
+                    <br />
+                    संचालित।
                   </>
                 ) : (
                   <>
-                    Plan Smarter. <br />
-                    <span className="text-[#E2725B]">Farm Better.</span>
+                    Your farm.
+                    <br />
+                    Powered by
+                    <br />
+                    <span className="text-field">intelligence.</span>
                   </>
                 )}
               </h1>
 
-              <p className="text-xs sm:text-[13px] leading-relaxed text-[#374151] max-w-lg font-medium">
+              <p className="t-lead mt-5 max-w-md text-pretty">
                 {isHi
-                  ? 'AI-संचालित योजना जो आपके खेत, मिट्टी, पानी और बजट के अनुसार अधिकतम लाभ और सुरक्षित पैदावार सुनिश्चित करती है।'
-                  : 'AI-powered planning that helps you make the right decisions for higher income, reduced risk, and a sustainable future.'}
+                  ? 'आपकी मिट्टी, पानी, बजट और मौसम को पढ़कर एक जीवंत डिजिटल खेत — जो अधिकतम लाभ और कम जोखिम के लिए हर निर्णय सुझाता है।'
+                  : 'A living digital twin of your land that reads your soil, water, budget and weather — then plans every decision for higher income and lower risk.'}
               </p>
+
+              {/* inline signature capability row (not boxed cards) */}
+              <div
+                className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2"
+                style={rise(1)}
+              >
+                {capabilities.map((c, i) => {
+                  const Icon = c.icon;
+                  return (
+                    <React.Fragment key={c.en}>
+                      {i > 0 && (
+                        <span className="hidden h-4 w-px bg-[var(--line-strong)] sm:block" aria-hidden />
+                      )}
+                      <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--ink-soft)]">
+                        <Icon size={15} className="text-[var(--field)]" />
+                        {isHi ? c.hi : c.en}
+                      </span>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* 3 Core Value Pillars */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-0.5">
-              <div className="rounded-2xl border border-[#EDE4D5]/90 bg-[#FFFFFF]/90 backdrop-blur-md p-3 shadow-xs transition-all hover:border-[#D4E7DC] hover:shadow-md hover:bg-[#FFFFFF]">
-                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#EAF3ED] text-[#2D5A43] mb-1.5">
-                  <Sprout size={15} />
-                </div>
-                <h3 className="text-[11px] font-bold text-[#1F2937] mb-0.5">
-                  {isHi ? 'व्यक्तिगत कृषि योजना' : 'Personalized Farm Plan'}
-                </h3>
-                <p className="text-[9.5px] text-[#6B7280] leading-snug">
-                  {isHi ? 'आपकी जमीन और बजट अनुसार फसल आवंटन।' : 'Multi-crop portfolio tuned to your land.'}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-[#EDE4D5]/90 bg-[#FFFFFF]/90 backdrop-blur-md p-3 shadow-xs transition-all hover:border-[#B2DFDB] hover:shadow-md hover:bg-[#FFFFFF]">
-                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#E0F2F1] text-[#2A7575] mb-1.5">
-                  <CloudRain size={15} />
-                </div>
-                <h3 className="text-[11px] font-bold text-[#1F2937] mb-0.5">
-                  {isHi ? 'लाइव मौसम व मंडी भाव' : 'Real-Time Intelligence'}
-                </h3>
-                <p className="text-[9.5px] text-[#6B7280] leading-snug">
-                  {isHi ? '7-दिन वर्षा व मंडी दरें।' : '7-day rain forecast & APMC market prices.'}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-[#EDE4D5]/90 bg-[#FFFFFF]/90 backdrop-blur-md p-3 shadow-xs transition-all hover:border-[#F9D0C5] hover:shadow-md hover:bg-[#FFFFFF]">
-                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#FDEEE9] text-[#E2725B] mb-1.5">
-                  <Bot size={15} />
-                </div>
-                <h3 className="text-[11px] font-bold text-[#1F2937] mb-0.5">
-                  {isHi ? 'स्वायत्त कृषि सहायक' : 'Autonomous Assistant'}
-                </h3>
-                <p className="text-[9.5px] text-[#6B7280] leading-snug">
-                  {isHi ? 'योजना के बाद 24/7 निगरानी।' : 'Continuous Sentinel monitoring.'}
-                </p>
-              </div>
+            {/* living farm twin — the object that carries through the flow */}
+            <div
+              ref={twinParallax}
+              className="relative mt-6 hidden sm:block"
+              style={rise(2)}
+            >
+              <FarmDigitalTwin
+                height={340}
+                interactive
+                showWeather
+                className="w-full"
+              />
+              <span className="t-eyebrow absolute bottom-1 left-1 text-[var(--ink-ghost)]">
+                {isHi ? 'लाइव डिजिटल फार्म ट्विन' : 'Live digital farm twin'}
+              </span>
             </div>
           </div>
 
-          {/* ======================================================================= */}
-          {/* RIGHT LOGIN CARD (42% width) */}
-          {/* ======================================================================= */}
-          <div className="lg:col-span-5 flex justify-center lg:justify-end">
-            <div className="w-full max-w-md rounded-3xl border border-[#EDE4D5] bg-[#FFFFFF] p-6 sm:p-8 shadow-[0_10px_35px_rgba(56,49,39,0.06)]">
-              
-              {/* Card Header */}
-              <div>
-                <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#1F2937]">
-                  {isHi ? 'स्वागत है!' : 'Welcome Back!'}
-                </h2>
-                <p className="mt-1 text-xs text-[#6B7280]">
-                  {isHi ? 'अपने एग्रीऑप्टिमा AI खाते में लॉगिन करें' : 'Login to your AgriOptima AI account'}
-                </p>
+          {/* ---------------------------------------------------------- */}
+          {/* RIGHT — floating sign-in panel with intelligence core       */}
+          {/* ---------------------------------------------------------- */}
+          <div className="lg:col-span-5" style={rise(1)}>
+            <div className="panel-glass relative mx-auto w-full max-w-md overflow-hidden p-6 sm:p-8">
+              {/* soft field glow in the corner for depth */}
+              <div
+                className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full blur-3xl"
+                style={{ background: 'var(--glow-field)' }}
+                aria-hidden
+              />
+
+              <div className="relative flex items-center gap-3">
+                <div className="shrink-0">
+                  <AIAgentOrb state="idle" size={58} />
+                </div>
+                <div>
+                  <h2 className="t-h3 text-[var(--ink)]">
+                    {isHi ? 'वापसी पर स्वागत है' : 'Welcome back'}
+                  </h2>
+                  <p className="text-sm text-[var(--ink-soft)]">
+                    {isHi ? 'अपने खेत की बुद्धिमत्ता में प्रवेश करें' : 'Sign in to your farm intelligence'}
+                  </p>
+                </div>
               </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <form onSubmit={handleSubmit} className="relative mt-6 space-y-4">
                 {/* Mobile or Email */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#374151] mb-1.5">
-                    {isHi ? 'मोबाइल नंबर या ईमेल' : 'Mobile number or Email'}
+                  <label htmlFor="login-id" className="mb-1.5 block text-xs font-semibold text-[var(--ink-soft)]">
+                    {isHi ? 'मोबाइल नंबर या ईमेल' : 'Mobile number or email'}
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9CA3AF]">
-                      <User size={15} />
+                    <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[var(--ink-ghost)]">
+                      <User size={16} />
                     </span>
                     <input
+                      id="login-id"
                       type="text"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       placeholder={isHi ? '98765 43210 या farmer@agri.in' : '98765 43210 or farmer@example.com'}
-                      className="w-full rounded-xl border border-[#D1D5DB] bg-[#FAF7F2] py-2.5 pl-10 pr-3 text-xs text-[#1F2937] placeholder:text-[#9CA3AF] focus:border-[#E2725B] focus:bg-[#FFFFFF] focus:outline-none focus:ring-2 focus:ring-[#E2725B]/20 transition-all"
+                      className="field-input pl-10 text-sm"
                     />
                   </div>
                 </div>
 
                 {/* Password */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-[#374151]">
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label htmlFor="login-pw" className="block text-xs font-semibold text-[var(--ink-soft)]">
                       {isHi ? 'पासवर्ड' : 'Password'}
                     </label>
                     <button
                       type="button"
                       tabIndex={-1}
-                      onClick={() => alert(isHi ? 'पासवर्ड रीसेट लिंक आपके नंबर पर भेजा गया है।' : 'Password reset link sent to your registered mobile.')}
-                      className="text-[11px] font-medium text-[#E2725B] hover:text-[#B54832] transition-colors focus:outline-none"
+                      onClick={() =>
+                        alert(
+                          isHi
+                            ? 'पासवर्ड रीसेट लिंक आपके नंबर पर भेजा गया है।'
+                            : 'Password reset link sent to your registered mobile.'
+                        )
+                      }
+                      className="text-[11px] font-semibold text-[var(--field)] transition-colors hover:text-[var(--field-deep)] focus:outline-none"
                     >
                       {isHi ? 'पासवर्ड भूल गए?' : 'Forgot password?'}
                     </button>
                   </div>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9CA3AF]">
-                      <Lock size={15} />
+                    <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[var(--ink-ghost)]">
+                      <Lock size={16} />
                     </span>
                     <input
+                      id="login-pw"
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder={isHi ? '••••••••' : 'Enter your password'}
-                      className="w-full rounded-xl border border-[#D1D5DB] bg-[#FAF7F2] py-2.5 pl-10 pr-10 text-xs text-[#1F2937] placeholder:text-[#9CA3AF] focus:border-[#E2725B] focus:bg-[#FFFFFF] focus:outline-none focus:ring-2 focus:ring-[#E2725B]/20 transition-all"
+                      className="field-input pl-10 pr-10 text-sm"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#9CA3AF] hover:text-[#4B5563]"
+                      aria-label={showPassword ? (isHi ? 'पासवर्ड छिपाएं' : 'Hide password') : (isHi ? 'पासवर्ड दिखाएं' : 'Show password')}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--ink-ghost)] transition-colors hover:text-[var(--ink-soft)]"
                     >
-                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
                 </div>
 
                 {/* Primary Login Button */}
-                <button
+                <MagneticButton
                   type="submit"
                   disabled={loading}
-                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#E2725B] py-3 text-xs font-bold text-[#FFFFFF] shadow-sm transition-all hover:bg-[#D9654D] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#E2725B]/30 disabled:opacity-60 cursor-pointer"
+                  className="btn btn-primary group w-full text-sm disabled:opacity-60"
                 >
-                  <span>{loading ? (isHi ? 'प्रमाणित हो रहा है...' : 'Logging in...') : (isHi ? 'लॉगिन करें' : 'Login')}</span>
-                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-                </button>
+                  <span>{loading ? (isHi ? 'प्रवेश हो रहा है...' : 'Signing in…') : (isHi ? 'लॉगिन करें' : 'Sign in')}</span>
+                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+                </MagneticButton>
 
                 {/* Divider */}
-                <div className="flex items-center gap-3 my-2.5">
-                  <div className="flex-1 border-t border-[#EDE4D5]" />
-                  <span className="shrink-0 text-[11px] text-[#9CA3AF] whitespace-nowrap">
+                <div className="my-1 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-[var(--line)]" />
+                  <span className="shrink-0 text-[11px] text-[var(--ink-ghost)]">
                     {isHi ? 'या जारी रखें' : 'or continue with'}
                   </span>
-                  <div className="flex-1 border-t border-[#EDE4D5]" />
+                  <div className="h-px flex-1 bg-[var(--line)]" />
                 </div>
 
-                {/* Alternative Quick Sign-in Grid */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* Alternative Quick Sign-in */}
+                <div className="grid grid-cols-2 gap-2.5">
                   <button
                     type="button"
                     onClick={handleDemoLogin}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] py-2 text-[11px] font-medium text-[#374151] hover:bg-[#F5EFE6] hover:border-[#DDD0BD] transition-colors"
+                    className="inset flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:border-[var(--line-strong)] hover:text-[var(--ink)]"
                   >
-                    <span>🌐</span>
+                    <span aria-hidden>🌐</span>
                     <span>{isHi ? 'गूगल' : 'Google'}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={handleDemoLogin}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] py-2 text-[11px] font-medium text-[#374151] hover:bg-[#F5EFE6] hover:border-[#DDD0BD] transition-colors"
+                    className="inset flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:border-[var(--line-strong)] hover:text-[var(--ink)]"
                   >
-                    <Phone size={13} className="text-[#3F7253]" />
+                    <Phone size={14} className="text-[var(--field)]" />
                     <span>{isHi ? 'फोन OTP' : 'Phone OTP'}</span>
                   </button>
                 </div>
 
-                {/* Quick 1-Click Demo Farmer Button */}
+                {/* Quick 1-Click Demo Farmer */}
                 <button
                   type="button"
                   onClick={handleDemoLogin}
                   disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4E7DC] bg-[#EAF3ED] py-2.5 text-xs font-semibold text-[#2D5A43] hover:bg-[#D4E7DC] transition-colors cursor-pointer"
+                  className="chip chip-field w-full justify-center py-3 text-xs disabled:opacity-60"
                 >
-                  <Sprout size={14} className="text-[#3F7253]" />
-                  <span>{isHi ? 'किसान मित्र डेमो के रूप में प्रवेश करें' : 'Continue as Demo Farmer (1-Click)'}</span>
+                  <Sprout size={14} />
+                  <span>{isHi ? 'किसान मित्र डेमो के रूप में प्रवेश करें' : 'Continue as Demo Farmer (1-click)'}</span>
                 </button>
               </form>
 
-              {/* Bottom Sign-up Link */}
-              <div className="mt-5 pt-4 border-t border-[#EDE4D5] text-center text-xs text-[#6B7280]">
+              {/* Sign-up */}
+              <div className="relative mt-5 border-t border-[var(--line)] pt-4 text-center text-xs text-[var(--ink-soft)]">
                 <span>{isHi ? 'नया खाता बनाना चाहते हैं? ' : 'New here? '}</span>
                 <button
                   type="button"
                   onClick={handleDemoLogin}
-                  className="font-semibold text-[#E2725B] hover:text-[#B54832] transition-colors"
+                  className="font-semibold text-[var(--field)] transition-colors hover:text-[var(--field-deep)]"
                 >
                   {isHi ? 'नया खाता बनाएं' : 'Create an account'}
                 </button>
               </div>
             </div>
           </div>
-
         </div>
       </main>
 
-      {/* ========================================================================= */}
-      {/* 3. BOTTOM FOOTER BAR */}
-      {/* ========================================================================= */}
-      <footer className="border-t border-[#EDE4D5] bg-[#FAF7F2] px-4 sm:px-8 py-3 text-xs text-[#6B7280]">
-        <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-3">
+      {/* ================================================================= */}
+      {/* FOOTER                                                            */}
+      {/* ================================================================= */}
+      <footer className="relative z-10 px-5 py-4 text-xs text-[var(--ink-faint)] sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-[11px]">
-            <ShieldCheck size={14} className="text-[#3F7253]" />
-            <span>{isHi ? 'सुरक्षित एवं निजी: आपका कृषि डेटा एन्क्रिप्टेड है' : 'Secure & Private: Your farm data is protected and never shared.'}</span>
+            <ShieldCheck size={14} className="text-[var(--field)]" />
+            <span>
+              {isHi
+                ? 'सुरक्षित एवं निजी: आपका कृषि डेटा एन्क्रिप्टेड है'
+                : 'Secure & private — your farm data is encrypted and never sold.'}
+            </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-[11px]">
@@ -361,14 +363,14 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <button
               type="button"
               onClick={() => setLegalModalType('privacy')}
-              className="hover:text-[#1F2937] transition-colors cursor-pointer"
+              className="transition-colors hover:text-[var(--ink)]"
             >
               {isHi ? 'गोपनीयता नीति' : 'Privacy Policy'}
             </button>
             <button
               type="button"
               onClick={() => setLegalModalType('terms')}
-              className="hover:text-[#1F2937] transition-colors cursor-pointer"
+              className="transition-colors hover:text-[var(--ink)]"
             >
               {isHi ? 'नियम एवं शर्तें' : 'Terms of Service'}
             </button>
@@ -385,4 +387,3 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     </div>
   );
 }
-

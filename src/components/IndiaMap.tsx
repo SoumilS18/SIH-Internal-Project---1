@@ -254,8 +254,8 @@ export function IndiaMap({
 
       {/* Floating tooltip showing ONLY the Localized State Name on hover */}
       {hoveredStateName && (
-        <div className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 rounded-full border border-[#EDE4D5] bg-[#FFFFFF] px-4 py-1 text-center shadow-lg backdrop-blur-md">
-          <span className="font-serif text-xs font-bold tracking-wide text-[#1F2937]">
+        <div className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 rounded-full border border-[var(--line)] bg-[var(--surface-elevated)] px-4 py-1 text-center shadow-lg backdrop-blur-md">
+          <span className="font-serif text-xs font-bold tracking-wide text-[var(--ink)]">
             {hoveredStateName}
           </span>
         </div>

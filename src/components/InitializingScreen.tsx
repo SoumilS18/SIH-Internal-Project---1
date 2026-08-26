@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { Loader2, CheckCircle2, Sparkles, Compass, Cpu, Droplets, LineChart } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { MapPin, Layers, Droplets, IndianRupee, CloudSun, Sprout, Check } from 'lucide-react';
 import { usePrefersReducedMotion } from '@/lib/hooks';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
+import { AIAgentOrb, type OrbState } from '@/components/AIAgentOrb';
+import { FarmDigitalTwin } from '@/components/FarmDigitalTwin';
+import { ProgressRing } from '@/components/ui/dataviz';
 
 interface InitializingScreenProps {
   stateName: string;
@@ -10,93 +13,197 @@ interface InitializingScreenProps {
   onReady: () => void;
 }
 
-export function InitializingScreen({
-  stateName,
-  districtName,
-  onReady,
-}: InitializingScreenProps) {
-  const [step, setStep] = useState(0);
-  const reduced = usePrefersReducedMotion();
-  const { t, language } = useLanguage();
-  const isHi = language === 'hi';
+/** Per-stage dwell + the hold on the final "strategy ready" beat. */
+const STAGE_MS = 720;
+const REVEAL_MS = 1200;
+const EXIT_MS = 620;
 
-  const STEPS = [
-    { label: isHi ? 'मौसम व 7-दिवसीय वर्षा पूर्वानुमान का संकलन...' : 'Fetching 7-day weather & rainfall forecast...', icon: Droplets },
-    { label: isHi ? 'मिट्टी की बनावट व जल धारण क्षमता का विश्लेषण...' : 'Analyzing soil texture & root-zone moisture...', icon: LineChart },
-    { label: isHi ? 'सर्वोत्तम कृषि लाभ योजना की गणना...' : 'Optimizing crop allocation & expected returns...', icon: Cpu },
-  ];
+interface Stage {
+  icon: React.ComponentType<{ size?: number | string; className?: string }>;
+  en: string;
+  hi: string;
+  enSub: string;
+  hiSub: string;
+}
+
+/**
+ * The cinematic analysis sequence. Instead of a spinner, the intelligence core
+ * visibly works through the farm — Location → Land → Water → Investment →
+ * Climate → Crop suitability — over a faint scan of the living twin, then lands
+ * on "YOUR FARM STRATEGY IS READY" before handing off to the dashboard.
+ *
+ * Contract preserved: reduced-motion hands off immediately via onReady().
+ */
+export function InitializingScreen({ stateName, districtName, onReady }: InitializingScreenProps) {
+  const reduced = usePrefersReducedMotion();
+  const { language } = useLanguage();
+  const isHi = language === 'hi';
+  const [step, setStep] = useState(0);
+  const [done, setDone] = useState(false);
+  const [exiting, setExiting] = useState(false);
+
+  const STAGES: Stage[] = useMemo(
+    () => [
+      { icon: MapPin, en: 'Locating your farm', hi: 'आपका खेत खोजा जा रहा है', enSub: 'District & coordinates', hiSub: 'ज़िला और निर्देशांक' },
+      { icon: Layers, en: 'Reading soil & terrain', hi: 'मिट्टी और भूमि का अध्ययन', enSub: 'Texture, depth & slope', hiSub: 'बनावट, गहराई और ढलान' },
+      { icon: Droplets, en: 'Checking water & rainfall', hi: 'पानी और वर्षा की जाँच', enSub: '7-day forecast', hiSub: '7-दिन का पूर्वानुमान' },
+      { icon: IndianRupee, en: 'Balancing cost & profit', hi: 'लागत और लाभ का संतुलन', enSub: 'Budget & expected returns', hiSub: 'बजट और अपेक्षित लाभ' },
+      { icon: CloudSun, en: 'Reading the season', hi: 'मौसम का आकलन', enSub: 'Temperature & humidity', hiSub: 'तापमान और नमी' },
+      { icon: Sprout, en: 'Matching the best crops', hi: 'सर्वोत्तम फसलें चुनना', enSub: 'For your exact field', hiSub: 'आपके खेत के लिए' },
+    ],
+    []
+  );
+  const total = STAGES.length;
+
+  const orbState: OrbState = done ? 'complete' : step >= 5 ? 'recommending' : step >= 3 ? 'planning' : 'analyzing';
 
   useEffect(() => {
     if (reduced) {
       onReady();
       return;
     }
+    const timers: number[] = [];
+    for (let i = 1; i < total; i++) {
+      timers.push(window.setTimeout(() => setStep(i), STAGE_MS * i));
+    }
+    timers.push(window.setTimeout(() => setDone(true), STAGE_MS * total));
+    timers.push(window.setTimeout(() => setExiting(true), STAGE_MS * total + REVEAL_MS));
+    timers.push(window.setTimeout(() => onReady(), STAGE_MS * total + REVEAL_MS + EXIT_MS));
+    return () => timers.forEach(clearTimeout);
+  }, [reduced, onReady, total]);
 
-    const t1 = setTimeout(() => setStep(1), 220);
-    const t2 = setTimeout(() => setStep(2), 440);
-    const t3 = setTimeout(() => onReady(), 700);
+  // Reduced motion: onReady already fired; render a calm holding frame to avoid a flash.
+  if (reduced) {
+    return <div className="fixed inset-0 world-bg" aria-hidden />;
+  }
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [reduced, onReady]);
+  const percent = done ? 100 : Math.round(((step + 1) / total) * 100);
+  const loc = `${getDistrictDisplayName(districtName, language)}, ${getStateDisplayName(stateName, language)}`;
+  const cur = STAGES[Math.min(step, total - 1)];
+  const CurIcon = cur.icon;
 
   return (
-    <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-[#FAF7F2] px-4">
-      <div className="relative z-10 w-full max-w-md rounded-3xl border border-[#EDE4D5] bg-[#FFFFFF] p-6 text-center shadow-xl sm:p-8 space-y-4">
-        {/* Animated Icon */}
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#F9D0C5] bg-[#FDEEE9] shadow-sm">
-          <Sparkles className="h-7 w-7 animate-pulse text-[#E2725B]" />
-        </div>
+    <div
+      className="fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden px-6"
+      style={{ background: 'var(--canvas)', transition: `opacity ${EXIT_MS}ms var(--ease-out)`, opacity: exiting ? 0 : 1 }}
+      role="status"
+      aria-live="polite"
+      aria-label={isHi ? 'खेत का विश्लेषण किया जा रहा है' : 'Analyzing your farm'}
+    >
+      {/* focus vignette toward the core */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: 'radial-gradient(115% 85% at 50% 38%, transparent 42%, var(--canvas) 100%)' }}
+      />
 
-        <div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#1F2937]">
-            {isHi ? 'खेत विश्लेषण तैयार हो रहा है' : 'Initializing Farm Intelligence'}
-          </h2>
+      {/* faint scan of the living twin — the object that carries through the flow */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-[-6%] flex justify-center opacity-[0.32]"
+        style={{
+          maskImage: 'linear-gradient(to top, black 46%, transparent 96%)',
+          WebkitMaskImage: 'linear-gradient(to top, black 46%, transparent 96%)',
+        }}
+      >
+        <FarmDigitalTwin height={500} interactive={false} scanning showWeather={false} className="w-[min(940px,130%)]" />
+      </div>
 
-          {/* Location pill */}
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#D4E7DC] bg-[#EAF3ED] px-3 py-1 text-xs font-semibold text-[#2D5A43]">
-            <Compass size={13} className="text-[#3F7253]" />
-            <span>
-              {getDistrictDisplayName(districtName, language)}, {getStateDisplayName(stateName, language)}
-            </span>
+      {/* foreground column */}
+      <div className="relative z-10 flex w-full max-w-xl flex-col items-center text-center">
+        <span className="t-eyebrow animate-rise" style={{ color: 'var(--field)' }}>
+          {isHi ? 'बुद्धिमत्ता सक्रिय' : 'Intelligence engaged'}
+        </span>
+
+        {/* intelligence core wrapped in an analysis progress ring.
+            Both the ring and the orb are pinned to the SAME grid cell (1/1) so
+            they stack and stay concentric — this avoids relying on absolute/
+            relative resolution, which would otherwise drop the orb into a
+            second grid row and push it below the ring. */}
+        <div className="relative mt-4 grid place-items-center" style={{ width: 256, height: 256 }}>
+          <ProgressRing
+            value={percent}
+            size={256}
+            stroke={3}
+            tone="field"
+            trackOpacity={0.45}
+            className="[grid-area:1/1]"
+          />
+          <div className="grid place-items-center [grid-area:1/1]">
+            <AIAgentOrb state={orbState} size={190} />
           </div>
         </div>
 
-        {/* Stepper Progress */}
-        <div className="mt-4 space-y-2 text-left text-xs">
-          {STEPS.map((s, idx) => {
-            const Icon = s.icon;
-            const isDone = step > idx;
-            const isCurrent = step === idx;
+        {/* farm location */}
+        <div className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-1.5 text-sm font-semibold text-[var(--ink-soft)] backdrop-blur-sm">
+          <MapPin size={14} className="text-[var(--field)]" />
+          <span>{loc}</span>
+        </div>
 
-            return (
-              <div
-                key={idx}
-                className={`flex items-center gap-2.5 rounded-xl border p-2.5 transition-all duration-300 ${
-                  isDone
-                    ? 'border-[#D4E7DC] bg-[#EAF3ED] text-[#2D5A43]'
-                    : isCurrent
-                    ? 'border-[#F9D0C5] bg-[#FDEEE9] text-[#B54832] shadow-xs'
-                    : 'border-[#EDE4D5] bg-[#FAF7F2] text-[#9CA3AF]'
-                }`}
+        {/* current analysis stage / final reveal */}
+        <div className="mt-7 flex min-h-[92px] flex-col items-center justify-center">
+          {!done ? (
+            <div key={step} className="animate-rise flex flex-col items-center gap-2.5">
+              <span
+                className="flex h-11 w-11 items-center justify-center rounded-2xl animate-breathe"
+                style={{ background: 'var(--field-tint)', color: 'var(--field-deep)' }}
               >
-                {isDone ? (
-                  <CheckCircle2 size={15} className="shrink-0 text-[#3F7253]" />
-                ) : isCurrent ? (
-                  <Loader2 size={15} className="shrink-0 animate-spin text-[#E2725B]" />
-                ) : (
-                  <Icon size={15} className="shrink-0 text-[#9CA3AF]" />
-                )}
-                <span className="text-xs font-medium leading-tight">{s.label}</span>
-              </div>
+                <CurIcon size={20} />
+              </span>
+              <h2 className="t-h3 leading-tight text-[var(--ink)]">{isHi ? cur.hi : cur.en}</h2>
+              <p className="text-sm text-[var(--ink-faint)]">{isHi ? cur.hiSub : cur.enSub}</p>
+            </div>
+          ) : (
+            <div className="animate-scale-in flex flex-col items-center gap-2">
+              <h2 className="t-display text-[clamp(1.4rem,4.6vw,2.4rem)] leading-[1.05] text-[var(--ink)]">
+                {isHi ? 'आपकी खेत योजना तैयार है' : 'Your farm strategy is ready'}
+              </h2>
+              <p className="text-sm text-[var(--ink-soft)]">
+                {isHi ? 'आपके खेत के लिए बनाई गई सिफ़ारिशें' : 'Built for your exact field'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* stage rail */}
+        <div className="mt-8 flex items-center gap-2.5" aria-hidden>
+          {STAGES.map((s, i) => {
+            const complete = done || i < step;
+            const current = !done && i === step;
+            const SIcon = s.icon;
+            return (
+              <span
+                key={i}
+                className="grid h-8 w-8 place-items-center rounded-full transition-all duration-500"
+                style={{
+                  background: complete ? 'var(--field)' : current ? 'var(--field-tint)' : 'var(--surface-inset)',
+                  color: complete ? 'var(--ink-invert)' : current ? 'var(--field-deep)' : 'var(--ink-ghost)',
+                  transform: current ? 'scale(1.12)' : 'scale(1)',
+                  boxShadow: current ? '0 0 0 3px var(--field-tint)' : undefined,
+                }}
+              >
+                {complete ? <Check size={14} strokeWidth={3} /> : <SIcon size={14} />}
+              </span>
             );
           })}
+        </div>
+
+        {/* thin progress line */}
+        <div className="mt-6 w-full max-w-sm">
+          <div className="h-1 w-full overflow-hidden rounded-full" style={{ background: 'var(--surface-inset)' }}>
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${percent}%`,
+                background: 'linear-gradient(90deg, var(--field), var(--grain))',
+                transition: 'width 0.6s var(--ease-out)',
+              }}
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-between font-data text-[11px] text-[var(--ink-faint)]">
+            <span>{String(done ? total : Math.min(step + 1, total)).padStart(2, '0')} / {String(total).padStart(2, '0')}</span>
+            <span>{percent}%</span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

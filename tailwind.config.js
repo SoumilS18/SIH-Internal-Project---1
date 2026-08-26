@@ -91,8 +91,10 @@ export default {
         },
       },
       fontFamily: {
-        serif: ['"Fraunces"', 'Georgia', 'serif'],
-        sans: ['"Inter"', 'system-ui', 'sans-serif'],
+        display: ['"Bricolage Grotesque"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
+        // legacy `font-serif` usages now resolve to the new display face
+        serif: ['"Bricolage Grotesque"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
+        sans: ['"Inter"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       keyframes: {

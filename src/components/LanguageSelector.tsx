@@ -55,11 +55,11 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[#EDE4D5] bg-[#FFFFFF] px-3 py-1.5 text-xs font-semibold text-[#1F2937] shadow-xs transition-all hover:border-[#D1D5DB] hover:bg-[#FAF7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E2725B]/40 cursor-pointer"
+        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-xs transition-all hover:border-[var(--line-strong)] hover:bg-[var(--paper)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--glow-field)] cursor-pointer"
       >
-        <Globe size={13} className="text-[#E2725B]" />
+        <Globe size={13} className="text-[var(--grain-deep)]" />
         <span className="font-sans font-medium">{languageOption.label}</span>
-        <ChevronDown size={11} className={`text-[#6B7280] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={11} className={`text-[var(--ink-soft)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Popover Menu (Guaranteed Viewport Safe) */}
@@ -67,20 +67,20 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
         <div
           className={`absolute ${
             computedAlign === 'left' ? 'left-0' : 'right-0'
-          } top-full z-50 mt-2 max-h-[min(420px,75vh)] w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-2.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-[#1F2937] overscroll-contain`}
+          } top-full z-50 mt-2 max-h-[min(420px,75vh)] w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-2.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-[var(--ink)] overscroll-contain`}
           role="listbox"
           aria-label="Select Language"
         >
           {/* Header */}
-          <div className="border-b border-[#EDE4D5] px-2.5 pb-2 pt-1">
-            <span className="font-serif text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">
+          <div className="border-b border-[var(--line)] px-2.5 pb-2 pt-1">
+            <span className="font-serif text-[11px] font-bold text-[var(--ink-soft)] uppercase tracking-wider">
               {isHindi ? 'भाषा चयन' : 'Select Language'}
             </span>
           </div>
 
           {/* SECTION 1: AVAILABLE LANGUAGES */}
           <div className="mt-2">
-            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#2D5A43]">
+            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--field-deep)]">
               {isHindi ? 'उपलब्ध भाषाएं' : 'AVAILABLE NOW'}
             </div>
 
@@ -91,19 +91,19 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
                 onClick={() => handleSelect(ENGLISH_LANGUAGE)}
                 className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors ${
                   language === 'en'
-                    ? 'bg-[#FDEEE9] font-bold text-[#E2725B] border border-[#F9D0C5]'
-                    : 'text-[#1F2937] hover:bg-[#FAF7F2]'
+                    ? 'bg-[var(--grain-tint)] font-bold text-[var(--grain-deep)] border border-[var(--grain-tint)]'
+                    : 'text-[var(--ink)] hover:bg-[var(--paper)]'
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span className="font-medium">English</span>
-                  <span className="text-[10px] text-[#6B7280]">(English)</span>
+                  <span className="text-[10px] text-[var(--ink-soft)]">(English)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="rounded-md bg-[#EAF3ED] px-1.5 py-0.5 text-[9px] font-semibold text-[#2D5A43] border border-[#D4E7DC]">
+                  <span className="rounded-md bg-[var(--field-tint)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--field-deep)] border border-[var(--field-tint)]">
                     AVAILABLE
                   </span>
-                  {language === 'en' && <Check size={13} className="text-[#E2725B]" />}
+                  {language === 'en' && <Check size={13} className="text-[var(--grain-deep)]" />}
                 </div>
               </button>
 
@@ -115,19 +115,19 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
                   onClick={() => handleSelect(l)}
                   className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors ${
                     language === 'hi'
-                      ? 'bg-[#FDEEE9] font-bold text-[#E2725B] border border-[#F9D0C5]'
-                      : 'text-[#1F2937] hover:bg-[#FAF7F2]'
+                      ? 'bg-[var(--grain-tint)] font-bold text-[var(--grain-deep)] border border-[var(--grain-tint)]'
+                      : 'text-[var(--ink)] hover:bg-[var(--paper)]'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className="font-bold">{l.label}</span>
-                    <span className="text-[10px] text-[#6B7280]">({l.english})</span>
+                    <span className="text-[10px] text-[var(--ink-soft)]">({l.english})</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="rounded-md bg-[#EAF3ED] px-1.5 py-0.5 text-[9px] font-semibold text-[#2D5A43] border border-[#D4E7DC]">
+                    <span className="rounded-md bg-[var(--field-tint)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--field-deep)] border border-[var(--field-tint)]">
                       AVAILABLE
                     </span>
-                    {language === 'hi' && <Check size={13} className="text-[#E2725B]" />}
+                    {language === 'hi' && <Check size={13} className="text-[var(--grain-deep)]" />}
                   </div>
                 </button>
               ))}
@@ -135,11 +135,11 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
           </div>
 
           {/* DIVIDER */}
-          <div className="my-2.5 border-t border-[#EDE4D5]" />
+          <div className="my-2.5 border-t border-[var(--line)]" />
 
           {/* SECTION 2: 22 INDIAN LANGUAGES (EIGHTH SCHEDULE) */}
           <div>
-            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B7280]">
+            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-soft)]">
               {isHindi ? '22 भारतीय भाषाएं' : '22 INDIAN LANGUAGES'}
             </div>
 
@@ -155,20 +155,20 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
                     onClick={() => handleSelect(l)}
                     className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-left text-xs transition-colors ${
                       isSelected
-                        ? 'bg-[#FDEEE9] font-bold text-[#E2725B] border border-[#F9D0C5]'
-                        : 'text-[#374151] hover:bg-[#FAF7F2]'
+                        ? 'bg-[var(--grain-tint)] font-bold text-[var(--grain-deep)] border border-[var(--grain-tint)]'
+                        : 'text-[var(--ink-soft)] hover:bg-[var(--paper)]'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <span>{l.label}</span>
-                      <span className="text-[10px] text-[#6B7280]">({l.english})</span>
+                      <span className="text-[10px] text-[var(--ink-soft)]">({l.english})</span>
                     </div>
 
                     <span
                       className={`rounded px-1.5 py-0.5 text-[8px] font-medium tracking-wide ${
                         isAvail
-                          ? 'bg-[#EAF3ED] text-[#2D5A43] border border-[#D4E7DC]'
-                          : 'bg-[#FAF7F2] text-[#9CA3AF] border border-[#EDE4D5]'
+                          ? 'bg-[var(--field-tint)] text-[var(--field-deep)] border border-[var(--field-tint)]'
+                          : 'bg-[var(--paper)] text-[var(--ink-faint)] border border-[var(--line)]'
                       }`}
                     >
                       {isAvail ? 'AVAILABLE' : 'COMING SOON'}

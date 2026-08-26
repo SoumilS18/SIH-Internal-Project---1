@@ -1,49 +1,28 @@
 import React, { useState } from 'react';
 import {
-  Sparkles,
-  ShieldCheck,
-  TrendingUp,
-  Droplets,
-  Calendar,
   ArrowRight,
   ArrowLeft,
-  CheckCircle2,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-  MapPin,
-  Maximize2,
-  IndianRupee,
-  Coins,
-  Activity,
   Layers,
-  HelpCircle,
+  Pencil,
   X,
-  Check,
+  CheckCircle2,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { getCropDisplayName } from '@/i18n/cropNames';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
-import {
-  formatCurrency,
-  formatCurrencyWords,
-  formatArea,
-  formatYield,
-  formatRainfall,
-} from '@/i18n/formatters';
+import { formatCurrency, formatCurrencyWords } from '@/i18n/formatters';
 import {
   translateRiskLevel,
-  translateIrrigationType,
-  translateIrrigationReliability,
   translateSeason,
 } from '@/i18n/enums';
-import {
-  getFarmerWhyCards,
-  getFarmerNextActionSteps,
-  getFarmerRecommendationHeadline,
-} from '@/i18n/semanticAdapter';
 import { DetailedAnalysisView } from '@/components/DetailedAnalysisView';
+import { FarmDigitalTwin } from '@/components/FarmDigitalTwin';
+import { AIAgentOrb } from '@/components/AIAgentOrb';
+import { StatBlock, ProgressRing, AllocationBar, RiskMeter, DonutChart } from '@/components/ui/dataviz';
+import { Reveal, MagneticButton, Counter } from '@/components/ui/motion';
+import { usePrefersReducedMotion } from '@/lib/hooks';
 import type { FarmDecisionResponse } from '@/types/farm';
 
 interface FarmPlanScreenProps {
@@ -52,19 +31,10 @@ interface FarmPlanScreenProps {
   selectedDistrict: string;
   landAcres: number;
   budgetInr: number;
-  irrigationType: 'Borewell' | 'Rainfed' | 'Canal' | 'Drip' | 'Sprinkler';
-  irrigationReliability: 'High' | 'Medium' | 'Low';
   season: 'Kharif' | 'Rabi' | 'Zaid';
-  riskTolerance: 'Conservative' | 'Balanced' | 'Aggressive';
   decision: FarmDecisionResponse | null;
   loading: boolean;
-  onLandAcresChange: (acres: number) => void;
-  onBudgetInrChange: (budget: number) => void;
-  onIrrigationTypeChange: (type: 'Borewell' | 'Rainfed' | 'Canal' | 'Drip' | 'Sprinkler') => void;
-  onIrrigationReliabilityChange: (rel: 'High' | 'Medium' | 'Low') => void;
-  onSeasonChange: (season: 'Kharif' | 'Rabi' | 'Zaid') => void;
-  onRiskToleranceChange: (risk: 'Conservative' | 'Balanced' | 'Aggressive') => void;
-  onRecalculate: () => void;
+  onEditDetails: () => void;
   onChangeLocation: () => void;
   onProceedToSentinel: () => void;
   onLogout: () => void;
@@ -92,50 +62,35 @@ function getCropIcon(cropName: string): string {
   return '🌱';
 }
 
+// palette for allocation segments (theme-aware tokens, matches the twin's language)
+const ALLOC_COLORS = [
+  'var(--field)',
+  'var(--grain)',
+  'var(--sky)',
+  'var(--field-deep)',
+  'var(--soil)',
+  'var(--grain-deep)',
+];
+
 export function FarmPlanScreen({
-  userName = 'Demo Farmer',
   selectedState,
   selectedDistrict,
   landAcres,
   budgetInr,
-  irrigationType,
-  irrigationReliability,
   season,
-  riskTolerance,
   decision,
   loading,
-  onLandAcresChange,
-  onBudgetInrChange,
-  onIrrigationTypeChange,
-  onIrrigationReliabilityChange,
-  onSeasonChange,
-  onRiskToleranceChange,
-  onRecalculate,
+  onEditDetails,
   onChangeLocation,
   onProceedToSentinel,
-  onLogout,
 }: FarmPlanScreenProps) {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const isHi = language === 'hi';
+  const reduced = usePrefersReducedMotion();
 
-  const [isEditingParams, setIsEditingParams] = useState<boolean>(!decision);
   const [showDetailedModal, setShowDetailedModal] = useState<boolean>(false);
   const [showFull7DayModal, setShowFull7DayModal] = useState<boolean>(false);
-  const [showWhyExpanded, setShowWhyExpanded] = useState<boolean>(false);
-
-  const landPresets = [
-    { label: isHi ? '1 एकड़' : '1 Ac', value: 1 },
-    { label: isHi ? '2 एकड़' : '2 Ac', value: 2 },
-    { label: isHi ? '5 एकड़' : '5 Ac', value: 5 },
-    { label: isHi ? '10 एकड़' : '10 Ac', value: 10 },
-  ];
-
-  const budgetPresets = [
-    { label: isHi ? '₹50 हज़ार' : '₹50K', value: 50000 },
-    { label: isHi ? '₹1.2 लाख' : '₹1.2L', value: 120000 },
-    { label: isHi ? '₹2 लाख' : '₹2 Lakh', value: 200000 },
-    { label: isHi ? '₹5 लाख' : '₹5 Lakh', value: 500000 },
-  ];
+  const [activeCrop, setActiveCrop] = useState<string | null>(null);
 
   // Derived decision values
   const allocatedCrops = decision?.allocated_crops || [];
@@ -144,10 +99,48 @@ export function FarmPlanScreen({
   const totalInvestment = farmTotals?.total_investment_inr ?? budgetInr;
   const roiPct = farmTotals?.expected_farm_roi_pct ?? 0;
   const riskLabel = farmTotals?.weighted_risk_label?.toUpperCase() || 'LOW';
+  // Parse fill strength from the RAW English risk so the meter stays correct even when the label is shown in Hindi.
+  const riskLevelNum: 1 | 2 | 3 | 4 = riskLabel.includes('CRIT')
+    ? 4
+    : riskLabel.includes('HIGH')
+      ? 3
+      : riskLabel.includes('MOD')
+        ? 2
+        : 1;
 
-  const whyCards = decision ? getFarmerWhyCards(decision, language) : [];
-  const nextSteps = decision ? getFarmerNextActionSteps(decision, language) : [];
-  const recHeadline = decision ? getFarmerRecommendationHeadline(decision, language) : '';
+  const allocSegments = allocatedCrops.map((c, i) => ({
+    name: getCropDisplayName(c.crop_name, language),
+    share: c.acre_share_pct,
+    color: ALLOC_COLORS[i % ALLOC_COLORS.length],
+  }));
+
+  // Estimated cost breakdown — the backend returns a single total_investment_inr with no
+  // category split, so we model a realistic Labor/Fertilizer/Other/Seeds/Irrigation spread
+  // over the REAL total and surface it as "Estimated". Percentages sum to 1.00.
+  const COST_MODEL: Array<{ key: string; label: string; pct: number; color: string }> = [
+    { key: 'labor', label: isHi ? 'मज़दूरी' : 'Labor', pct: 0.26, color: 'var(--field-deep)' },
+    { key: 'fertilizer', label: isHi ? 'खाद' : 'Fertilizer', pct: 0.22, color: 'var(--field)' },
+    { key: 'other', label: isHi ? 'अन्य लागत' : 'Other inputs', pct: 0.22, color: 'var(--soil)' },
+    { key: 'seeds', label: isHi ? 'बीज' : 'Seeds', pct: 0.18, color: 'var(--grain)' },
+    { key: 'irrigation', label: isHi ? 'सिंचाई' : 'Irrigation', pct: 0.12, color: 'var(--sky)' },
+  ];
+  const costSegments = COST_MODEL.map((c) => ({
+    name: c.label,
+    value: Math.round(totalInvestment * c.pct),
+    pct: c.pct,
+    color: c.color,
+  }));
+
+  // Remount key so the plan-reveal entrance animations replay whenever a new/recalculated plan lands.
+  const planKey = decision
+    ? `${allocatedCrops.map((c) => c.crop_name).join('-')}|${Math.round(netProfit)}|${Math.round(totalInvestment)}`
+    : 'none';
+  const cropLine =
+    allocatedCrops.length > 0
+      ? `${isHi ? 'उगाएं ' : 'Grow '}${allocatedCrops.map((c) => getCropDisplayName(c.crop_name, language)).join(' + ')}`
+      : isHi
+        ? 'अनुकूलित फसल योजना'
+        : 'Optimized crop plan';
 
   // 7-day micro-plan summary days
   const default7Days = [
@@ -161,53 +154,63 @@ export function FarmPlanScreen({
   ];
 
   return (
-    <div className="relative min-h-screen w-full bg-transparent text-[#1F2937] flex flex-col justify-between selection:bg-[#E2725B]/20 selection:text-[#873322]">
+    <div className="relative flex min-h-screen w-full flex-col justify-between text-[var(--ink)] selection:bg-[var(--grain-tint)] selection:text-[var(--grain-deep)]">
       {/* ===================================================================== */}
-      {/* 1. TOP NAVIGATION BAR */}
+      {/* 1. TOP NAVIGATION BAR                                                  */}
       {/* ===================================================================== */}
-      <header className="sticky top-0 z-30 border-b border-[#EDE4D5] bg-[#FAF7F2]/90 backdrop-blur-md px-4 sm:px-8 py-3">
-        <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-3">
-          {/* Logo & Stage Indicator */}
+      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3 backdrop-blur-md sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={onChangeLocation}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#EDE4D5] bg-[#FFFFFF] text-[#4B5563] hover:bg-[#F5EFE6] transition-colors"
+              className="btn-ghost grid h-9 w-9 place-items-center rounded-xl"
               title={isHi ? 'स्थान बदलें' : 'Back to Location Selection'}
+              aria-label={isHi ? 'स्थान बदलें' : 'Back to Location Selection'}
             >
               <ArrowLeft size={16} />
             </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-serif text-lg font-bold tracking-tight text-[#1F2937]">
-                  AgriOptima AI
-                </span>
-                <span className="rounded-full bg-[#EAF3ED] px-2.5 py-0.5 text-[10px] font-semibold text-[#2D5A43] border border-[#D4E7DC]">
-                  {isHi ? 'चरण 3/4: खेत योजना' : 'Step 3/4: Farm Plan'}
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="font-display text-lg font-extrabold tracking-tight text-[var(--ink)]">
+                AgriOptima<span className="text-[var(--field)]"> AI</span>
+              </span>
+              <span className="chip chip-field font-data text-[10px] tracking-wider">
+                {isHi ? 'चरण 04 / 05 · योजना' : 'Step 04 / 05 · Plan'}
+              </span>
             </div>
           </div>
 
-          {/* Quick Tab Breadcrumb & Right Controls */}
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={() => setShowDetailedModal(true)}
-              className="hidden md:flex items-center gap-1.5 rounded-xl border border-[#EDE4D5] bg-[#FFFFFF] px-3 py-1.5 text-xs font-semibold text-[#374151] hover:border-[#D1D5DB] hover:bg-[#F5EFE6] transition-colors"
+              onClick={onEditDetails}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--surface-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:border-[var(--line-strong)] hover:text-[var(--ink)]"
+              title={isHi ? 'विवरण बदलें' : 'Edit details'}
             >
-              <Layers size={14} className="text-[#E2725B]" />
-              <span>{isHi ? 'विस्तृत तकनीकी विश्लेषण' : 'Detailed Analysis'}</span>
+              <Pencil size={13} className="text-[var(--grain-deep)]" />
+              <span className="hidden sm:inline">{isHi ? 'विवरण बदलें' : 'Edit details'}</span>
             </button>
 
+            {decision && (
+              <button
+                type="button"
+                onClick={() => setShowDetailedModal(true)}
+                className="hidden items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--surface-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:border-[var(--line-strong)] hover:text-[var(--ink)] md:flex"
+              >
+                <Layers size={14} className="text-[var(--grain-deep)]" />
+                <span>{isHi ? 'विस्तृत विश्लेषण' : 'Detailed Analysis'}</span>
+              </button>
+            )}
+
             <LanguageSelector />
+            <ThemeToggle />
 
             <button
               type="button"
               onClick={onProceedToSentinel}
-              className="flex items-center gap-1.5 rounded-xl bg-[#E2725B] px-3.5 py-1.5 text-xs font-bold text-[#FFFFFF] shadow-sm hover:bg-[#D9654D] transition-colors cursor-pointer"
+              className="btn btn-primary px-3.5 py-1.5 text-xs"
             >
-              <span>{isHi ? 'सेंटीनेल सहायक' : 'Sentinel Agent'}</span>
+              <span>{isHi ? 'सेंटीनेल' : 'Sentinel'}</span>
               <ArrowRight size={13} />
             </button>
           </div>
@@ -215,558 +218,337 @@ export function FarmPlanScreen({
       </header>
 
       {/* ===================================================================== */}
-      {/* 2. MAIN 2-COLUMN WORKSPACE */}
+      {/* 2. MAIN WORKSPACE                                                      */}
       {/* ===================================================================== */}
-      <main className="flex-1 px-4 sm:px-8 py-6 max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* =================================================================== */}
-          {/* LEFT COLUMN: "YOUR FARM" (32% width) */}
-          {/* =================================================================== */}
-          <div className="lg:col-span-4 space-y-4">
-            <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-5 shadow-sm space-y-4">
-              
-              {/* Header with Edit Toggle */}
-              <div className="flex items-center justify-between border-b border-[#EDE4D5] pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#EAF3ED] text-[#2D5A43] text-sm">
-                    🌾
-                  </span>
-                  <h2 className="font-serif text-base font-bold text-[#1F2937]">
-                    {isHi ? 'आपका खेत' : 'Your Farm'}
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingParams(!isEditingParams)}
-                  className="text-xs font-semibold text-[#E2725B] hover:text-[#B54832] transition-colors"
-                >
-                  {isEditingParams ? (isHi ? 'पूर्ण' : 'Done') : (isHi ? 'बदलें' : 'Edit Details')}
-                </button>
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8">
+        {!decision ? (
+          /* ---------- DEFENSIVE: plan still finalizing ---------- */
+          <div className="grid min-h-[60vh] place-items-center">
+            <div className="flex max-w-md flex-col items-center gap-4 text-center">
+              <AIAgentOrb state="analyzing" size={120} />
+              <div>
+                <h2 className="t-h3 text-[var(--ink)]">
+                  {isHi ? 'आपकी योजना तैयार की जा रही है…' : 'Finalizing your plan…'}
+                </h2>
+                <p className="mt-1 text-sm text-[var(--ink-soft)]">
+                  {isHi ? 'कृपया एक क्षण प्रतीक्षा करें।' : 'This will only take a moment.'}
+                </p>
               </div>
-
-              {/* Location Tag */}
-              <div className="flex items-center justify-between rounded-xl bg-[#FAF7F2] border border-[#EDE4D5] p-3">
-                <div className="flex items-center gap-2">
-                  <MapPin size={15} className="text-[#E2725B] shrink-0" />
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-[#6B7280] block">
-                      {isHi ? 'खेत का स्थान' : 'Farm Location'}
-                    </span>
-                    <span className="text-xs font-bold text-[#1F2937]">
-                      {getDistrictDisplayName(selectedDistrict, language)}, {getStateDisplayName(selectedState, language)}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={onChangeLocation}
-                  className="text-[11px] font-semibold text-[#2D5A43] hover:underline"
-                >
-                  {isHi ? 'बदलें' : 'Change'}
-                </button>
-              </div>
-
-              {/* Farm Parameters (Read or Quick Edit Mode) */}
-              {!isEditingParams ? (
-                /* Compact Summary Cards */
-                <div className="space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#FAF7F2]">
-                    <span className="text-[#6B7280]">{isHi ? 'जमीन का आकार' : 'Land Size'}</span>
-                    <span className="font-bold text-[#1F2937]">{landAcres} {isHi ? 'एकड़' : 'Acres'}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#FAF7F2]">
-                    <span className="text-[#6B7280]">{isHi ? 'निवेश बजट' : 'Investment Budget'}</span>
-                    <span className="font-bold text-[#1F2937]">{formatCurrency(budgetInr, language)}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#FAF7F2]">
-                    <span className="text-[#6B7280]">{isHi ? 'सिंचाई साधन' : 'Irrigation'}</span>
-                    <span className="font-bold text-[#1F2937]">{translateIrrigationType(irrigationType, language)} ({translateIrrigationReliability(irrigationReliability, language)})</span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#FAF7F2]">
-                    <span className="text-[#6B7280]">{isHi ? 'फसल मौसम' : 'Season'}</span>
-                    <span className="font-bold text-[#1F2937]">{translateSeason(season, language)}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1.5">
-                    <span className="text-[#6B7280]">{isHi ? 'जोखिम स्तर' : 'Risk Level'}</span>
-                    <span className="font-bold text-[#1F2937]">{riskTolerance}</span>
-                  </div>
-                </div>
-              ) : (
-                /* Quick Edit Form */
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setIsEditingParams(false);
-                    onRecalculate();
-                  }}
-                  className="space-y-3.5 text-xs pt-1"
-                >
-                  {/* Land Size */}
-                  <div>
-                    <label className="block font-semibold text-[#374151] mb-1">
-                      {isHi ? 'जमीन का आकार (एकड़):' : 'Land Size (Acres):'}
-                    </label>
-                    <input
-                      type="number"
-                      min="0.5"
-                      max="100"
-                      step="0.5"
-                      value={landAcres}
-                      onChange={(e) => onLandAcresChange(parseFloat(e.target.value) || 1)}
-                      className="w-full rounded-xl border border-[#D1D5DB] bg-[#FAF7F2] px-3 py-2 text-xs font-semibold focus:border-[#E2725B] focus:bg-[#FFFFFF] focus:outline-none"
-                    />
-                    <div className="flex gap-1 mt-1.5">
-                      {landPresets.map((p) => (
-                        <button
-                          key={p.value}
-                          type="button"
-                          onClick={() => onLandAcresChange(p.value)}
-                          className={`rounded-lg px-2 py-0.5 text-[10px] font-medium ${
-                            landAcres === p.value
-                              ? 'bg-[#E2725B] text-white font-bold'
-                              : 'bg-[#FAF7F2] border border-[#EDE4D5] text-[#6B7280]'
-                          }`}
-                        >
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Budget */}
-                  <div>
-                    <label className="block font-semibold text-[#374151] mb-1">
-                      {isHi ? 'निवेश बजट (₹):' : 'Investment Budget (₹):'}
-                    </label>
-                    <input
-                      type="number"
-                      min="5000"
-                      step="5000"
-                      value={budgetInr}
-                      onChange={(e) => onBudgetInrChange(parseInt(e.target.value, 10) || 50000)}
-                      className="w-full rounded-xl border border-[#D1D5DB] bg-[#FAF7F2] px-3 py-2 text-xs font-semibold focus:border-[#E2725B] focus:bg-[#FFFFFF] focus:outline-none"
-                    />
-                    <div className="flex gap-1 mt-1.5">
-                      {budgetPresets.map((p) => (
-                        <button
-                          key={p.value}
-                          type="button"
-                          onClick={() => onBudgetInrChange(p.value)}
-                          className={`rounded-lg px-2 py-0.5 text-[10px] font-medium ${
-                            budgetInr === p.value
-                              ? 'bg-[#E2725B] text-white font-bold'
-                              : 'bg-[#FAF7F2] border border-[#EDE4D5] text-[#6B7280]'
-                          }`}
-                        >
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Irrigation Type */}
-                  <div>
-                    <label className="block font-semibold text-[#374151] mb-1">
-                      {isHi ? 'सिंचाई साधन:' : 'Irrigation Source:'}
-                    </label>
-                    <select
-                      value={irrigationType}
-                      onChange={(e) => onIrrigationTypeChange(e.target.value as any)}
-                      className="w-full rounded-xl border border-[#D1D5DB] bg-[#FAF7F2] px-3 py-2 text-xs font-medium focus:border-[#E2725B] focus:outline-none"
-                    >
-                      <option value="Borewell">{isHi ? 'बोरवेल (Borewell)' : 'Borewell'}</option>
-                      <option value="Canal">{isHi ? 'नहर (Canal)' : 'Canal'}</option>
-                      <option value="Drip">{isHi ? 'ड्रिप सिंचाई (Drip)' : 'Drip'}</option>
-                      <option value="Sprinkler">{isHi ? 'फव्वारा (Sprinkler)' : 'Sprinkler'}</option>
-                      <option value="Rainfed">{isHi ? 'वर्षा आधारित (Rainfed)' : 'Rainfed'}</option>
-                    </select>
-                  </div>
-
-                  {/* Season */}
-                  <div>
-                    <label className="block font-semibold text-[#374151] mb-1">
-                      {isHi ? 'फसल मौसम:' : 'Crop Season:'}
-                    </label>
-                    <select
-                      value={season}
-                      onChange={(e) => onSeasonChange(e.target.value as any)}
-                      className="w-full rounded-xl border border-[#D1D5DB] bg-[#FAF7F2] px-3 py-2 text-xs font-medium focus:border-[#E2725B] focus:outline-none"
-                    >
-                      <option value="Kharif">{isHi ? 'खरीफ (Kharif)' : 'Kharif'}</option>
-                      <option value="Rabi">{isHi ? 'रबी (Rabi)' : 'Rabi'}</option>
-                      <option value="Zaid">{isHi ? 'जायद (Zaid)' : 'Zaid'}</option>
-                    </select>
-                  </div>
-
-                  {/* Risk Preference */}
-                  <div>
-                    <label className="block font-semibold text-[#374151] mb-1">
-                      {isHi ? 'जोखिम लेने की क्षमता:' : 'Risk Tolerance:'}
-                    </label>
-                    <div className="grid grid-cols-3 gap-1">
-                      {(['Conservative', 'Balanced', 'Aggressive'] as const).map((r) => (
-                        <button
-                          key={r}
-                          type="button"
-                          onClick={() => onRiskToleranceChange(r)}
-                          className={`rounded-lg py-1.5 text-[10px] font-semibold transition-colors ${
-                            riskTolerance === r
-                              ? 'bg-[#2D5A43] text-white'
-                              : 'bg-[#FAF7F2] border border-[#EDE4D5] text-[#6B7280]'
-                          }`}
-                        >
-                          {r}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Submit Update Button */}
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className={`w-full rounded-xl py-3 text-xs font-bold text-white shadow-sm transition-all cursor-pointer ${
-                      !decision
-                        ? 'bg-[#E2725B] hover:bg-[#D9654D] shadow-md hover:shadow-lg'
-                        : 'bg-[#2D5A43] hover:bg-[#224432]'
-                    }`}
-                  >
-                    {loading
-                      ? (isHi ? 'गणना हो रही है...' : 'Calculating Optimal Plan...')
-                      : !decision
-                      ? (isHi ? 'AI खेत योजना तैयार करें →' : 'Generate AI Farm Plan →')
-                      : (isHi ? 'योजना अपडेट करें' : 'Update Farm Plan')}
-                  </button>
-                </form>
-              )}
-
-              {/* Recalculate CTA */}
-              {!isEditingParams && decision && (
-                <button
-                  type="button"
-                  onClick={onRecalculate}
-                  disabled={loading}
-                  className="w-full rounded-xl border border-[#D4E7DC] bg-[#EAF3ED] py-2.5 text-xs font-semibold text-[#2D5A43] hover:bg-[#D4E7DC] transition-colors cursor-pointer"
-                >
-                  {loading ? (isHi ? 'गणना हो रही है...' : 'Optimizing...') : (isHi ? 'योजना पुनः अनुकूलित करें' : 'Re-Optimize Plan')}
-                </button>
-              )}
-
+              <button type="button" onClick={onEditDetails} className="btn-ghost text-sm">
+                {isHi ? '← विवरण पर लौटें' : '← Back to details'}
+              </button>
             </div>
           </div>
-
-          {/* =================================================================== */}
-          {/* RIGHT COLUMN: "YOUR RECOMMENDED PLAN" or "CONFIGURE FARM DETAILS" */}
-          {/* =================================================================== */}
-          <div className="lg:col-span-8 space-y-5">
-            
-            {/* INITIAL ZERO-ASSUMPTION PROMPT (Shown when farmer has not generated plan yet) */}
-            {!decision ? (
-              <div className="rounded-3xl border border-[#EDE4D5] bg-[#FFFFFF] p-8 sm:p-12 shadow-[0_4px_25px_rgba(56,49,39,0.04)] text-center space-y-6">
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[#FDEEE9] text-[#E2725B] text-4xl shadow-inner">
-                  🌱
-                </div>
-
-                <div className="max-w-lg mx-auto space-y-2.5">
-                  <div className="inline-flex items-center gap-1.5 rounded-full border border-[#D4E7DC] bg-[#EAF3ED] px-3.5 py-1 text-xs font-semibold text-[#2D5A43]">
-                    <MapPin size={13} className="text-[#3F7253]" />
-                    <span>{getDistrictDisplayName(selectedDistrict, language)}, {getStateDisplayName(selectedState, language)}</span>
-                  </div>
-
-                  <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#1F2937] tracking-tight">
-                    {isHi ? 'अपने खेत का विवरण दर्ज करें' : 'Ready to Generate Your Farm Plan'}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-[#6B7280] leading-relaxed">
-                    {isHi
-                      ? 'बाईं ओर अपनी जमीन का आकार, बजट और सिंचाई का साधन दर्ज करें। फिर "AI खेत योजना तैयार करें" पर क्लिक करें ताकि आपके खेत के अनुसार वास्तविक फसल योजना प्राप्त हो सके।'
-                      : 'Please enter your actual land acreage, investment capital, and irrigation details on the left, then click "Generate AI Farm Plan" to calculate your personalized crop portfolio.'}
-                  </p>
-                </div>
-
-                {/* 3 Step Guidance Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 max-w-2xl mx-auto pt-3 text-left">
-                  <div className="rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-4">
-                    <span className="text-xs font-bold text-[#2D5A43] block mb-1">
-                      1. {isHi ? 'जमीन व बजट' : 'Land & Budget'}
-                    </span>
-                    <p className="text-[11px] text-[#6B7280] leading-snug">
-                      {isHi ? 'अपनी उपलब्ध खेती योग्य भूमि और कार्यशील पूंजी दर्ज करें।' : 'Input your available land acres and working capital.'}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-4">
-                    <span className="text-xs font-bold text-[#2A7575] block mb-1">
-                      2. {isHi ? 'सिंचाई व मौसम' : 'Water & Season'}
-                    </span>
-                    <p className="text-[11px] text-[#6B7280] leading-snug">
-                      {isHi ? 'बोरवेल, नहर, ड्रिप, फव्वारा या वर्षा आधारित साधन।' : 'Select borewell, canal, drip, sprinkler, or rainfed.'}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-4">
-                    <span className="text-xs font-bold text-[#E2725B] block mb-1">
-                      3. {isHi ? 'अनुकूलित AI योजना' : 'AI Crop Plan'}
-                    </span>
-                    <p className="text-[11px] text-[#6B7280] leading-snug">
-                      {isHi ? 'गणितीय LP इंजन द्वारा अधिकतम शुद्ध मुनाफा।' : 'Deterministic LP solver optimizes for maximum profit.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-5">
-            {/* HERO RECOMMENDATION CARD */}
-            <div className="rounded-3xl border border-[#EDE4D5] bg-[#FFFFFF] p-6 sm:p-7 shadow-[0_4px_25px_rgba(56,49,39,0.04)] space-y-6">
-              
-              {/* Hero Title & Confidence Badge */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EDE4D5] pb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#E2725B]">
-                      {isHi ? 'सर्वोत्तम AI सिफारिश' : 'Recommended Farm Plan'}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#EAF3ED] px-2 py-0.5 text-[9px] font-semibold text-[#2D5A43] border border-[#D4E7DC]">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#3F7253] animate-pulse" />
-                      <span>{isHi ? 'विश्वसनीयता: उच्च' : 'Confidence: High'}</span>
-                    </span>
-                  </div>
-                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#1F2937] tracking-tight mt-0.5">
-                    {recHeadline || (allocatedCrops.length > 0
-                      ? `${isHi ? 'उगाएं' : 'Grow'} ${allocatedCrops.map(c => getCropDisplayName(c.crop_name, language)).join(' + ')}`
-                      : (isHi ? 'अनुकूलित फसल योजना' : 'Optimal Farm Portfolio'))}
-                  </h2>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="rounded-xl border border-[#D4E7DC] bg-[#EAF3ED] px-3 py-1.5 text-xs font-bold text-[#2D5A43]">
-                    {translateSeason(season, language)} 2026
-                  </span>
-                </div>
-              </div>
-
-              {/* RECOMMENDED CROP ALLOCATION CARDS */}
-              <div>
-                <span className="text-xs font-bold text-[#374151] block mb-2.5">
-                  {isHi ? 'फसल आवंटन एवं अनुमानित लाभ' : 'Recommended Crops & Acreage'}
-                </span>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {allocatedCrops.map((crop, idx) => {
-                    const sharePct = ((crop.allocated_acres / (decision?.farm_totals.total_allocated_acres || 1)) * 100).toFixed(0);
-                    return (
-                      <div
-                        key={idx}
-                        className="rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-4 transition-all hover:border-[#D4E7DC] hover:shadow-sm"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-2xl">{getCropIcon(crop.crop_name)}</span>
-                          <span className="rounded-full bg-[#FFFFFF] px-2 py-0.5 text-[10px] font-bold text-[#2D5A43] border border-[#EDE4D5]">
-                            {sharePct}% {isHi ? 'हिस्सा' : 'Share'}
-                          </span>
-                        </div>
-
-                        <h3 className="font-serif text-base font-bold text-[#1F2937]">
-                          {getCropDisplayName(crop.crop_name, language)}
-                        </h3>
-                        <p className="text-xs font-semibold text-[#E2725B] mt-0.5">
-                          {crop.allocated_acres.toFixed(1)} {isHi ? 'एकड़' : 'Acres'}
-                        </p>
-
-                        <div className="mt-3 pt-2.5 border-t border-[#EDE4D5] space-y-1 text-[11px]">
-                          <div className="flex justify-between text-[#6B7280]">
-                            <span>{isHi ? 'अनुमानित उपज' : 'Est. Yield'}:</span>
-                            <span className="font-medium text-[#1F2937]">{crop.expected_yield_qtl_acre.toFixed(1)} Q/Ac</span>
-                          </div>
-                          <div className="flex justify-between text-[#6B7280]">
-                            <span>{isHi ? 'अनुमानित लाभ' : 'Est. Profit'}:</span>
-                            <span className="font-bold text-[#2D5A43]">{formatCurrency(crop.net_profit_inr, language)}</span>
-                          </div>
-                        </div>
+        ) : (
+          /* ---------- PLAN REVEAL (full width) ---------- */
+          <div className="space-y-6" key={planKey}>
+                {/* PLAN SURFACE — headline on top, twin + cost parallel, stats below both */}
+                <Reveal className="panel-elevated overflow-hidden p-6 sm:p-7">
+                  {/* headline — large brand-gradient block heading with a reveal wipe */}
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="max-w-2xl">
+                      <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-[var(--field)]" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
+                        </span>
+                        {isHi ? `सर्वोत्तम योजना · ${translateSeason(season, language)} 2026` : `Recommended plan · ${translateSeason(season, language)} 2026`}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* FINANCIAL SUMMARY STRIP (Hero 4 Key Metrics) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                <div className="rounded-2xl border border-[#D4E7DC] bg-[#EAF3ED] p-3.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#2D5A43] block">
-                    {isHi ? 'कुल अनुमानित लाभ' : 'Total Expected Profit'}
-                  </span>
-                  <p className="font-serif text-base sm:text-lg font-bold text-[#1F2937] mt-0.5">
-                    {formatCurrency(netProfit, language)}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-3.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B7280] block">
-                    {isHi ? 'कुल आवश्यक निवेश' : 'Total Investment'}
-                  </span>
-                  <p className="font-serif text-base sm:text-lg font-bold text-[#1F2937] mt-0.5">
-                    {formatCurrency(totalInvestment, language)}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-3.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B7280] block">
-                    {isHi ? 'अनुमानित रिटर्न (ROI)' : 'Expected ROI'}
-                  </span>
-                  <p className="font-serif text-base sm:text-lg font-bold text-[#2D5A43] mt-0.5">
-                    +{roiPct.toFixed(1)}%
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-3.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B7280] block">
-                    {isHi ? 'जोखिम स्तर' : 'Risk Level'}
-                  </span>
-                  <p className="font-serif text-base sm:text-lg font-bold text-[#E2725B] mt-0.5">
-                    {translateRiskLevel(riskLabel, language)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* =============================================================== */}
-            {/* 7-DAY MICRO PLAN SECTION */}
-              {/* =============================================================== */}
-              <div className="rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-serif text-sm sm:text-base font-bold text-[#1F2937]">
-                      {isHi ? '7-दिवसीय कृषि कार्ययोजना' : '7-Day Farm Action Plan'}
-                    </h3>
-                    <p className="text-[11px] text-[#6B7280]">
-                      {isHi ? 'लाइव मौसम और बुवाई खिड़की के अनुसार इस सप्ताह की योजना' : 'Next 7 days action plan for your farm'}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowFull7DayModal(true)}
-                    className="text-xs font-semibold text-[#E2725B] hover:underline cursor-pointer"
-                  >
-                    {isHi ? 'पूरी योजना देखें' : 'View Full Plan'}
-                  </button>
-                </div>
-
-                {/* 7-Day Micro Cards Strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 pt-1">
-                  {default7Days.map((step) => (
-                    <div
-                      key={step.day}
-                      className="rounded-xl border border-[#EDE4D5] bg-[#FFFFFF] p-2.5 text-center shadow-xs"
-                    >
-                      <span className="text-[9px] font-mono font-bold text-[#E2725B] uppercase block">
-                        {isHi ? `दिन ${step.day}` : `Day ${step.day}`}
-                      </span>
-                      <h4 className="text-xs font-bold text-[#1F2937] mt-0.5 truncate">
-                        {step.title}
-                      </h4>
-                      <p className="text-[10px] text-[#6B7280] mt-1 leading-tight line-clamp-2">
-                        {step.desc}
+                      <h2 className="plan-title animate-plan-title mt-3">{cropLine}</h2>
+                      <p className="animate-plan-sub mt-3 text-[0.95rem] font-medium text-[var(--ink-soft)]">
+                        {landAcres} {isHi ? 'एकड़' : 'acres'} · {getDistrictDisplayName(selectedDistrict, language)}, {getStateDisplayName(selectedState, language)}
                       </p>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <span className="chip chip-field shrink-0 text-[11px]">
+                      <CheckCircle2 size={13} />
+                      {isHi ? 'विश्वसनीयता: उच्च' : 'Confidence: High'}
+                    </span>
+                  </div>
 
-              {/* =============================================================== */}
-              {/* WHY WE RECOMMEND THIS (Progressive Disclosure) */}
-              {/* =============================================================== */}
-              <div className="rounded-2xl border border-[#EDE4D5] bg-[#FFFFFF] p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif text-sm sm:text-base font-bold text-[#1F2937]">
-                    {isHi ? 'हम यह सिफारिश क्यों कर रहे हैं?' : 'Why are we recommending this?'}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setShowWhyExpanded(!showWhyExpanded)}
-                    className="flex items-center gap-1 text-xs font-semibold text-[#6B7280] hover:text-[#1F2937]"
-                  >
-                    <span>{showWhyExpanded ? (isHi ? 'संक्षिप्त' : 'Less') : (isHi ? 'विस्तार' : 'More')}</span>
-                    {showWhyExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                  {whyCards.slice(0, showWhyExpanded ? whyCards.length : 4).map((c, i) => (
-                    <div key={i} className="flex items-start gap-2.5 rounded-xl bg-[#FAF7F2] p-3 border border-[#EDE4D5]">
-                      <span className="text-base shrink-0 mt-0.5">{c.icon}</span>
-                      <div>
-                        <span className="font-bold text-[#1F2937] block">{c.title}</span>
-                        <p className="text-[11px] text-[#6B7280] mt-0.5 leading-snug">{c.explanation}</p>
+                  {/* TWIN + COST — the field and where the money goes, side by side */}
+                  <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-0">
+                    <div className="flex flex-col justify-center lg:col-span-3 lg:pr-7">
+                      {/* twin centerpiece — now showing the REAL allocation */}
+                      <div className="relative">
+                        <FarmDigitalTwin
+                          decision={decision}
+                          height={380}
+                          interactive
+                          showWeather
+                          scanning={loading}
+                          selectedCrop={activeCrop}
+                          onSelectCrop={setActiveCrop}
+                          className="w-full"
+                        />
+                        <span className="t-eyebrow absolute bottom-1 left-1 text-[var(--ink-ghost)]">
+                          {isHi ? 'आपका डिजिटल फार्म ट्विन' : 'Your digital farm twin'}
+                        </span>
                       </div>
                     </div>
-                  ))}
-                </div>
 
-                <div className="pt-2 flex justify-end">
+                    <div className="flex flex-col border-t border-[var(--line)] pt-5 lg:col-span-2 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
+                            {isHi ? 'आपका पैसा कहाँ लगेगा' : 'Where your money goes'}
+                          </h3>
+                          <p className="mt-1 text-[13px] text-[var(--ink-soft)]">
+                            {isHi ? 'अनुमानित कुल लागत' : 'Estimated total cost'} ·{' '}
+                            <span className="font-data font-semibold text-[var(--ink)]">
+                              ₹{Math.round(totalInvestment).toLocaleString('en-IN')}
+                            </span>
+                          </p>
+                        </div>
+                        <span className="chip chip-grain shrink-0 text-[10px]">{isHi ? 'अनुमानित' : 'Estimated'}</span>
+                      </div>
+                      <div className="mt-5 flex flex-1 flex-col items-center justify-center gap-6">
+                        <DonutChart
+                          segments={costSegments}
+                          size={210}
+                          thickness={26}
+                          className="shrink-0"
+                          centerTop={<Counter value={Math.round(totalInvestment)} prefix="₹" />}
+                          centerBottom={isHi ? 'कुल लागत' : 'Total cost'}
+                        />
+                        <div className="grid w-full grid-cols-1 gap-x-6 gap-y-2.5 sm:grid-cols-2">
+                          {costSegments.map((s) => (
+                            <div
+                              key={s.name}
+                              className="flex items-center justify-between gap-3 border-b border-[var(--line)] pb-2"
+                            >
+                              <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--ink-soft)]">
+                                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: s.color }} />
+                                {s.name}
+                              </span>
+                              <span className="font-data text-sm font-bold text-[var(--ink)]">
+                                {Math.round(s.pct * 100)}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* animated stats — open, hairline-divided (no inner cards) */}
+                  <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-[var(--line)] pt-6 lg:grid-cols-4 lg:gap-x-0 lg:divide-x lg:divide-[var(--line)]">
+                    <StatBlock
+                      label={isHi ? 'कुल अनुमानित लाभ' : 'Expected profit'}
+                      value={netProfit}
+                      prefix="₹"
+                      compactINR
+                      tone="field"
+                      className="lg:pr-4"
+                      sub={formatCurrencyWords(netProfit, language)}
+                    />
+                    <div className="grid place-items-center lg:px-2">
+                      <ProgressRing
+                        value={Math.max(0, Math.min(100, roiPct))}
+                        size={116}
+                        stroke={9}
+                        tone="grain"
+                        centerTop={<Counter value={roiPct} decimals={0} prefix="+" suffix="%" />}
+                        centerBottom={isHi ? 'रिटर्न' : 'ROI'}
+                      />
+                    </div>
+                    <StatBlock
+                      label={isHi ? 'कुल निवेश' : 'Total investment'}
+                      value={totalInvestment}
+                      prefix="₹"
+                      compactINR
+                      tone="sky"
+                      className="lg:px-4"
+                      sub={formatCurrencyWords(totalInvestment, language)}
+                    />
+                    <div className="lg:pl-4">
+                      <div className="t-eyebrow mb-2">{isHi ? 'जोखिम स्तर' : 'Risk level'}</div>
+                      <RiskMeter
+                        label={translateRiskLevel(riskLabel, language)}
+                        level={riskLevelNum}
+                        caption={`${allocatedCrops.length} ${isHi ? 'फसलें' : 'crops'}`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* allocation bar + legend */}
+                  <div className="mt-6 border-t border-[var(--line)] pt-5">
+                    <div className="t-eyebrow mb-2.5">{isHi ? 'फसल आवंटन' : 'Crop allocation'}</div>
+                    <AllocationBar segments={allocSegments} />
+                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+                      {allocSegments.map((s) => (
+                        <span key={s.name} className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ink-soft)]">
+                          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: s.color }} />
+                          {s.name} · {s.share.toFixed(0)}%
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </Reveal>
+
+                {/* CROP DETAIL — clean hairline rows (not a 3-col card grid) */}
+                <Reveal className="panel p-5 sm:p-6" delay={60}>
+                  <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
+                    {isHi ? 'फसलें, रकबा और अनुमानित लाभ' : 'Crops, acreage & expected profit'}
+                  </h3>
+                  <div className="mt-3 divide-y divide-[var(--line)]">
+                    {allocatedCrops.map((crop, idx) => {
+                      const share = crop.acre_share_pct;
+                      const isActive = activeCrop === crop.crop_name;
+                      return (
+                        <button
+                          type="button"
+                          key={idx}
+                          onMouseEnter={() => setActiveCrop(crop.crop_name)}
+                          onFocus={() => setActiveCrop(crop.crop_name)}
+                          onMouseLeave={() => setActiveCrop(null)}
+                          onBlur={() => setActiveCrop(null)}
+                          className={`flex w-full items-center gap-4 py-3.5 text-left transition-colors ${isActive ? 'bg-[var(--surface-inset)]' : ''}`}
+                        >
+                          <span
+                            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-xl leaf-radius"
+                            style={{ background: 'var(--field-tint)' }}
+                          >
+                            {getCropIcon(crop.crop_name)}
+                          </span>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className="truncate font-display text-sm font-bold text-[var(--ink)]">
+                                {getCropDisplayName(crop.crop_name, language)}
+                              </span>
+                              <span className="shrink-0 font-data text-[11px] text-[var(--ink-faint)]">
+                                {crop.allocated_acres.toFixed(1)} {isHi ? 'एकड़' : 'ac'} · {share.toFixed(0)}%
+                              </span>
+                            </div>
+                            {/* per-crop share track */}
+                            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-inset)]">
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${Math.max(4, Math.min(100, share))}%`,
+                                  background: ALLOC_COLORS[idx % ALLOC_COLORS.length],
+                                  transition: reduced ? undefined : 'width 1s var(--ease-out)',
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="hidden shrink-0 text-right sm:block">
+                            <span className="t-eyebrow block text-[0.5rem]">{isHi ? 'लाभ' : 'Profit'}</span>
+                            <span className="font-display text-sm font-bold text-[var(--field-deep)]">
+                              {formatCurrency(crop.net_profit_inr, language)}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Reveal>
+
+                {/* 7-DAY — connected horizontal timeline */}
+                <Reveal className="panel p-5 sm:p-6" delay={90}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
+                        {isHi ? '7-दिवसीय कार्ययोजना' : '7-day action plan'}
+                      </h3>
+                      <p className="text-[11px] text-[var(--ink-soft)]">
+                        {isHi ? 'इस सप्ताह आपके खेत के लिए' : 'For your farm, this week'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowFull7DayModal(true)}
+                      className="text-xs font-semibold text-[var(--grain-deep)] transition-colors hover:text-[var(--field)]"
+                    >
+                      {isHi ? 'पूरी योजना →' : 'Full plan →'}
+                    </button>
+                  </div>
+
+                  <div className="mt-4 flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+                    {default7Days.map((step, i) => (
+                      <div key={step.day} className="relative flex min-w-[124px] flex-1 flex-col">
+                        {/* connector line */}
+                        {i < default7Days.length - 1 && (
+                          <span className="absolute left-[26px] top-[10px] hidden h-px w-full bg-[var(--line)] sm:block" aria-hidden />
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--field)] font-data text-[9px] font-bold text-white">
+                            {step.day}
+                          </span>
+                          <span className="t-eyebrow text-[0.5rem]">{isHi ? `दिन ${step.day}` : `Day ${step.day}`}</span>
+                        </div>
+                        <h4 className="mt-2 text-xs font-bold text-[var(--ink)]">{step.title}</h4>
+                        <p className="mt-0.5 text-[10px] leading-tight text-[var(--ink-soft)]">{step.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </Reveal>
+
+                {/* DEEPER — the full scientific & mathematical breakdown */}
+                <Reveal className="flex justify-end" delay={120}>
                   <button
                     type="button"
                     onClick={() => setShowDetailedModal(true)}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E2725B] hover:text-[#B54832] transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--grain-deep)] transition-colors hover:text-[var(--field)]"
                   >
-                    <span>{isHi ? 'वैज्ञानिक एवं गणितीय विश्लेषण देखें →' : 'See Detailed Mathematical & Agro Analysis →'}</span>
+                    {isHi ? 'वैज्ञानिक व गणितीय विश्लेषण देखें →' : 'See the scientific & mathematical analysis →'}
                   </button>
-                </div>
-              </div>
+                </Reveal>
 
-              {/* PROCEED TO AUTONOMOUS SENTINEL CTA */}
-              <div className="rounded-2xl border border-[#F9D0C5] bg-gradient-to-r from-[#FDEEE9] to-[#FAF7F2] p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-serif text-base font-bold text-[#1F2937]">
-                    {isHi ? 'स्वायत्त खेत सहायक सक्रिय करें' : 'Next Step: Autonomous Sentinel Monitoring'}
-                  </h3>
-                  <p className="text-xs text-[#6B7280] mt-0.5 max-w-lg">
-                    {isHi
-                      ? 'योजना बन जाने के बाद, एग्रीऑप्टिमा सेंटीनेल मौसम, बीमारी और मंडी भाव की 24/7 निगरानी रखता है।'
-                      : 'After planning, Sentinel continuously monitors weather, crop stress, and market changes 24/7.'}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={onProceedToSentinel}
-                  className="shrink-0 flex items-center gap-2 rounded-xl bg-[#E2725B] px-5 py-3 text-xs font-bold text-white shadow-sm hover:bg-[#D9654D] transition-colors cursor-pointer"
+                {/* SENTINEL CTA — de-boxed gradient banner with the intelligence core */}
+                <Reveal
+                  className="relative flex flex-col items-center justify-between gap-4 overflow-hidden rounded-3xl border border-[var(--grain-tint)] p-5 sm:flex-row sm:p-6"
+                  delay={150}
+                  style={{ background: 'linear-gradient(100deg, var(--grain-tint), var(--surface))' }}
                 >
-                  <span>{isHi ? 'सेंटीनेल चालू करें' : 'Proceed to Autonomous Sentinel'}</span>
-                  <ArrowRight size={15} />
-                </button>
+                  <div className="flex items-center gap-4">
+                    <AIAgentOrb state="idle" size={52} />
+                    <div>
+                      <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
+                        {isHi ? 'स्वायत्त सेंटीनेल सक्रिय करें' : 'Activate the autonomous Sentinel'}
+                      </h3>
+                      <p className="mt-0.5 max-w-lg text-xs text-[var(--ink-soft)]">
+                        {isHi
+                          ? 'योजना बनने के बाद सेंटीनेल मौसम, फसल तनाव और मंडी भाव की 24/7 निगरानी करता है।'
+                          : 'Once the plan is set, Sentinel watches weather, crop stress and mandi prices 24/7.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <MagneticButton
+                    type="button"
+                    onClick={onProceedToSentinel}
+                    className="btn btn-primary group shrink-0 text-sm"
+                  >
+                    <span>{isHi ? 'सेंटीनेल चालू करें' : 'Proceed to Sentinel'}</span>
+                    <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+                  </MagneticButton>
+                </Reveal>
               </div>
-            </div>
             )}
-
-          </div>
-
-        </div>
       </main>
 
       {/* ===================================================================== */}
-      {/* 3. FULL 7-DAY ACTION PLAN MODAL */}
+      {/* 3. FULL 7-DAY ACTION PLAN MODAL                                        */}
       {/* ===================================================================== */}
       {showFull7DayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-3xl border border-[#EDE4D5] bg-[#FFFFFF] p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#EDE4D5] pb-3">
+          <div className="max-h-[85vh] w-full max-w-2xl space-y-4 overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface-elevated)] p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
               <div>
-                <h3 className="font-serif text-lg font-bold text-[#1F2937]">
+                <h3 className="font-display text-lg font-bold text-[var(--ink)]">
                   {isHi ? 'विस्तृत 7-दिवसीय खेत कार्ययोजना' : 'Comprehensive 7-Day Farm Action Plan'}
                 </h3>
-                <p className="text-xs text-[#6B7280]">
+                <p className="text-xs text-[var(--ink-soft)]">
                   {isHi ? 'आपके खेत व मिट्टी के अनुसार दैनिक कार्य' : 'Daily operational checklist tailored to your farm allocation'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowFull7DayModal(false)}
-                className="rounded-full p-1 text-[#6B7280] hover:bg-[#FAF7F2]"
+                className="rounded-full p-1 text-[var(--ink-soft)] hover:bg-[var(--surface-inset)]"
+                aria-label={isHi ? 'बंद करें' : 'Close'}
               >
                 <X size={18} />
               </button>
@@ -774,23 +556,23 @@ export function FarmPlanScreen({
 
             <div className="space-y-3">
               {default7Days.map((step) => (
-                <div key={step.day} className="flex items-start gap-3 rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3.5">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E2725B] text-xs font-bold text-white">
+                <div key={step.day} className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-inset)] p-3.5">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--field)] text-xs font-bold text-white">
                     {step.day}
                   </span>
                   <div>
-                    <h4 className="text-xs font-bold text-[#1F2937]">{step.title}</h4>
-                    <p className="text-xs text-[#6B7280] mt-0.5">{step.desc}</p>
+                    <h4 className="text-xs font-bold text-[var(--ink)]">{step.title}</h4>
+                    <p className="mt-0.5 text-xs text-[var(--ink-soft)]">{step.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="flex justify-end pt-2">
               <button
                 type="button"
                 onClick={() => setShowFull7DayModal(false)}
-                className="rounded-xl bg-[#2D5A43] px-4 py-2 text-xs font-bold text-white hover:bg-[#224432]"
+                className="btn btn-primary px-4 py-2 text-xs"
               >
                 {isHi ? 'बंद करें' : 'Close'}
               </button>
@@ -800,21 +582,21 @@ export function FarmPlanScreen({
       )}
 
       {/* ===================================================================== */}
-      {/* 4. DETAILED EXPERT ANALYSIS MODAL / DRAWER */}
+      {/* 4. DETAILED EXPERT ANALYSIS MODAL                                      */}
       {/* ===================================================================== */}
       {showDetailedModal && decision && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2 sm:px-4 backdrop-blur-sm">
-          <div className="w-full max-w-5xl rounded-3xl border border-[#EDE4D5] bg-[#FAF7F2] text-[#1F2937] p-4 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#EDE4D5] pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2 backdrop-blur-sm sm:px-4">
+          <div className="max-h-[92vh] w-full max-w-5xl space-y-4 overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 text-[var(--ink)] shadow-2xl sm:p-6">
+            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FDEEE9] text-[#E2725B] text-lg">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--grain-tint)] text-lg text-[var(--grain-deep)]">
                   🔬
                 </span>
                 <div>
-                  <h3 className="font-serif text-base sm:text-lg font-bold text-[#1F2937]">
+                  <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
                     {isHi ? 'वैज्ञानिक एवं गणितीय निर्णय विश्लेषण' : 'Expert Decision & Optimization Analysis'}
                   </h3>
-                  <p className="text-xs text-[#6B7280]">
+                  <p className="text-xs text-[var(--ink-soft)]">
                     HiGHS Simplex Engine • ICAR Scientific Agronomy • Open-Meteo Professional Telemetry
                   </p>
                 </div>
@@ -823,7 +605,8 @@ export function FarmPlanScreen({
               <button
                 type="button"
                 onClick={() => setShowDetailedModal(false)}
-                className="rounded-full bg-[#FFFFFF] border border-[#EDE4D5] p-2 text-[#6B7280] hover:text-[#1F2937] hover:bg-[#F5EFE6] transition-colors cursor-pointer"
+                className="rounded-full border border-[var(--line)] bg-[var(--surface-inset)] p-2 text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
+                aria-label={isHi ? 'बंद करें' : 'Close'}
               >
                 <X size={18} />
               </button>
@@ -841,11 +624,11 @@ export function FarmPlanScreen({
       )}
 
       {/* ===================================================================== */}
-      {/* 5. FOOTER */}
+      {/* 5. FOOTER                                                              */}
       {/* ===================================================================== */}
-      <footer className="border-t border-[#EDE4D5] bg-[#FAF7F2] px-4 sm:px-8 py-3 text-xs text-[#6B7280]">
-        <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-3 text-[11px]">
-          <span>{isHi ? 'भारतीय कृषि अनुसंधान परिषद (ICAR) एवं मंडी डेटा द्वारा संचालित' : 'Powered by ICAR Agronomy Engine & Real-time Mandi Telemetry'}</span>
+      <footer className="border-t border-[var(--line)] px-4 py-3 text-xs text-[var(--ink-soft)] sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 text-[11px]">
+          <span>{isHi ? 'ICAR कृषि इंजन एवं रीयल-टाइम मंडी डेटा द्वारा संचालित' : 'Powered by ICAR Agronomy Engine & Real-time Mandi Telemetry'}</span>
           <span>© 2026 AgriOptima AI</span>
         </div>
       </footer>

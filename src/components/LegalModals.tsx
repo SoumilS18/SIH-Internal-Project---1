@@ -37,16 +37,16 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-[#EDE4D5] bg-[#FFFFFF] p-6 sm:p-8 text-[#1F2937] shadow-2xl overflow-hidden">
+      <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-[var(--line)] bg-[var(--surface-elevated)] p-6 sm:p-8 text-[var(--ink)] shadow-2xl overflow-hidden">
         
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-[#EDE4D5] pb-4">
+        <div className="flex items-start justify-between border-b border-[var(--line)] pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#F9D0C5] bg-[#FDEEE9] text-[#E2725B] shadow-xs">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--grain-tint)] bg-[var(--grain-tint)] text-[var(--grain-deep)] shadow-xs">
               {type === 'privacy' ? <ShieldCheck size={20} /> : <FileText size={20} />}
             </div>
             <div>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#1F2937]">
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--ink)]">
                 {type === 'privacy'
                   ? isHi
                     ? 'गोपनीयता नीति (Privacy Policy)'
@@ -55,7 +55,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
                   ? 'सेवा की शर्तें (Terms of Service)'
                   : 'Terms of Service'}
               </h2>
-              <p className="font-mono text-[11px] text-[#6B7280]">
+              <p className="font-mono text-[11px] text-[var(--ink-soft)]">
                 {isHi
                   ? 'एग्रीऑप्टिमा एआई • डिजिटल पर्सनल डेटा प्रोटेक्शन (DPDP) अनुपालन'
                   : 'AgriOptima AI • Digital Personal Data Protection (DPDP) Act Compliance'}
@@ -66,7 +66,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-[#EDE4D5] bg-[#FAF7F2] p-2 text-[#6B7280] hover:bg-[#F5EFE6] hover:text-[#1F2937] transition-colors cursor-pointer"
+            className="rounded-full border border-[var(--line)] bg-[var(--paper)] p-2 text-[var(--ink-soft)] hover:bg-[var(--paper-2)] hover:text-[var(--ink)] transition-colors cursor-pointer"
             aria-label="Close"
           >
             <X size={18} />
@@ -74,15 +74,15 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
         </div>
 
         {/* Scrollable Document Content */}
-        <div className="mt-4 flex-1 space-y-6 overflow-y-auto pr-2 text-xs leading-relaxed text-[#4B5563] font-sans">
+        <div className="mt-4 flex-1 space-y-6 overflow-y-auto pr-2 text-xs leading-relaxed text-[var(--ink-soft)] font-sans">
           {type === 'privacy' ? (
             /* ========================================================================= */
             /* PRIVACY POLICY CONTENT */
             /* ========================================================================= */
             <>
               {/* Section 1: Commitment */}
-              <div className="rounded-2xl border border-[#D4E7DC] bg-[#EAF3ED] p-4 space-y-2 text-[#2D5A43]">
-                <div className="flex items-center gap-2 font-serif text-sm font-bold text-[#2D5A43]">
+              <div className="rounded-2xl border border-[var(--field-tint)] bg-[var(--field-tint)] p-4 space-y-2 text-[var(--field-deep)]">
+                <div className="flex items-center gap-2 font-serif text-sm font-bold text-[var(--field-deep)]">
                   <Lock size={16} />
                   <span>
                     {isHi
@@ -90,7 +90,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
                       : '1. Farmer Privacy & Data Sovereign Commitment'}
                   </span>
                 </div>
-                <p className="text-[#374151]">
+                <p className="text-[var(--ink-soft)]">
                   {isHi
                     ? 'एग्रीऑप्टिमा एआई (AgriOptima AI) में, हम भारतीय किसानों के डेटा की संप्रभुता और गोपनीयता का पूर्ण सम्मान करते हैं। यह नीति डिजिटल व्यक्तिगत डेटा संरक्षण (DPDP) अधिनियम 2023 के प्रावधानों के तहत तैयार की गई है।'
                     : 'At AgriOptima AI, we uphold the sovereign data rights of Indian farmers. This policy outlines our stringent data protection standards formulated in adherence with the Digital Personal Data Protection (DPDP) Act, 2023.'}
@@ -99,13 +99,13 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 2: Data Collected */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[#1F2937] flex items-center gap-2">
-                  <Database size={15} className="text-[#E2725B]" />
+                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                  <Database size={15} className="text-[var(--grain-deep)]" />
                   {isHi ? '2. हम कौन सा डेटा एकत्र करते हैं' : '2. Information We Collect'}
                 </h3>
-                <ul className="list-disc pl-5 space-y-1.5 text-[#6B7280]">
+                <ul className="list-disc pl-5 space-y-1.5 text-[var(--ink-soft)]">
                   <li>
-                    <strong className="text-[#1F2937]">
+                    <strong className="text-[var(--ink)]">
                       {isHi ? 'खेत एवं स्थान विवरण:' : 'Farm Telemetry & Geographic Attributes:'}
                     </strong>{' '}
                     {isHi
@@ -113,7 +113,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
                       : 'State, district, GPS/centroid coordinates, farm land size (acres), and irrigation infrastructure type.'}
                   </li>
                   <li>
-                    <strong className="text-[#1F2937]">
+                    <strong className="text-[var(--ink)]">
                       {isHi ? 'मृदा एवं कृषि-जलवायु डेटा:' : 'Soil & Agro-Climatic Parameters:'}
                     </strong>{' '}
                     {isHi
@@ -121,7 +121,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
                       : 'Soil classification (Vertisols, Alluvial, etc.), root-zone soil moisture telemetry, and IMD/Open-Meteo meteorological forecasts.'}
                   </li>
                   <li>
-                    <strong className="text-[#1F2937]">
+                    <strong className="text-[var(--ink)]">
                       {isHi ? 'आर्थिक व वित्तीय सीमाएं:' : 'Economic Constraints:'}
                     </strong>{' '}
                     {isHi
@@ -133,8 +133,8 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 3: Usage */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[#1F2937] flex items-center gap-2">
-                  <Cpu size={15} className="text-[#E2725B]" />
+                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                  <Cpu size={15} className="text-[var(--grain-deep)]" />
                   {isHi ? '3. आपके डेटा का उपयोग कैसे किया जाता है' : '3. How Your Data Is Utilized'}
                 </h3>
                 <p>
@@ -143,21 +143,21 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
                     : 'Your farm data is processed strictly for algorithmic and agronomic decision intelligence:'}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
-                    <span className="font-bold text-[#2D5A43] block mb-1">
+                  <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
+                    <span className="font-bold text-[var(--field-deep)] block mb-1">
                       {isHi ? 'गणितीय LP अनुकूलन' : 'Deterministic Optimization'}
                     </span>
-                    <span className="text-[11px] text-[#6B7280]">
+                    <span className="text-[11px] text-[var(--ink-soft)]">
                       {isHi
                         ? 'HiGHS सॉल्वर द्वारा अधिकतम लाभ और न्यूनतम जोखिम वाली फसल योजना तैयार करना।'
                         : 'Executing HiGHS linear programming to determine profit-maximizing crop allocations.'}
                     </span>
                   </div>
-                  <div className="rounded-xl border border-[#EDE4D5] bg-[#FAF7F2] p-3">
-                    <span className="font-bold text-[#2D5A43] block mb-1">
+                  <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
+                    <span className="font-bold text-[var(--field-deep)] block mb-1">
                       {isHi ? 'स्वायत्त प्रहरी परामर्श' : 'Autonomous Sentinel Alerts'}
                     </span>
-                    <span className="text-[11px] text-[#6B7280]">
+                    <span className="text-[11px] text-[var(--ink-soft)]">
                       {isHi
                         ? 'सूखा, जलभराव या लू की स्थिति में सक्रिय सुरक्षात्मक निर्देश देना।'
                         : 'Generating proactive evening irrigation, drainage, and heat mitigation directives.'}
@@ -167,12 +167,12 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
               </div>
 
               {/* Section 4: Zero Commercial Exploitation */}
-              <div className="rounded-2xl border border-[#F9D0C5] bg-[#FDEEE9] p-4 space-y-1.5">
-                <h3 className="font-serif text-sm font-bold text-[#B54832] flex items-center gap-2">
-                  <ShieldCheck size={15} className="text-[#E2725B]" />
+              <div className="rounded-2xl border border-[var(--grain-tint)] bg-[var(--grain-tint)] p-4 space-y-1.5">
+                <h3 className="font-serif text-sm font-bold text-[var(--grain-deep)] flex items-center gap-2">
+                  <ShieldCheck size={15} className="text-[var(--grain-deep)]" />
                   {isHi ? '4. शून्य वाणिज्यिक डेटा बिक्री (No Commercial Exploitation)' : '4. Zero Third-Party Monetization'}
                 </h3>
-                <p className="text-[#374151] font-medium">
+                <p className="text-[var(--ink-soft)] font-medium">
                   {isHi
                     ? 'हम आपके कृषि डेटा, मोबाइल नंबर या स्थान विवरण को किसी भी तीसरे पक्ष, कीटनाशक कंपनी या विज्ञापनदाता को कभी नहीं बेचते या साझा नहीं करते हैं।'
                     : 'We NEVER monetize, sell, lease, or distribute farmer telemetry to third-party commercial advertisers, chemical marketing companies, or data brokers.'}
@@ -181,8 +181,8 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 5: Farmer Rights & Security */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[#1F2937] flex items-center gap-2">
-                  <UserCheck size={15} className="text-[#E2725B]" />
+                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                  <UserCheck size={15} className="text-[var(--grain-deep)]" />
                   {isHi ? '5. किसान अधिकार व डेटा सुरक्षा' : '5. Farmer Rights & Security Standards'}
                 </h3>
                 <p>
@@ -198,16 +198,16 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
             /* ========================================================================= */
             <>
               {/* Section 1: Agreement */}
-              <div className="rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-4 space-y-2">
-                <div className="flex items-center gap-2 font-serif text-sm font-bold text-[#1F2937]">
-                  <Scale size={16} className="text-[#E2725B]" />
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4 space-y-2">
+                <div className="flex items-center gap-2 font-serif text-sm font-bold text-[var(--ink)]">
+                  <Scale size={16} className="text-[var(--grain-deep)]" />
                   <span>
                     {isHi
                       ? '1. नियम एवं शर्तों की स्वीकृति'
                       : '1. Acceptance of Terms'}
                   </span>
                 </div>
-                <p className="text-[#4B5563]">
+                <p className="text-[var(--ink-soft)]">
                   {isHi
                     ? 'एग्रीऑप्टिमा एआई स्वायत्त कृषि निर्णय पोर्टल का उपयोग करके, आप इन नियमों और शर्तों का पालन करने के लिए अपनी सहमति व्यक्त करते हैं। यह मंच कृषि निर्णय सहायता और जलवायु-सचेत योजना के लिए बनाया गया है।'
                     : 'By accessing or utilizing the AgriOptima AI Autonomous Decision Portal, you agree to be bound by these Terms of Service. This platform is engineered to deliver climate-resilient agricultural decision intelligence.'}
@@ -216,8 +216,8 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 2: Human in the loop & Bounded Autonomy */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[#1F2937] flex items-center gap-2">
-                  <Cpu size={15} className="text-[#2D5A43]" />
+                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                  <Cpu size={15} className="text-[var(--field-deep)]" />
                   {isHi
                     ? '2. सीमित स्वायत्तता एवं मानव-नियंत्रित सिद्धांत (Human-in-the-Loop)'
                     : '2. Bounded Autonomy & Human-in-the-Loop Architecture'}
@@ -231,8 +231,8 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 3: Data Sources and Deterministic Modeling */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[#1F2937] flex items-center gap-2">
-                  <Database size={15} className="text-[#E2725B]" />
+                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                  <Database size={15} className="text-[var(--grain-deep)]" />
                   {isHi
                     ? '3. डेटा स्रोत एवं गणितीय प्रमाणन'
                     : '3. Data Provenance & Deterministic Modeling'}
@@ -245,14 +245,14 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
               </div>
 
               {/* Section 4: Agricultural Disclaimers */}
-              <div className="rounded-2xl border border-[#EDE4D5] bg-[#FAF7F2] p-4 space-y-2">
-                <div className="flex items-center gap-2 font-serif text-sm font-bold text-[#B54832]">
-                  <AlertTriangle size={16} className="text-[#E2725B]" />
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4 space-y-2">
+                <div className="flex items-center gap-2 font-serif text-sm font-bold text-[var(--grain-deep)]">
+                  <AlertTriangle size={16} className="text-[var(--grain-deep)]" />
                   <span>
                     {isHi ? '4. कृषि उपज अस्वीकरण (Agronomic Advisory Notice)' : '4. Agronomic Advisory & Natural Risk Notice'}
                   </span>
                 </div>
-                <p className="text-[#4B5563]">
+                <p className="text-[var(--ink-soft)]">
                   {isHi
                     ? 'यद्यपि एग्रीऑप्टिमा एआई गणितीय रूप से जोखिम को कम करने और लाभ को अधिकतम करने के लिए सर्वोत्तम योजना तैयार करता है, परंतु प्राकृतिक आपदाओं (ओलावृष्टि, बादल फटना, कीट आक्रमण) से होने वाले अप्रत्याशित नुकसान के लिए मंच प्रत्यक्ष रूप से उत्तरदायी नहीं है।'
                     : 'While AgriOptima AI minimizes exposure to environmental volatility through dual-simplex optimization and stress penalties, agricultural outcomes remain inherently subject to force majeure natural events (severe hailstorms, sudden cloudbursts, pest outbreaks).'}
@@ -261,8 +261,8 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 5: Intellectual Property */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[#1F2937] flex items-center gap-2">
-                  <HelpCircle size={15} className="text-[#E2725B]" />
+                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                  <HelpCircle size={15} className="text-[var(--grain-deep)]" />
                   {isHi ? '5. बौद्धिक संपदा एवं उपयोग अधिकार' : '5. Intellectual Property & Fair Use'}
                 </h3>
                 <p>
@@ -276,14 +276,14 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="mt-5 flex items-center justify-between border-t border-[#EDE4D5] pt-4">
-          <span className="font-mono text-[10px] text-[#6B7280]">
+        <div className="mt-5 flex items-center justify-between border-t border-[var(--line)] pt-4">
+          <span className="font-mono text-[10px] text-[var(--ink-soft)]">
             {isHi ? 'अंतिम अद्यतन: 23 अगस्त 2026' : 'Last Updated: August 23, 2026'}
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl bg-[#E2725B] px-6 py-2 text-xs font-bold text-white hover:bg-[#D9654D] transition-colors shadow-sm cursor-pointer"
+            className="rounded-xl bg-[var(--field)] px-6 py-2 text-xs font-bold text-white hover:bg-[var(--field-bright)] transition-colors shadow-sm cursor-pointer"
           >
             {isHi ? 'बंद करें (Close)' : 'Close'}
           </button>

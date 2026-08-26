@@ -10,7 +10,6 @@ import {
   Info,
   Sparkles,
 } from 'lucide-react';
-import { Atmosphere } from '@/components/Atmosphere';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { getFarmDecision, getAvailableLocations } from '@/services/api';
@@ -20,7 +19,9 @@ import {
   getLocalizedBudgetAlert,
   getLocalizedNasaFallbackAlert,
 } from '@/i18n/semanticAdapter';
+import { FarmDetailsScreen } from '@/components/FarmDetailsScreen';
 import { FarmPlanScreen } from '@/components/FarmPlanScreen';
+import { InitializingScreen } from '@/components/InitializingScreen';
 import { AutonomousSentinelScreen } from '@/components/AutonomousSentinelScreen';
 import { DetailedAnalysisView, DetailedTabType } from '@/components/DetailedAnalysisView';
 import { runAutonomousCycle } from '@/services/autonomousSentinel';
@@ -99,6 +100,13 @@ export function MainScreen({
   const [selectedExpertTab, setSelectedExpertTab] = useState<DetailedTabType>(
     savedParams?.selectedExpertTab || 'overview'
   );
+
+  // Guided flow navigation: Page 3 (details entry) → cinematic → Page 4 (plan).
+  // We always begin on 'details' and only reveal the plan after the farmer taps
+  // “Generate” (which plays the cinematic analysis overlay). This is intentionally
+  // NOT persisted, so every visit starts from the details form.
+  const [page, setPage] = useState<'details' | 'plan'>('details');
+  const [generating, setGenerating] = useState<boolean>(false);
 
   // Location Catalog State
   const [locations, setLocations] = useState<DistrictLocationItem[]>(ALL_INDIAN_DISTRICTS);
@@ -271,6 +279,25 @@ export function MainScreen({
     isHi,
   ]);
 
+  // Tap “Generate plan” on the details page (Page 3) → play the cinematic
+  // analysis overlay while the optimizer runs, then reveal the full-screen plan.
+  const handleGeneratePlan = useCallback(() => {
+    setGenerating(true);
+    runOptimization();
+  }, [runOptimization]);
+
+  // Cinematic hand-off → reveal the plan (Page 4). If the optimizer is still
+  // running, FarmPlanScreen shows its own “finalizing” state until it resolves.
+  const handleGenerationReady = useCallback(() => {
+    setGenerating(false);
+    setPage('plan');
+  }, []);
+
+  // “Edit details” on the plan page returns to the details form (Page 3).
+  const handleEditDetails = useCallback(() => {
+    setPage('details');
+  }, []);
+
   // Trigger manual telemetry observation & verification cycle on demand
   const handleRunSentinelCheck = useCallback(() => {
     if (!decision) return;
@@ -351,7 +378,7 @@ export function MainScreen({
     }
   }, [isDemo]);
 
-  // Render Target 4-Page Experience (Page 3: Farm Plan vs Page 4: Autonomous Sentinel)
+  // Page 5: Autonomous Sentinel — returns the farmer to the plan (Page 4).
   if (viewMode === 'autonomous') {
     return (
       <AutonomousSentinelScreen
@@ -361,37 +388,65 @@ export function MainScreen({
         advisory={proactiveAdvisory}
         isChecking={isCheckingSentinel}
         onRunCheck={handleRunSentinelCheck}
-        onBackToPlan={() => setViewMode('farmer')}
+        onBackToPlan={() => {
+          setViewMode('farmer');
+          setPage('plan');
+        }}
         onLogout={onLogout || onBack}
       />
     );
   }
 
-  // Page 3: Farm Plan (Your Farm + Recommended Plan 2-Column Experience)
+  // Guided experience: Page 3 (details entry) → cinematic → Page 4 (full-screen plan).
   return (
-    <FarmPlanScreen
-      userName={userName}
-      selectedState={selectedState}
-      selectedDistrict={selectedDistrict}
-      landAcres={landAcres}
-      budgetInr={budgetInr}
-      irrigationType={irrigationType}
-      irrigationReliability={irrigationReliability}
-      season={season}
-      riskTolerance={riskTolerance}
-      decision={decision}
-      loading={loading}
-      onLandAcresChange={setLandAcres}
-      onBudgetInrChange={setBudgetInr}
-      onIrrigationTypeChange={setIrrigationType}
-      onIrrigationReliabilityChange={setIrrigationReliability}
-      onSeasonChange={setSeason}
-      onRiskToleranceChange={setRiskTolerance}
-      onRecalculate={runOptimization}
-      onChangeLocation={onBack}
-      onProceedToSentinel={() => setViewMode('autonomous')}
-      onLogout={onLogout || onBack}
-    />
+    <>
+      {page === 'details' ? (
+        <FarmDetailsScreen
+          userName={userName}
+          selectedState={selectedState}
+          selectedDistrict={selectedDistrict}
+          landAcres={landAcres}
+          budgetInr={budgetInr}
+          irrigationType={irrigationType}
+          irrigationReliability={irrigationReliability}
+          season={season}
+          riskTolerance={riskTolerance}
+          loading={loading}
+          onLandAcresChange={setLandAcres}
+          onBudgetInrChange={setBudgetInr}
+          onIrrigationTypeChange={setIrrigationType}
+          onIrrigationReliabilityChange={setIrrigationReliability}
+          onSeasonChange={setSeason}
+          onRiskToleranceChange={setRiskTolerance}
+          onGenerate={handleGeneratePlan}
+          onChangeLocation={onBack}
+        />
+      ) : (
+        <FarmPlanScreen
+          userName={userName}
+          selectedState={selectedState}
+          selectedDistrict={selectedDistrict}
+          landAcres={landAcres}
+          budgetInr={budgetInr}
+          season={season}
+          decision={decision}
+          loading={loading}
+          onEditDetails={handleEditDetails}
+          onChangeLocation={onBack}
+          onProceedToSentinel={() => setViewMode('autonomous')}
+          onLogout={onLogout || onBack}
+        />
+      )}
+
+      {/* Cinematic analysis overlay — plays after “Generate”, then reveals the plan */}
+      {generating && (
+        <InitializingScreen
+          stateName={selectedState}
+          districtName={selectedDistrict}
+          onReady={handleGenerationReady}
+        />
+      )}
+    </>
   );
 }
 
