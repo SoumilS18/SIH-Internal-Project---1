@@ -3,7 +3,6 @@ import {
   Mic,
   MicOff,
   Send,
-  ArrowLeft,
   ArrowRight,
   CheckCircle2,
   CloudRain,
@@ -13,14 +12,12 @@ import {
   AlertOctagon,
   Loader2,
   RefreshCw,
-  LogOut,
   Volume2,
   VolumeX,
   Radio,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { JourneyNav } from '@/components/JourneyNav';
 import { getCropDisplayName } from '@/i18n/cropNames';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
 import { formatRainfall } from '@/i18n/formatters';
@@ -44,9 +41,12 @@ interface AutonomousSentinelScreenProps {
   onRunCheck: () => void;
   onBackToPlan: () => void;
   onLogout: () => void;
+  onEditDetails?: () => void;
+  onChangeLocation?: () => void;
 }
 
 export function AutonomousSentinelScreen({
+  userName,
   decision,
   logs,
   advisory,
@@ -54,6 +54,8 @@ export function AutonomousSentinelScreen({
   onRunCheck,
   onBackToPlan,
   onLogout,
+  onEditDetails,
+  onChangeLocation,
 }: AutonomousSentinelScreenProps) {
   const { language } = useLanguage();
   const isHi = language === 'hi';
@@ -345,48 +347,34 @@ export function AutonomousSentinelScreen({
   return (
     <div className="relative flex min-h-screen w-full flex-col justify-between text-[var(--ink)] selection:bg-[var(--grain-tint)] selection:text-[var(--grain-deep)]">
       {/* ===================================================================== */}
-      {/* 1. TOP NAVIGATION BAR — same grammar as every other stage             */}
+      {/* 1. FLOATING JOURNEY NAV — same chrome layer as every other stage      */}
       {/* ===================================================================== */}
-      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3 backdrop-blur-md sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onBackToPlan}
-              className="btn-ghost grid h-9 w-9 place-items-center rounded-xl"
-              title={isHi ? 'योजना पर लौटें' : 'Back to Farm Plan'}
-              aria-label={isHi ? 'योजना पर लौटें' : 'Back to Farm Plan'}
-            >
-              <ArrowLeft size={16} />
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="font-display text-lg font-extrabold tracking-tight text-[var(--ink)]">
-                AgriOptima<span className="text-[var(--field)]"> AI</span>
-              </span>
-              <span className="chip chip-field font-data text-[10px] tracking-wider">
-                {isHi ? 'चरण 05 / 05 · सेंटीनेल' : 'Step 05 / 05 · Sentinel'}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
+      <JourneyNav
+        stage={4}
+        accent="grain"
+        userName={userName}
+        reachable={[1, 2, 3]}
+        onNavigate={(target) => {
+          if (target === 1) onChangeLocation?.();
+          if (target === 2) onEditDetails?.();
+          if (target === 3) onBackToPlan();
+        }}
+        onLogout={onLogout}
+        actions={
+          <>
             <button
               type="button"
               onClick={() => setIsLogModalOpen(true)}
-              className="hidden items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--surface-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:border-[var(--line-strong)] hover:text-[var(--ink)] sm:flex"
+              className="nav-pill hidden h-9 items-center gap-1.5 px-3 text-xs font-medium text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] sm:inline-flex"
             >
               <FileText size={14} className="text-[var(--grain-deep)]" />
               <span>{isHi ? 'निगरानी लॉग्स' : 'Activity Logs'}</span>
             </button>
-
-            <LanguageSelector />
-            <ThemeToggle />
-
             <button
               type="button"
               onClick={onRunCheck}
               disabled={isChecking}
-              className="btn btn-primary px-3.5 py-1.5 text-xs disabled:opacity-60"
+              className="btn btn-primary btn-sm disabled:opacity-60"
             >
               {isChecking ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
               <span>
@@ -399,24 +387,14 @@ export function AutonomousSentinelScreen({
                     : 'Run Sentinel Check'}
               </span>
             </button>
-
-            <button
-              type="button"
-              onClick={onLogout}
-              className="btn-ghost grid h-9 w-9 place-items-center rounded-xl"
-              title={isHi ? 'लॉगआउट' : 'Log out'}
-              aria-label={isHi ? 'लॉगआउट' : 'Log out'}
-            >
-              <LogOut size={15} />
-            </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {/* ===================================================================== */}
       {/* 2. MAIN WORKSPACE                                                     */}
       {/* ===================================================================== */}
-      <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 py-6 sm:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 pb-24 pt-24 sm:px-8 sm:pt-28 md:pb-8">
         {/* ------------------------------------------------------------- */}
         {/* WATCH BAND — the living core + the current verdict, one surface */}
         {/* ------------------------------------------------------------- */}
@@ -464,7 +442,7 @@ export function AutonomousSentinelScreen({
                 </span>
               </div>
 
-              <h2 className="font-display mt-3 text-[1.15rem] font-bold leading-snug text-[var(--ink)] sm:text-[1.3rem]">
+              <h2 className="font-display mt-3 text-[1.15rem] font-semibold leading-snug text-[var(--ink)] sm:text-[1.3rem]">
                 {advisory?.headline ||
                   (isHi
                     ? 'आपकी वर्तमान खेत योजना पूरी तरह अनुकूल है।'
@@ -505,7 +483,7 @@ export function AutonomousSentinelScreen({
             <button
               type="button"
               onClick={() => setIsLogModalOpen(true)}
-              className="text-xs font-bold text-[var(--grain-deep)] transition-colors hover:text-[var(--field)]"
+              className="text-xs font-semibold text-[var(--grain-deep)] transition-colors hover:text-[var(--field)]"
             >
               {isHi ? 'सभी निगरानी लॉग्स देखें →' : 'View all sentinel logs →'}
             </button>
@@ -517,7 +495,7 @@ export function AutonomousSentinelScreen({
                 key={s.id}
                 className={`flex flex-col gap-1.5 ${i === 0 ? 'lg:pr-5' : i === streams.length - 1 ? 'lg:pl-5' : 'lg:px-5'}`}
               >
-                <span className="flex items-center gap-2 text-[11px] font-bold" style={{ color: s.tone }}>
+                <span className="flex items-center gap-2 text-[11px] font-semibold" style={{ color: s.tone }}>
                   <s.Icon size={14} />
                   {s.name}
                 </span>
@@ -630,7 +608,7 @@ export function AutonomousSentinelScreen({
                   <button
                     type="button"
                     onClick={handleStopAudio}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] px-2.5 py-1 text-[10px] font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
                   >
                     <VolumeX size={12} />
                     {isHi ? 'आवाज़ बंद करें' : 'Stop audio'}
@@ -662,7 +640,7 @@ export function AutonomousSentinelScreen({
                   >
                     <p>{msg.text}</p>
                     {msg.action && (
-                      <div className="mt-2 border-t border-[var(--line)] pt-2 text-[11px] font-bold text-[var(--field-deep)]">
+                      <div className="mt-2 border-t border-[var(--line)] pt-2 text-[11px] font-semibold text-[var(--field-deep)]">
                         ✓ {isHi ? 'सुझाव:' : 'Action:'} {msg.action}
                       </div>
                     )}
@@ -703,7 +681,7 @@ export function AutonomousSentinelScreen({
                 <span className="t-eyebrow shrink-0 text-[var(--grain-deep)]">
                   {isHi ? 'वर्तमान शब्द:' : 'Hearing:'}
                 </span>
-                <span className="truncate font-bold text-[var(--ink)]">"{chatInput}"</span>
+                <span className="truncate font-semibold text-[var(--ink)]">"{chatInput}"</span>
               </div>
             )}
 

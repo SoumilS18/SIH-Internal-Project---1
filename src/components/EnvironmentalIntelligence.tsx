@@ -159,7 +159,7 @@ export function EnvironmentalIntelligence({
       {/* 1. PAGE HEADER */}
       {/* --------------------------------------------------------------------- */}
       <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 shadow-sm">
-        <h2 className="font-serif text-base font-bold text-[var(--ink)] sm:text-lg">
+        <h2 className="font-serif text-base font-semibold text-[var(--ink)] sm:text-lg">
           {t('telemetry.title')}
         </h2>
         <p className="mt-0.5 text-xs text-[var(--ink-soft)]">
@@ -176,25 +176,25 @@ export function EnvironmentalIntelligence({
       {/* --------------------------------------------------------------------- */}
       <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-3 sm:grid-cols-4">
         <div>
-          <span className="block text-[9px] uppercase font-bold tracking-wider text-[var(--ink-soft)]">
+          <span className="block text-[9px] uppercase font-semibold tracking-wider text-[var(--ink-soft)]">
             {t('telemetry.dataProvider')}
           </span>
-          <span className="text-xs font-bold text-[var(--ink)]">
+          <span className="text-xs font-semibold text-[var(--ink)]">
             {weather.data_provider || 'Open-Meteo & ERA5'}
           </span>
         </div>
 
         <div>
-          <span className="block text-[9px] uppercase font-bold tracking-wider text-[var(--ink-soft)]">
+          <span className="block text-[9px] uppercase font-semibold tracking-wider text-[var(--ink-soft)]">
             {t('telemetry.confidenceScore')}
           </span>
-          <span className="text-xs font-bold text-[var(--field-deep)]">
+          <span className="text-xs font-semibold text-[var(--field-deep)]">
             {translateConfidence(weather.confidence_score, language)}
           </span>
         </div>
 
         <div>
-          <span className="block text-[9px] uppercase font-bold tracking-wider text-[var(--ink-soft)]">
+          <span className="block text-[9px] uppercase font-semibold tracking-wider text-[var(--ink-soft)]">
             {t('telemetry.lastUpdated')}
           </span>
           <span className="text-xs font-semibold text-[var(--ink-soft)]">
@@ -207,10 +207,10 @@ export function EnvironmentalIntelligence({
         </div>
 
         <div>
-          <span className="block text-[9px] uppercase font-bold tracking-wider text-[var(--ink-soft)]">
+          <span className="block text-[9px] uppercase font-semibold tracking-wider text-[var(--ink-soft)]">
             {t('telemetry.soilStatus')}
           </span>
-          <span className="text-xs font-bold text-[var(--grain-deep)]">
+          <span className="text-xs font-semibold text-[var(--grain-deep)]">
             {translateMoistureStatus(risk.soil_moisture_status, language)}
           </span>
         </div>
@@ -220,7 +220,7 @@ export function EnvironmentalIntelligence({
       {/* 3. CURRENT ENVIRONMENTAL CONDITIONS (5 Primary Metrics Grid) */}
       {/* --------------------------------------------------------------------- */}
       <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 shadow-sm">
-        <h3 className="mb-3 font-serif text-sm font-bold text-[var(--ink)]">
+        <h3 className="mb-3 font-serif text-sm font-semibold text-[var(--ink)]">
           {t('telemetry.currentConditions')}
         </h3>
 
@@ -229,11 +229,11 @@ export function EnvironmentalIntelligence({
           <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
             <div className="flex items-center gap-1.5 text-[var(--grain-deep)]">
               <Thermometer size={14} />
-              <span className="text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+              <span className="text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
                 {t('telemetry.temperature')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-bold text-[var(--ink)]">
+            <div className="mt-1.5 font-serif text-lg font-semibold text-[var(--ink)]">
               {formatTemperature(weather.current_temperature_c, language)}
             </div>
           </div>
@@ -242,11 +242,11 @@ export function EnvironmentalIntelligence({
           <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
             <div className="flex items-center gap-1.5 text-[var(--field-deep)]">
               <Droplets size={14} />
-              <span className="text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+              <span className="text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
                 {t('telemetry.humidity')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-bold text-[var(--ink)]">
+            <div className="mt-1.5 font-serif text-lg font-semibold text-[var(--ink)]">
               {weather.current_humidity_pct !== null ? `${weather.current_humidity_pct}%` : '73%'}
             </div>
           </div>
@@ -255,11 +255,11 @@ export function EnvironmentalIntelligence({
           <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
             <div className="flex items-center gap-1.5 text-[var(--ink-soft)]">
               <Wind size={14} />
-              <span className="text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+              <span className="text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
                 {t('telemetry.wind')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-bold text-[var(--ink)]">
+            <div className="mt-1.5 font-serif text-lg font-semibold text-[var(--ink)]">
               {formatWind(weather.current_wind_kmh, language)}
             </div>
           </div>
@@ -268,11 +268,11 @@ export function EnvironmentalIntelligence({
           <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
             <div className="flex items-center gap-1.5 text-[#2563EB]">
               <CloudRain size={14} />
-              <span className="text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+              <span className="text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
                 {t('telemetry.rainfall')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-bold text-[#2563EB]">
+            <div className="mt-1.5 font-serif text-lg font-semibold text-[#2563EB]">
               {formatRainfall(weather.current_precipitation_mm, language)}
             </div>
           </div>
@@ -281,11 +281,11 @@ export function EnvironmentalIntelligence({
           <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
             <div className="flex items-center gap-1.5 text-[var(--grain-deep)]">
               <Activity size={14} />
-              <span className="text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+              <span className="text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
                 {t('telemetry.vpd')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-bold text-[var(--ink)]">
+            <div className="mt-1.5 font-serif text-lg font-semibold text-[var(--ink)]">
               {formatVpd(weather.vapour_pressure_deficit_kpa)}
             </div>
           </div>
@@ -297,10 +297,10 @@ export function EnvironmentalIntelligence({
       {/* --------------------------------------------------------------------- */}
       <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-5 shadow-sm space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
-          <h3 className="font-serif text-sm font-bold text-[var(--ink)]">
+          <h3 className="font-serif text-sm font-semibold text-[var(--ink)]">
             {t('telemetry.rootZoneTitle')}
           </h3>
-          <span className="rounded-full border border-[var(--field-tint)] bg-[var(--field-tint)] px-3 py-0.5 text-[11px] font-bold text-[var(--field-deep)]">
+          <span className="rounded-full border border-[var(--field-tint)] bg-[var(--field-tint)] px-3 py-0.5 text-[11px] font-semibold text-[var(--field-deep)]">
             {translateMoistureStatus(risk.soil_moisture_status, language)}
           </span>
         </div>
@@ -308,19 +308,19 @@ export function EnvironmentalIntelligence({
         {/* Moisture Metrics Row */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5">
-            <span className="block text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+            <span className="block text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
               {t('telemetry.surfaceSoilMoisture')}
             </span>
-            <div className="mt-1 font-serif text-xl font-bold text-[var(--ink)]">
+            <div className="mt-1 font-serif text-xl font-semibold text-[var(--ink)]">
               {formatSoilMoisture(weather.surface_soil_moisture_m3m3)}
             </div>
           </div>
 
           <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5">
-            <span className="block text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+            <span className="block text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
               {t('telemetry.rootZoneSoilMoisture')}
             </span>
-            <div className="mt-1 font-serif text-xl font-bold text-[var(--grain-deep)]">
+            <div className="mt-1 font-serif text-xl font-semibold text-[var(--grain-deep)]">
               {formatSoilMoisture(weather.root_zone_soil_moisture_m3m3)}
             </div>
           </div>
@@ -328,7 +328,7 @@ export function EnvironmentalIntelligence({
 
         {/* Continuous Horizontal Moisture Gauge */}
         <div className="pt-2">
-          <div className="mb-1.5 flex justify-between text-[10px] font-bold text-[var(--ink-soft)]">
+          <div className="mb-1.5 flex justify-between text-[10px] font-semibold text-[var(--ink-soft)]">
             <span>{t('telemetry.distributionScale')}</span>
             <span className="text-[var(--ink)]">
               {t('telemetry.current')}: {formatSoilMoisture(weather.root_zone_soil_moisture_m3m3 ?? 0.468)}
@@ -357,14 +357,14 @@ export function EnvironmentalIntelligence({
           <div className="mt-1.5 grid grid-cols-4 text-center text-[10px] font-semibold text-[var(--ink-soft)]">
             <span>{t('telemetry.dry')}</span>
             <span>{t('telemetry.deficit')}</span>
-            <span className="text-[var(--field-deep)] font-bold">{t('telemetry.optimal')}</span>
+            <span className="text-[var(--field-deep)] font-semibold">{t('telemetry.optimal')}</span>
             <span>{t('telemetry.saturated')}</span>
           </div>
         </div>
 
         {/* Soil Type & Explanation */}
         <div className="rounded-xl bg-[var(--paper)] border border-[var(--line)] p-3 text-xs">
-          <div className="text-[11px] font-bold text-[var(--ink)]">
+          <div className="text-[11px] font-semibold text-[var(--ink)]">
             {t('telemetry.soilType')}: {location.major_soil_type || 'Medium Black Soil'}
           </div>
           <p className="mt-0.5 leading-relaxed text-[var(--ink-soft)]">
@@ -382,25 +382,25 @@ export function EnvironmentalIntelligence({
       {/* --------------------------------------------------------------------- */}
       <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 shadow-sm space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
-          <h3 className="font-serif text-sm font-bold text-[var(--ink)]">
+          <h3 className="font-serif text-sm font-semibold text-[var(--ink)]">
             {t('telemetry.forecast7dTitle')}
           </h3>
 
           <div className="flex items-center gap-3 text-xs">
             <div className="text-right">
-              <span className="block text-[9px] uppercase font-bold text-[var(--ink-soft)]">
+              <span className="block text-[9px] uppercase font-semibold text-[var(--ink-soft)]">
                 {t('telemetry.forecastRainfall7d')}
               </span>
-              <span className="font-bold text-[#2563EB]">
+              <span className="font-semibold text-[#2563EB]">
                 {formatRainfall(weather.forecast_rain_7d_total_mm, language)}
               </span>
             </div>
 
             <div className="border-l border-[var(--line)] pl-3 text-right">
-              <span className="block text-[9px] uppercase font-bold text-[var(--ink-soft)]">
+              <span className="block text-[9px] uppercase font-semibold text-[var(--ink-soft)]">
                 {t('telemetry.peakRainProb')}
               </span>
-              <span className="font-bold text-[var(--grain-deep)]">
+              <span className="font-semibold text-[var(--grain-deep)]">
                 {weather.max_rain_probability_7d_pct ?? 95}%
               </span>
             </div>
@@ -415,13 +415,13 @@ export function EnvironmentalIntelligence({
                 key={day.date}
                 className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2.5 text-center text-xs"
               >
-                <span className="block text-[10px] font-bold text-[var(--ink-soft)]">
+                <span className="block text-[10px] font-semibold text-[var(--ink-soft)]">
                   {day.date.slice(5)}
                 </span>
-                <span className="mt-1 block font-serif text-xs font-bold text-[var(--ink)]">
+                <span className="mt-1 block font-serif text-xs font-semibold text-[var(--ink)]">
                   {day.t_max.toFixed(0)}° / {day.t_min.toFixed(0)}°
                 </span>
-                <div className="mt-1 flex items-center justify-center gap-1 text-[11px] text-[#2563EB] font-bold">
+                <div className="mt-1 flex items-center justify-center gap-1 text-[11px] text-[#2563EB] font-semibold">
                   <Droplets size={10} />
                   <span>{formatRainfall(day.rain_mm, language)}</span>
                 </div>
@@ -450,7 +450,7 @@ export function EnvironmentalIntelligence({
       {/* 6. ENVIRONMENTAL RISK (4 Horizontal Risk Indicators) */}
       {/* --------------------------------------------------------------------- */}
       <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 shadow-sm space-y-3">
-        <h3 className="font-serif text-sm font-bold text-[var(--ink)]">
+        <h3 className="font-serif text-sm font-semibold text-[var(--ink)]">
           {t('telemetry.environmentalRisk')}
         </h3>
 
@@ -463,13 +463,13 @@ export function EnvironmentalIntelligence({
               </span>
               <div className="flex items-center gap-2">
                 <span
-                  className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${
+                  className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${
                     getRiskColorClass(risk.drought_risk_label).badge
                   }`}
                 >
                   {translateRiskLevel(risk.drought_risk_label, language)}
                 </span>
-                <span className="text-xs font-bold text-[var(--ink)]">
+                <span className="text-xs font-semibold text-[var(--ink)]">
                   {risk.drought_risk_score.toFixed(2)}
                 </span>
               </div>
@@ -490,13 +490,13 @@ export function EnvironmentalIntelligence({
               </span>
               <div className="flex items-center gap-2">
                 <span
-                  className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${
+                  className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${
                     getRiskColorClass(risk.waterlogging_risk_label).badge
                   }`}
                 >
                   {translateRiskLevel(risk.waterlogging_risk_label, language)}
                 </span>
-                <span className="text-xs font-bold text-[var(--ink)]">
+                <span className="text-xs font-semibold text-[var(--ink)]">
                   {risk.waterlogging_risk_score.toFixed(2)}
                 </span>
               </div>
@@ -517,13 +517,13 @@ export function EnvironmentalIntelligence({
               </span>
               <div className="flex items-center gap-2">
                 <span
-                  className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${
+                  className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${
                     getRiskColorClass(risk.heat_risk_label).badge
                   }`}
                 >
                   {translateRiskLevel(risk.heat_risk_label, language)}
                 </span>
-                <span className="text-xs font-bold text-[var(--ink)]">
+                <span className="text-xs font-semibold text-[var(--ink)]">
                   {risk.heat_risk_score.toFixed(2)}
                 </span>
               </div>
@@ -544,13 +544,13 @@ export function EnvironmentalIntelligence({
               </span>
               <div className="flex items-center gap-2">
                 <span
-                  className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${
+                  className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${
                     getRiskColorClass(risk.atmospheric_water_stress_label).badge
                   }`}
                 >
                   {translateRiskLevel(risk.atmospheric_water_stress_label, language)}
                 </span>
-                <span className="text-xs font-bold text-[var(--ink)]">
+                <span className="text-xs font-semibold text-[var(--ink)]">
                   {risk.atmospheric_water_stress_score.toFixed(2)}
                 </span>
               </div>
@@ -573,7 +573,7 @@ export function EnvironmentalIntelligence({
           <div className="flex items-start gap-3">
             <ShieldAlert size={18} className="mt-0.5 shrink-0 text-[#E11D48]" />
             <div>
-              <h4 className="font-serif text-sm font-bold text-[#9F1239]">
+              <h4 className="font-serif text-sm font-semibold text-[#9F1239]">
                 {hasWaterlogAlert
                   ? t('telemetry.waterloggingAlert')
                   : hasHeatAlert
@@ -601,27 +601,27 @@ export function EnvironmentalIntelligence({
       {/* 8. SIMPLE "WHAT THIS MEANS" SECTION (Environmental Interpretation) */}
       {/* --------------------------------------------------------------------- */}
       <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 shadow-sm space-y-2.5 text-xs">
-        <h3 className="font-serif text-sm font-bold text-[var(--ink)]">
+        <h3 className="font-serif text-sm font-semibold text-[var(--ink)]">
           {t('telemetry.interpretationTitle')}
         </h3>
 
         <div className="space-y-2">
           <div className="flex items-start gap-2.5">
-            <span className="w-24 shrink-0 text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+            <span className="w-24 shrink-0 text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
               {t('telemetry.currentLabel')}
             </span>
             <p className="text-[var(--ink)]">{currentStatement}</p>
           </div>
 
           <div className="flex items-start gap-2.5">
-            <span className="w-24 shrink-0 text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+            <span className="w-24 shrink-0 text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
               {t('telemetry.forecastLabel')}
             </span>
             <p className="text-[var(--ink)]">{forecastStatement}</p>
           </div>
 
           <div className="flex items-start gap-2.5">
-            <span className="w-24 shrink-0 text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+            <span className="w-24 shrink-0 text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
               {t('telemetry.implicationLabel')}
             </span>
             <p className="text-[var(--ink-soft)]">{implicationStatement}</p>

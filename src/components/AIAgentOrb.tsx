@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { useTheme } from '@/theme/ThemeContext';
 import { usePrefersReducedMotion, useRafLoop } from '@/lib/hooks';
 
 export type OrbState =
@@ -27,25 +26,16 @@ interface Palette {
   bg: string;
 }
 
-function getPalette(isDark: boolean): Palette {
-  return isDark
-    ? {
-        core: '#5CF0A8',
-        coreEdge: '#0e5a3c',
-        ring: 'rgba(92,240,168,',
-        gold: 'rgba(240,194,75,',
-        spark: 'rgba(200,255,225,',
-        bg: 'rgba(6,20,15,',
-      }
-    : {
-        core: '#3FBF74',
-        coreEdge: '#12472c',
-        ring: 'rgba(31,107,67,',
-        gold: 'rgba(196,140,20,',
-        spark: 'rgba(24,80,50,',
-        bg: 'rgba(240,246,236,',
-      };
-}
+/* One world, one palette: the core reads as a fresh leaf-green seed lit from
+   above, sitting on warm ivory. */
+const PALETTE: Palette = {
+  core: '#46A968',
+  coreEdge: '#1C5335',
+  ring: 'rgba(47, 122, 79, ',
+  gold: 'rgba(216, 166, 60, ',
+  spark: 'rgba(28, 83, 53, ',
+  bg: 'rgba(246, 244, 236, ',
+};
 
 /**
  * The AgriOptima intelligence core — a living "seed core" orb rendered on a
@@ -58,7 +48,6 @@ export function AIAgentOrb({
   className = '',
   level = 0,
 }: AIAgentOrbProps) {
-  const { isDark } = useTheme();
   const reduced = usePrefersReducedMotion();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateStartRef = useRef<number>(performance.now() / 1000);
@@ -87,7 +76,7 @@ export function AIAgentOrb({
     const cx = size / 2;
     const cy = size / 2;
     const R = size * 0.2; // core radius
-    const p = getPalette(isDark);
+    const p = PALETTE;
     const elapsed = t - stateStartRef.current;
     const breathe = 1 + Math.sin(t * 1.6) * 0.05;
 
@@ -212,7 +201,7 @@ export function AIAgentOrb({
             : breathe;
     const cr = R * coreScale;
     const core = ctx.createRadialGradient(cx - cr * 0.3, cy - cr * 0.35, cr * 0.15, cx, cy, cr);
-    core.addColorStop(0, isDark ? '#eafff4' : '#eafff2');
+    core.addColorStop(0, '#EDFBF1');
     core.addColorStop(0.5, p.core);
     core.addColorStop(1, p.coreEdge);
     ctx.fillStyle = core;
@@ -224,7 +213,7 @@ export function AIAgentOrb({
     ctx.shadowBlur = 0;
 
     // inner seed motif (a sprouting line)
-    ctx.strokeStyle = isDark ? 'rgba(6,30,20,0.5)' : 'rgba(255,255,255,0.6)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.62)';
     ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.moveTo(cx, cy + cr * 0.4);
@@ -277,7 +266,7 @@ export function AIAgentOrb({
   useEffect(() => {
     if (reduced) draw(0.6);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reduced, isDark, state, size]);
+  }, [reduced, state, size]);
 
   return (
     <canvas

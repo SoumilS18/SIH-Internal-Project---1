@@ -7,7 +7,16 @@ import {
 } from '@/i18n/languages';
 import { useLanguage } from '@/i18n/LanguageContext';
 
-export function LanguageSelector({ className = '', align = 'auto' }: { className?: string; align?: 'left' | 'right' | 'auto' }) {
+export function LanguageSelector({
+  className = '',
+  align = 'auto',
+  variant = 'pill',
+}: {
+  className?: string;
+  align?: 'left' | 'right' | 'auto';
+  /** `pill` floats on its own; `bare` sits inside an existing pill group. */
+  variant?: 'pill' | 'bare';
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const { language, setLanguage, languageOption } = useLanguage();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -55,11 +64,15 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-xs transition-all hover:border-[var(--line-strong)] hover:bg-[var(--paper)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--glow-field)] cursor-pointer"
+        className={
+          variant === 'pill'
+            ? 'nav-pill inline-flex h-9 cursor-pointer items-center gap-1.5 px-3 text-xs font-medium text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] focus:outline-none'
+            : 'inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-[var(--ink-soft)] transition-colors hover:bg-[var(--field-tint)] hover:text-[var(--ink)] focus:outline-none'
+        }
       >
-        <Globe size={13} className="text-[var(--grain-deep)]" />
-        <span className="font-sans font-medium">{languageOption.label}</span>
-        <ChevronDown size={11} className={`text-[var(--ink-soft)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <Globe size={13} className="text-[var(--field)]" />
+        <span className="font-sans">{languageOption.label}</span>
+        <ChevronDown size={11} className={`text-[var(--ink-ghost)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Popover Menu (Guaranteed Viewport Safe) */}
@@ -67,20 +80,20 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
         <div
           className={`absolute ${
             computedAlign === 'left' ? 'left-0' : 'right-0'
-          } top-full z-50 mt-2 max-h-[min(420px,75vh)] w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-2.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-[var(--ink)] overscroll-contain`}
+          } top-full z-50 mt-2 max-h-[min(420px,75vh)] w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-[26px] bg-[var(--surface-elevated)] p-2.5 shadow-[0_30px_70px_rgb(var(--sh-color)/0.16)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-[var(--ink)] overscroll-contain`}
           role="listbox"
           aria-label="Select Language"
         >
           {/* Header */}
           <div className="border-b border-[var(--line)] px-2.5 pb-2 pt-1">
-            <span className="font-serif text-[11px] font-bold text-[var(--ink-soft)] uppercase tracking-wider">
+            <span className="font-serif text-[11px] font-semibold text-[var(--ink-soft)] uppercase tracking-wider">
               {isHindi ? 'भाषा चयन' : 'Select Language'}
             </span>
           </div>
 
           {/* SECTION 1: AVAILABLE LANGUAGES */}
           <div className="mt-2">
-            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--field-deep)]">
+            <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--field-deep)]">
               {isHindi ? 'उपलब्ध भाषाएं' : 'AVAILABLE NOW'}
             </div>
 
@@ -91,7 +104,7 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
                 onClick={() => handleSelect(ENGLISH_LANGUAGE)}
                 className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors ${
                   language === 'en'
-                    ? 'bg-[var(--grain-tint)] font-bold text-[var(--grain-deep)] border border-[var(--grain-tint)]'
+                    ? 'bg-[var(--grain-tint)] font-semibold text-[var(--grain-deep)] border border-[var(--grain-tint)]'
                     : 'text-[var(--ink)] hover:bg-[var(--paper)]'
                 }`}
               >
@@ -115,12 +128,12 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
                   onClick={() => handleSelect(l)}
                   className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors ${
                     language === 'hi'
-                      ? 'bg-[var(--grain-tint)] font-bold text-[var(--grain-deep)] border border-[var(--grain-tint)]'
+                      ? 'bg-[var(--grain-tint)] font-semibold text-[var(--grain-deep)] border border-[var(--grain-tint)]'
                       : 'text-[var(--ink)] hover:bg-[var(--paper)]'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-bold">{l.label}</span>
+                    <span className="font-semibold">{l.label}</span>
                     <span className="text-[10px] text-[var(--ink-soft)]">({l.english})</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -139,7 +152,7 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
 
           {/* SECTION 2: 22 INDIAN LANGUAGES (EIGHTH SCHEDULE) */}
           <div>
-            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-soft)]">
+            <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
               {isHindi ? '22 भारतीय भाषाएं' : '22 INDIAN LANGUAGES'}
             </div>
 
@@ -155,7 +168,7 @@ export function LanguageSelector({ className = '', align = 'auto' }: { className
                     onClick={() => handleSelect(l)}
                     className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-left text-xs transition-colors ${
                       isSelected
-                        ? 'bg-[var(--grain-tint)] font-bold text-[var(--grain-deep)] border border-[var(--grain-tint)]'
+                        ? 'bg-[var(--grain-tint)] font-semibold text-[var(--grain-deep)] border border-[var(--grain-tint)]'
                         : 'text-[var(--ink-soft)] hover:bg-[var(--paper)]'
                     }`}
                   >

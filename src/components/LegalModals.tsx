@@ -36,8 +36,8 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-[var(--line)] bg-[var(--surface-elevated)] p-6 sm:p-8 text-[var(--ink)] shadow-2xl overflow-hidden">
+    <div className="scrim fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="panel-modal relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden p-6 text-[var(--ink)] sm:p-8">
         
         {/* Header */}
         <div className="flex items-start justify-between border-b border-[var(--line)] pb-4">
@@ -46,7 +46,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
               {type === 'privacy' ? <ShieldCheck size={20} /> : <FileText size={20} />}
             </div>
             <div>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--ink)]">
+              <h2 className="font-serif text-xl sm:text-2xl font-semibold text-[var(--ink)]">
                 {type === 'privacy'
                   ? isHi
                     ? 'गोपनीयता नीति (Privacy Policy)'
@@ -82,7 +82,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
             <>
               {/* Section 1: Commitment */}
               <div className="rounded-2xl border border-[var(--field-tint)] bg-[var(--field-tint)] p-4 space-y-2 text-[var(--field-deep)]">
-                <div className="flex items-center gap-2 font-serif text-sm font-bold text-[var(--field-deep)]">
+                <div className="flex items-center gap-2 font-serif text-sm font-semibold text-[var(--field-deep)]">
                   <Lock size={16} />
                   <span>
                     {isHi
@@ -99,7 +99,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 2: Data Collected */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                <h3 className="font-serif text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
                   <Database size={15} className="text-[var(--grain-deep)]" />
                   {isHi ? '2. हम कौन सा डेटा एकत्र करते हैं' : '2. Information We Collect'}
                 </h3>
@@ -133,7 +133,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 3: Usage */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                <h3 className="font-serif text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
                   <Cpu size={15} className="text-[var(--grain-deep)]" />
                   {isHi ? '3. आपके डेटा का उपयोग कैसे किया जाता है' : '3. How Your Data Is Utilized'}
                 </h3>
@@ -144,7 +144,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                   <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
-                    <span className="font-bold text-[var(--field-deep)] block mb-1">
+                    <span className="font-semibold text-[var(--field-deep)] block mb-1">
                       {isHi ? 'गणितीय LP अनुकूलन' : 'Deterministic Optimization'}
                     </span>
                     <span className="text-[11px] text-[var(--ink-soft)]">
@@ -154,7 +154,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
                     </span>
                   </div>
                   <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
-                    <span className="font-bold text-[var(--field-deep)] block mb-1">
+                    <span className="font-semibold text-[var(--field-deep)] block mb-1">
                       {isHi ? 'स्वायत्त प्रहरी परामर्श' : 'Autonomous Sentinel Alerts'}
                     </span>
                     <span className="text-[11px] text-[var(--ink-soft)]">
@@ -168,7 +168,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 4: Zero Commercial Exploitation */}
               <div className="rounded-2xl border border-[var(--grain-tint)] bg-[var(--grain-tint)] p-4 space-y-1.5">
-                <h3 className="font-serif text-sm font-bold text-[var(--grain-deep)] flex items-center gap-2">
+                <h3 className="font-serif text-sm font-semibold text-[var(--grain-deep)] flex items-center gap-2">
                   <ShieldCheck size={15} className="text-[var(--grain-deep)]" />
                   {isHi ? '4. शून्य वाणिज्यिक डेटा बिक्री (No Commercial Exploitation)' : '4. Zero Third-Party Monetization'}
                 </h3>
@@ -181,7 +181,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 5: Farmer Rights & Security */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                <h3 className="font-serif text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
                   <UserCheck size={15} className="text-[var(--grain-deep)]" />
                   {isHi ? '5. किसान अधिकार व डेटा सुरक्षा' : '5. Farmer Rights & Security Standards'}
                 </h3>
@@ -199,7 +199,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
             <>
               {/* Section 1: Agreement */}
               <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4 space-y-2">
-                <div className="flex items-center gap-2 font-serif text-sm font-bold text-[var(--ink)]">
+                <div className="flex items-center gap-2 font-serif text-sm font-semibold text-[var(--ink)]">
                   <Scale size={16} className="text-[var(--grain-deep)]" />
                   <span>
                     {isHi
@@ -216,7 +216,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 2: Human in the loop & Bounded Autonomy */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                <h3 className="font-serif text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
                   <Cpu size={15} className="text-[var(--field-deep)]" />
                   {isHi
                     ? '2. सीमित स्वायत्तता एवं मानव-नियंत्रित सिद्धांत (Human-in-the-Loop)'
@@ -231,7 +231,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 3: Data Sources and Deterministic Modeling */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                <h3 className="font-serif text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
                   <Database size={15} className="text-[var(--grain-deep)]" />
                   {isHi
                     ? '3. डेटा स्रोत एवं गणितीय प्रमाणन'
@@ -246,7 +246,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 4: Agricultural Disclaimers */}
               <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4 space-y-2">
-                <div className="flex items-center gap-2 font-serif text-sm font-bold text-[var(--grain-deep)]">
+                <div className="flex items-center gap-2 font-serif text-sm font-semibold text-[var(--grain-deep)]">
                   <AlertTriangle size={16} className="text-[var(--grain-deep)]" />
                   <span>
                     {isHi ? '4. कृषि उपज अस्वीकरण (Agronomic Advisory Notice)' : '4. Agronomic Advisory & Natural Risk Notice'}
@@ -261,7 +261,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
               {/* Section 5: Intellectual Property */}
               <div className="space-y-2">
-                <h3 className="font-serif text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+                <h3 className="font-serif text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
                   <HelpCircle size={15} className="text-[var(--grain-deep)]" />
                   {isHi ? '5. बौद्धिक संपदा एवं उपयोग अधिकार' : '5. Intellectual Property & Fair Use'}
                 </h3>
@@ -283,7 +283,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl bg-[var(--field)] px-6 py-2 text-xs font-bold text-white hover:bg-[var(--field-bright)] transition-colors shadow-sm cursor-pointer"
+            className="rounded-xl bg-[var(--field)] px-6 py-2 text-xs font-semibold text-white hover:bg-[var(--field-bright)] transition-colors shadow-sm cursor-pointer"
           >
             {isHi ? 'बंद करें (Close)' : 'Close'}
           </button>

@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import {
   ArrowRight,
-  ArrowLeft,
   Layers,
   Pencil,
   X,
   CheckCircle2,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { JourneyNav } from '@/components/JourneyNav';
 import { getCropDisplayName } from '@/i18n/cropNames';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
 import { formatCurrency, formatCurrencyWords } from '@/i18n/formatters';
@@ -73,6 +71,7 @@ const ALLOC_COLORS = [
 ];
 
 export function FarmPlanScreen({
+  userName,
   selectedState,
   selectedDistrict,
   landAcres,
@@ -83,6 +82,7 @@ export function FarmPlanScreen({
   onEditDetails,
   onChangeLocation,
   onProceedToSentinel,
+  onLogout,
 }: FarmPlanScreenProps) {
   const { language } = useLanguage();
   const isHi = language === 'hi';
@@ -156,71 +156,55 @@ export function FarmPlanScreen({
   return (
     <div className="relative flex min-h-screen w-full flex-col justify-between text-[var(--ink)] selection:bg-[var(--grain-tint)] selection:text-[var(--grain-deep)]">
       {/* ===================================================================== */}
-      {/* 1. TOP NAVIGATION BAR                                                  */}
+      {/* 1. FLOATING JOURNEY NAV — the growth line is gold once a plan exists   */}
       {/* ===================================================================== */}
-      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3 backdrop-blur-md sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onChangeLocation}
-              className="btn-ghost grid h-9 w-9 place-items-center rounded-xl"
-              title={isHi ? 'स्थान बदलें' : 'Back to Location Selection'}
-              aria-label={isHi ? 'स्थान बदलें' : 'Back to Location Selection'}
-            >
-              <ArrowLeft size={16} />
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="font-display text-lg font-extrabold tracking-tight text-[var(--ink)]">
-                AgriOptima<span className="text-[var(--field)]"> AI</span>
-              </span>
-              <span className="chip chip-field font-data text-[10px] tracking-wider">
-                {isHi ? 'चरण 04 / 05 · योजना' : 'Step 04 / 05 · Plan'}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
+      <JourneyNav
+        stage={3}
+        accent="grain"
+        userName={userName}
+        reachable={[1, 2]}
+        onNavigate={(target) => {
+          if (target === 1) onChangeLocation();
+          if (target === 2) onEditDetails();
+        }}
+        onLogout={onLogout}
+        actions={
+          <>
             <button
               type="button"
               onClick={onEditDetails}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--surface-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:border-[var(--line-strong)] hover:text-[var(--ink)]"
+              className="nav-pill hidden h-9 items-center gap-1.5 px-3 text-xs font-medium text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] sm:inline-flex"
               title={isHi ? 'विवरण बदलें' : 'Edit details'}
             >
               <Pencil size={13} className="text-[var(--grain-deep)]" />
               <span className="hidden sm:inline">{isHi ? 'विवरण बदलें' : 'Edit details'}</span>
             </button>
-
             {decision && (
               <button
                 type="button"
                 onClick={() => setShowDetailedModal(true)}
-                className="hidden items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--surface-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:border-[var(--line-strong)] hover:text-[var(--ink)] md:flex"
+                className="nav-pill hidden h-9 items-center gap-1.5 px-3 text-xs font-medium text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] lg:inline-flex"
               >
                 <Layers size={14} className="text-[var(--grain-deep)]" />
                 <span>{isHi ? 'विस्तृत विश्लेषण' : 'Detailed Analysis'}</span>
               </button>
             )}
-
-            <LanguageSelector />
-            <ThemeToggle />
-
             <button
               type="button"
               onClick={onProceedToSentinel}
-              className="btn btn-primary px-3.5 py-1.5 text-xs"
+              className="btn btn-primary btn-sm"
             >
               <span>{isHi ? 'सेंटीनेल' : 'Sentinel'}</span>
               <ArrowRight size={13} />
             </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {/* ===================================================================== */}
       {/* 2. MAIN WORKSPACE                                                      */}
       {/* ===================================================================== */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-24 pt-24 sm:px-8 sm:pt-28 md:pb-8">
         {!decision ? (
           /* ---------- DEFENSIVE: plan still finalizing ---------- */
           <div className="grid min-h-[60vh] place-items-center">
@@ -320,7 +304,7 @@ export function FarmPlanScreen({
                                 <span className="h-2.5 w-2.5 rounded-sm" style={{ background: s.color }} />
                                 {s.name}
                               </span>
-                              <span className="font-data text-sm font-bold text-[var(--ink)]">
+                              <span className="font-data text-sm font-semibold text-[var(--ink)]">
                                 {Math.round(s.pct * 100)}%
                               </span>
                             </div>
@@ -413,7 +397,7 @@ export function FarmPlanScreen({
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-baseline justify-between gap-2">
-                              <span className="truncate font-display text-sm font-bold text-[var(--ink)]">
+                              <span className="truncate font-display text-sm font-semibold text-[var(--ink)]">
                                 {getCropDisplayName(crop.crop_name, language)}
                               </span>
                               <span className="shrink-0 font-data text-[11px] text-[var(--ink-faint)]">
@@ -435,7 +419,7 @@ export function FarmPlanScreen({
 
                           <div className="hidden shrink-0 text-right sm:block">
                             <span className="t-eyebrow block text-[0.5rem]">{isHi ? 'लाभ' : 'Profit'}</span>
-                            <span className="font-display text-sm font-bold text-[var(--field-deep)]">
+                            <span className="font-display text-sm font-semibold text-[var(--field-deep)]">
                               {formatCurrency(crop.net_profit_inr, language)}
                             </span>
                           </div>
@@ -473,12 +457,12 @@ export function FarmPlanScreen({
                           <span className="absolute left-[26px] top-[10px] hidden h-px w-full bg-[var(--line)] sm:block" aria-hidden />
                         )}
                         <div className="flex items-center gap-2">
-                          <span className="z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--field)] font-data text-[9px] font-bold text-white">
+                          <span className="z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--field)] font-data text-[9px] font-semibold text-white">
                             {step.day}
                           </span>
                           <span className="t-eyebrow text-[0.5rem]">{isHi ? `दिन ${step.day}` : `Day ${step.day}`}</span>
                         </div>
-                        <h4 className="mt-2 text-xs font-bold text-[var(--ink)]">{step.title}</h4>
+                        <h4 className="mt-2 text-xs font-semibold text-[var(--ink)]">{step.title}</h4>
                         <p className="mt-0.5 text-[10px] leading-tight text-[var(--ink-soft)]">{step.desc}</p>
                       </div>
                     ))}
@@ -490,7 +474,7 @@ export function FarmPlanScreen({
                   <button
                     type="button"
                     onClick={() => setShowDetailedModal(true)}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--grain-deep)] transition-colors hover:text-[var(--field)]"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--grain-deep)] transition-colors hover:text-[var(--field)]"
                   >
                     {isHi ? 'वैज्ञानिक व गणितीय विश्लेषण देखें →' : 'See the scientific & mathematical analysis →'}
                   </button>
@@ -533,11 +517,11 @@ export function FarmPlanScreen({
       {/* 3. FULL 7-DAY ACTION PLAN MODAL                                        */}
       {/* ===================================================================== */}
       {showFull7DayModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="max-h-[85vh] w-full max-w-2xl space-y-4 overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface-elevated)] p-6 shadow-2xl">
+        <div className="scrim fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="panel-modal max-h-[85vh] w-full max-w-2xl space-y-4 overflow-y-auto p-6">
             <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
               <div>
-                <h3 className="font-display text-lg font-bold text-[var(--ink)]">
+                <h3 className="font-display text-lg font-semibold text-[var(--ink)]">
                   {isHi ? 'विस्तृत 7-दिवसीय खेत कार्ययोजना' : 'Comprehensive 7-Day Farm Action Plan'}
                 </h3>
                 <p className="text-xs text-[var(--ink-soft)]">
@@ -557,11 +541,11 @@ export function FarmPlanScreen({
             <div className="space-y-3">
               {default7Days.map((step) => (
                 <div key={step.day} className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-inset)] p-3.5">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--field)] text-xs font-bold text-white">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--field)] text-xs font-semibold text-white">
                     {step.day}
                   </span>
                   <div>
-                    <h4 className="text-xs font-bold text-[var(--ink)]">{step.title}</h4>
+                    <h4 className="text-xs font-semibold text-[var(--ink)]">{step.title}</h4>
                     <p className="mt-0.5 text-xs text-[var(--ink-soft)]">{step.desc}</p>
                   </div>
                 </div>
@@ -585,15 +569,15 @@ export function FarmPlanScreen({
       {/* 4. DETAILED EXPERT ANALYSIS MODAL                                      */}
       {/* ===================================================================== */}
       {showDetailedModal && decision && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2 backdrop-blur-sm sm:px-4">
-          <div className="max-h-[92vh] w-full max-w-5xl space-y-4 overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 text-[var(--ink)] shadow-2xl sm:p-6">
+        <div className="scrim fixed inset-0 z-50 flex items-center justify-center px-2 sm:px-4">
+          <div className="panel-modal max-h-[92vh] w-full max-w-5xl space-y-4 overflow-y-auto p-4 text-[var(--ink)] sm:p-6">
             <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
               <div className="flex items-center gap-2.5">
                 <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--grain-tint)] text-lg text-[var(--grain-deep)]">
                   🔬
                 </span>
                 <div>
-                  <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
+                  <h3 className="font-display text-base font-semibold text-[var(--ink)] sm:text-lg">
                     {isHi ? 'वैज्ञानिक एवं गणितीय निर्णय विश्लेषण' : 'Expert Decision & Optimization Analysis'}
                   </h3>
                   <p className="text-xs text-[var(--ink-soft)]">

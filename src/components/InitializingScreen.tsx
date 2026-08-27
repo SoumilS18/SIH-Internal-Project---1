@@ -84,7 +84,7 @@ export function InitializingScreen({ stateName, districtName, onReady }: Initial
 
   return (
     <div
-      className="fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden px-6"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden px-6"
       style={{ background: 'var(--canvas)', transition: `opacity ${EXIT_MS}ms var(--ease-out)`, opacity: exiting ? 0 : 1 }}
       role="status"
       aria-live="polite"

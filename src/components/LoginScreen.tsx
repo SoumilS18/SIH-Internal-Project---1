@@ -4,7 +4,6 @@ import {
   ShieldCheck,
   Lock,
   User,
-  Leaf,
   Sprout,
   CloudRain,
   Bot,
@@ -14,9 +13,8 @@ import {
 } from 'lucide-react';
 import { usePrefersReducedMotion, useMouseParallax, useMounted } from '@/lib/hooks';
 import { useLanguage } from '@/i18n/LanguageContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { LegalModal } from '@/components/LegalModals';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { JourneyNav } from '@/components/JourneyNav';
 import { FarmDigitalTwin } from '@/components/FarmDigitalTwin';
 import { AIAgentOrb } from '@/components/AIAgentOrb';
 import { MagneticButton } from '@/components/ui/motion';
@@ -77,34 +75,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden text-[var(--ink)] selection:bg-[var(--field-tint)] selection:text-[var(--field-deep)]">
-      {/* ================================================================= */}
-      {/* FLOATING TOP CHROME (transparent — keeps the hero immersive)      */}
-      {/* ================================================================= */}
-      <header className="relative z-30 flex items-center justify-between gap-3 px-5 py-5 sm:px-8">
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--field-tint)] text-[var(--field)] leaf-radius">
-            <Leaf size={19} />
-          </span>
-          <span className="flex flex-col leading-none">
-            <span className="font-display text-lg font-extrabold tracking-tight text-[var(--ink)]">
-              AgriOptima<span className="text-[var(--field)]"> AI</span>
-            </span>
-            <span className="mt-1 hidden text-[10px] font-medium tracking-wide text-[var(--ink-faint)] sm:block">
-              {isHi ? 'सटीक निर्णय • समृद्ध किसान' : 'Smart decisions. Stronger farms.'}
-            </span>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <LanguageSelector />
-          <ThemeToggle />
-        </div>
-      </header>
+      {/* Floating chrome — brand + language only; the journey has not begun yet */}
+      <JourneyNav stage={0} />
 
       {/* ================================================================= */}
       {/* HERO STAGE                                                        */}
       {/* ================================================================= */}
-      <main className="relative z-10 flex flex-1 items-center px-5 pb-4 sm:px-8">
+      <main className="relative z-10 flex flex-1 items-center px-5 pb-4 pt-24 sm:px-8 sm:pt-28">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">
           {/* ---------------------------------------------------------- */}
           {/* LEFT — thesis headline + living twin                        */}

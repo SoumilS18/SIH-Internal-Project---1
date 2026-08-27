@@ -45,8 +45,8 @@ export function AutonomousLogModal({
   const currentLog = logs[selectedLogIndex] || logs[0] || null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-[var(--line)] bg-[var(--paper)] p-5 sm:p-6 text-[var(--ink)] shadow-2xl overflow-hidden">
+    <div className="scrim fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="panel-modal relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden p-5 text-[var(--ink)] sm:p-6">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-[var(--line)] pb-4">
           <div className="space-y-1">
@@ -54,7 +54,7 @@ export function AutonomousLogModal({
               <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[var(--field-tint)] text-[var(--field-deep)] border border-[var(--field-tint)]">
                 <ShieldCheck size={16} />
               </span>
-              <h2 className="font-serif text-lg font-bold text-[var(--ink)]">
+              <h2 className="font-serif text-lg font-semibold text-[var(--ink)]">
                 {t('sentinel.modalTitle')}
               </h2>
             </div>
@@ -77,7 +77,7 @@ export function AutonomousLogModal({
           <button
             type="button"
             onClick={() => setShowSecurityDetails((prev) => !prev)}
-            className="flex items-center gap-1.5 font-bold hover:underline text-left cursor-pointer"
+            className="flex items-center gap-1.5 font-semibold hover:underline text-left cursor-pointer"
           >
             <Lock size={13} className="text-[var(--field)] shrink-0" />
             <span>{t('sentinel.securityBadge')}</span>
@@ -87,7 +87,7 @@ export function AutonomousLogModal({
             type="button"
             onClick={onRunCheck}
             disabled={isChecking}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--field-deep)] px-3 py-1 text-xs font-bold text-white shadow-xs hover:bg-[var(--field-deep)] transition-all disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--field-deep)] px-3 py-1 text-xs font-semibold text-white shadow-xs hover:bg-[var(--field-deep)] transition-all disabled:opacity-50 cursor-pointer"
           >
             <Activity size={12} className={isChecking ? 'animate-spin' : ''} />
             <span>{isChecking ? t('sentinel.checking') : t('sentinel.runCheckNow')}</span>
@@ -97,7 +97,7 @@ export function AutonomousLogModal({
         {/* Security Whitelist Details Drawer */}
         {showSecurityDetails && (
           <div className="mt-2.5 rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 space-y-2.5 text-xs animate-in slide-in-from-top-2 duration-150">
-            <div className="text-[var(--field-deep)] font-bold flex items-center gap-1.5">
+            <div className="text-[var(--field-deep)] font-semibold flex items-center gap-1.5">
               <ShieldCheck size={14} /> {t('sentinel.allowedActionsTitle')}
             </div>
             <ul className="list-disc pl-5 text-[var(--ink-soft)] space-y-0.5 text-[11px]">
@@ -106,7 +106,7 @@ export function AutonomousLogModal({
               <li>RECORD_OPTIMAL_STATUS (Verification clearance logging)</li>
             </ul>
 
-            <div className="text-[var(--grain-deep)] font-bold flex items-center gap-1.5 pt-1">
+            <div className="text-[var(--grain-deep)] font-semibold flex items-center gap-1.5 pt-1">
               <ShieldAlert size={14} /> {t('sentinel.blockedActionsTitle')}
             </div>
             <ul className="list-disc pl-5 text-[var(--ink-soft)] space-y-0.5 text-[11px]">
@@ -130,7 +130,7 @@ export function AutonomousLogModal({
                 onClick={() => setSelectedLogIndex(idx)}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-medium shrink-0 transition-colors cursor-pointer ${
                   selectedLogIndex === idx
-                    ? 'bg-[var(--field)] text-white font-bold shadow-xs'
+                    ? 'bg-[var(--field)] text-white font-semibold shadow-xs'
                     : 'bg-[var(--surface-elevated)] border border-[var(--line)] text-[var(--ink-soft)] hover:text-[var(--ink)]'
                 }`}
               >
@@ -150,7 +150,7 @@ export function AutonomousLogModal({
                   <Clock size={12} /> {currentLog.timestamp} • {currentLog.district}, {currentLog.state} (ID: {currentLog.cycle_id})
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[10px] ${
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-semibold border text-[10px] ${
                     currentLog.verification_status === 'VERIFIED'
                       ? 'bg-[var(--field-tint)] text-[var(--field-deep)] border-[var(--field-tint)]'
                       : currentLog.verification_status === 'FAILED'
@@ -165,7 +165,7 @@ export function AutonomousLogModal({
 
               {/* 1. OBSERVE */}
               <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 space-y-2 shadow-xs">
-                <div className="flex items-center justify-between text-[var(--grain-deep)] font-bold text-xs uppercase tracking-wider">
+                <div className="flex items-center justify-between text-[var(--grain-deep)] font-semibold text-xs uppercase tracking-wider">
                   <span className="flex items-center gap-1.5">
                     <Activity size={14} className="text-[var(--grain-deep)]" />
                     {t('sentinel.stepObserve')}
@@ -197,7 +197,7 @@ export function AutonomousLogModal({
 
               {/* 2. REASON */}
               <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 space-y-1.5 shadow-xs">
-                <div className="text-[var(--field-deep)] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <div className="text-[var(--field-deep)] font-semibold text-xs uppercase tracking-wider flex items-center gap-1.5">
                   <Sparkles size={14} className="text-[var(--field)]" />
                   {t('sentinel.stepReason')}
                 </div>
@@ -207,7 +207,7 @@ export function AutonomousLogModal({
               {/* 3. DECIDE & 4. VALIDATE */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 space-y-1.5 shadow-xs">
-                  <div className="text-[var(--grain-deep)] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                  <div className="text-[var(--grain-deep)] font-semibold text-xs uppercase tracking-wider flex items-center gap-1.5">
                     <Zap size={14} className="text-[var(--grain-deep)]" />
                     {t('sentinel.stepDecide')}
                   </div>
@@ -215,11 +215,11 @@ export function AutonomousLogModal({
                 </div>
 
                 <div className="rounded-2xl border border-[var(--field-tint)] bg-[var(--field-tint)] p-4 space-y-1.5 shadow-xs">
-                  <div className="text-[var(--field-deep)] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                  <div className="text-[var(--field-deep)] font-semibold text-xs uppercase tracking-wider flex items-center gap-1.5">
                     <ShieldCheck size={14} className="text-[var(--field)]" />
                     {t('sentinel.stepValidate')}
                   </div>
-                  <p className="text-[var(--field-deep)] text-xs font-bold">
+                  <p className="text-[var(--field-deep)] text-xs font-semibold">
                     ✓ {currentLog.action_validated ? 'APPROVED: Whitelisted Safe' : 'REJECTED: Security Boundary'}
                   </p>
                 </div>
@@ -227,11 +227,11 @@ export function AutonomousLogModal({
 
               {/* 5. ACT */}
               <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 space-y-1.5 shadow-xs">
-                <div className="text-[var(--sky)] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <div className="text-[var(--sky)] font-semibold text-xs uppercase tracking-wider flex items-center gap-1.5">
                   <Zap size={14} className="text-[var(--sky)]" />
                   {t('sentinel.stepAct')}
                 </div>
-                <p className="text-[var(--ink)] font-bold">{currentLog.action_name}</p>
+                <p className="text-[var(--ink)] font-semibold">{currentLog.action_name}</p>
                 <p className="text-[var(--ink-soft)] text-xs">{currentLog.action_detail}</p>
               </div>
 
@@ -244,7 +244,7 @@ export function AutonomousLogModal({
                 }`}
               >
                 <div
-                  className={`font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 ${
+                  className={`font-semibold text-xs uppercase tracking-wider flex items-center gap-1.5 ${
                     currentLog.verification_status === 'VERIFIED' ? 'text-[var(--field-deep)]' : 'text-[#BE123C]'
                   }`}
                 >
@@ -272,7 +272,7 @@ export function AutonomousLogModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl bg-[var(--field-deep)] px-5 py-2 text-xs font-bold text-white hover:bg-[var(--field-deep)] transition-colors cursor-pointer"
+            className="rounded-xl bg-[var(--field-deep)] px-5 py-2 text-xs font-semibold text-white hover:bg-[var(--field-deep)] transition-colors cursor-pointer"
           >
             {t('common.close')}
           </button>

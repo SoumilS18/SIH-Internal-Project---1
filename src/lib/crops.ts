@@ -60,14 +60,83 @@ function hashString(s: string): number {
   return h;
 }
 
-export function cropVisual(name: string): CropVisual {
+/** Longest-first so "sugarcane" never matches a shorter key by accident. */
+const CROP_KEYS = Object.keys(CROP_TABLE).sort((a, b) => b.length - a.length);
+
+function matchKey(name: string): string | null {
   const key = (name || '').toLowerCase().trim();
-  for (const k of Object.keys(CROP_TABLE)) {
-    if (key.includes(k)) return CROP_TABLE[k];
+  for (const k of CROP_KEYS) {
+    if (key.includes(k)) return k;
   }
-  return FALLBACK_PALETTE[hashString(key) % FALLBACK_PALETTE.length];
+  return null;
+}
+
+export function cropVisual(name: string): CropVisual {
+  const k = matchKey(name);
+  if (k) return CROP_TABLE[k];
+  return FALLBACK_PALETTE[hashString((name || '').toLowerCase().trim()) % FALLBACK_PALETTE.length];
 }
 
 export function cropEmoji(name: string): string {
   return cropVisual(name).emoji;
+}
+
+/* ==========================================================================
+   HOW A CROP STANDS IN A FIELD
+   The digital twin plants the crops the optimiser actually allocated, so each
+   one has to read as itself from across the room: cane towers, cereals carry
+   an ear, pulses and vegetables sit low and bushy, tubers show leaf only.
+   This is plant morphology — a visual property of a known crop — not an
+   agronomic recommendation.
+   ========================================================================== */
+
+export type CropForm = 'cereal' | 'cane' | 'bush' | 'tuber' | 'fibre' | 'tree';
+
+export interface CropStand {
+  form: CropForm;
+  /** stand height relative to the tallest crop in the table (0.34 .. 1) */
+  height: number;
+  /** ear / fruit / boll / plume colour */
+  head: string;
+  /** how thickly this crop is planted, relative (0.7 .. 1.3) */
+  spacing: number;
+}
+
+const STAND_TABLE: Record<string, CropStand> = {
+  rice:      { form: 'cereal', height: 0.52, head: '#CFC486', spacing: 1.25 },
+  paddy:     { form: 'cereal', height: 0.52, head: '#CFC486', spacing: 1.25 },
+  wheat:     { form: 'cereal', height: 0.58, head: '#E8CC77', spacing: 1.2 },
+  barley:    { form: 'cereal', height: 0.6,  head: '#E2D28C', spacing: 1.2 },
+  bajra:     { form: 'cereal', height: 0.74, head: '#CDB878', spacing: 0.95 },
+  jowar:     { form: 'cereal', height: 0.8,  head: '#D2BC7E', spacing: 0.9 },
+  maize:     { form: 'cereal', height: 0.86, head: '#EFC24A', spacing: 0.85 },
+  corn:      { form: 'cereal', height: 0.86, head: '#EFC24A', spacing: 0.85 },
+  sugarcane: { form: 'cane',   height: 1,    head: '#C4D6AC', spacing: 1.05 },
+  banana:    { form: 'tree',   height: 0.94, head: '#E0BE4B', spacing: 0.6 },
+  cotton:    { form: 'fibre',  height: 0.55, head: '#FBF8EE', spacing: 0.9 },
+  tomato:    { form: 'bush',   height: 0.5,  head: '#C9503A', spacing: 0.85 },
+  chilli:    { form: 'bush',   height: 0.46, head: '#C24733', spacing: 0.9 },
+  soybean:   { form: 'bush',   height: 0.42, head: '#B9C98C', spacing: 1.15 },
+  groundnut: { form: 'bush',   height: 0.38, head: '#D9C48E', spacing: 1.15 },
+  gram:      { form: 'bush',   height: 0.4,  head: '#C3D39A', spacing: 1.15 },
+  chickpea:  { form: 'bush',   height: 0.4,  head: '#C3D39A', spacing: 1.15 },
+  tur:       { form: 'bush',   height: 0.62, head: '#C8D69C', spacing: 0.9 },
+  arhar:     { form: 'bush',   height: 0.62, head: '#C8D69C', spacing: 0.9 },
+  moong:     { form: 'bush',   height: 0.38, head: '#BCD094', spacing: 1.2 },
+  lentil:    { form: 'bush',   height: 0.36, head: '#CBB489', spacing: 1.25 },
+  masoor:    { form: 'bush',   height: 0.36, head: '#CBB489', spacing: 1.25 },
+  pea:       { form: 'bush',   height: 0.44, head: '#A9D48C', spacing: 1.15 },
+  sesame:    { form: 'bush',   height: 0.5,  head: '#DCCFA4', spacing: 1.05 },
+  mustard:   { form: 'bush',   height: 0.56, head: '#F2D24A', spacing: 1.1 },
+  sunflower: { form: 'bush',   height: 0.78, head: '#F0C63C', spacing: 0.7 },
+  turmeric:  { form: 'tuber',  height: 0.44, head: '#E3AE3A', spacing: 1.1 },
+  potato:    { form: 'tuber',  height: 0.36, head: '#BFD3A0', spacing: 1.2 },
+  onion:     { form: 'tuber',  height: 0.34, head: '#C9A0B0', spacing: 1.3 },
+};
+
+const STAND_FALLBACK: CropStand = { form: 'bush', height: 0.48, head: '#C8D69C', spacing: 1 };
+
+export function cropStand(name: string): CropStand {
+  const k = matchKey(name);
+  return (k && STAND_TABLE[k]) || STAND_FALLBACK;
 }

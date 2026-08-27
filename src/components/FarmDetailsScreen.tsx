@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  ArrowLeft,
   ArrowRight,
   Sprout,
   IndianRupee,
@@ -10,8 +9,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { JourneyNav } from '@/components/JourneyNav';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
 import { translateIrrigationReliability } from '@/i18n/enums';
 import { FarmDigitalTwin } from '@/components/FarmDigitalTwin';
@@ -37,6 +35,7 @@ interface FarmDetailsScreenProps {
   onRiskToleranceChange: (risk: 'Conservative' | 'Balanced' | 'Aggressive') => void;
   onGenerate: () => void;
   onChangeLocation: () => void;
+  onLogout?: () => void;
 }
 
 /** Guided step eyebrow — turns the setup form into a STEP 01–05 journey. */
@@ -51,10 +50,10 @@ function StepLabel({
 }) {
   return (
     <div className="mb-2.5 flex items-center gap-2">
-      <span className="font-data text-xs font-bold tracking-wider text-[var(--field)]">{n}</span>
+      <span className="font-data text-xs font-semibold tracking-wider text-[var(--field)]">{n}</span>
       <span className="h-3.5 w-px bg-[var(--line-strong)]" aria-hidden />
       <Icon size={14} className="text-[var(--field)]" />
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ink-soft)]">
+      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-soft)]">
         {children}
       </span>
     </div>
@@ -69,6 +68,7 @@ function StepLabel({
  * off to the cinematic analysis + full-screen plan reveal via onGenerate().
  */
 export function FarmDetailsScreen({
+  userName,
   selectedState,
   selectedDistrict,
   landAcres,
@@ -86,6 +86,7 @@ export function FarmDetailsScreen({
   onRiskToleranceChange,
   onGenerate,
   onChangeLocation,
+  onLogout,
 }: FarmDetailsScreenProps) {
   const { language } = useLanguage();
   const isHi = language === 'hi';
@@ -125,41 +126,22 @@ export function FarmDetailsScreen({
   return (
     <div className="relative flex min-h-screen w-full flex-col justify-between text-[var(--ink)] selection:bg-[var(--field-tint)] selection:text-[var(--field-deep)]">
       {/* ===================================================================== */}
-      {/* 1. TOP NAVIGATION BAR                                                  */}
+      {/* 1. FLOATING JOURNEY NAV — brand, growth line, utilities                */}
       {/* ===================================================================== */}
-      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3 backdrop-blur-md sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onChangeLocation}
-              className="btn-ghost grid h-9 w-9 place-items-center rounded-xl"
-              title={isHi ? 'स्थान बदलें' : 'Back to Location Selection'}
-              aria-label={isHi ? 'स्थान बदलें' : 'Back to Location Selection'}
-            >
-              <ArrowLeft size={16} />
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="font-display text-lg font-extrabold tracking-tight text-[var(--ink)]">
-                AgriOptima<span className="text-[var(--field)]"> AI</span>
-              </span>
-              <span className="chip chip-field font-data text-[10px] tracking-wider">
-                {isHi ? 'चरण 03 / 05 · विवरण' : 'Step 03 / 05 · Details'}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <LanguageSelector />
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <JourneyNav
+        stage={2}
+        userName={userName}
+        reachable={[1]}
+        onNavigate={(target) => {
+          if (target === 1) onChangeLocation();
+        }}
+        onLogout={onLogout}
+      />
 
       {/* ===================================================================== */}
       {/* 2. DETAILS WORKSPACE                                                   */}
       {/* ===================================================================== */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-7 sm:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-6 pt-24 sm:px-8 sm:pt-28">
         {/* hero band — the intelligence core invites the farmer to describe the field */}
         <Reveal className="flex flex-wrap items-center justify-between gap-5">
           <div className="max-w-2xl">
@@ -368,7 +350,7 @@ export function FarmDetailsScreen({
                   <span className="t-eyebrow block text-[0.55rem]">
                     {isHi ? 'खेत का स्थान' : 'Farm location'}
                   </span>
-                  <span className="text-sm font-bold text-[var(--ink)]">
+                  <span className="text-sm font-semibold text-[var(--ink)]">
                     {getDistrictDisplayName(selectedDistrict, language)}, {getStateDisplayName(selectedState, language)}
                   </span>
                 </div>
@@ -398,9 +380,9 @@ export function FarmDetailsScreen({
               <div className="mt-3 space-y-3">
                 {nextSteps.map((s) => (
                   <div key={s.n} className="flex items-start gap-3">
-                    <span className="font-data text-sm font-bold text-[var(--field)]">{s.n}</span>
+                    <span className="font-data text-sm font-semibold text-[var(--field)]">{s.n}</span>
                     <div>
-                      <div className="text-sm font-bold text-[var(--ink)]">{s.t}</div>
+                      <div className="text-sm font-semibold text-[var(--ink)]">{s.t}</div>
                       <p className="mt-0.5 text-[11px] leading-snug text-[var(--ink-soft)]">{s.d}</p>
                     </div>
                   </div>
@@ -414,7 +396,7 @@ export function FarmDetailsScreen({
       {/* ===================================================================== */}
       {/* 3. FOOTER                                                              */}
       {/* ===================================================================== */}
-      <footer className="border-t border-[var(--line)] px-4 py-3 text-xs text-[var(--ink-soft)] sm:px-8">
+      <footer className="border-t border-[var(--line-soft)] px-4 pb-24 pt-3 text-xs text-[var(--ink-soft)] sm:px-8 md:pb-3">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 text-[11px]">
           <span>{isHi ? 'ICAR कृषि इंजन एवं रीयल-टाइम मंडी डेटा द्वारा संचालित' : 'Powered by ICAR Agronomy Engine & Real-time Mandi Telemetry'}</span>
           <span>© 2026 AgriOptima AI</span>

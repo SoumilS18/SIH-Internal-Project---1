@@ -90,12 +90,14 @@ export default {
           300: '#f5e6c0',
         },
       },
+      // ONE family for the whole product. Every legacy alias (font-serif,
+      // font-mono, font-display) resolves to Manrope so no screen can drift
+      // back into a second typeface.
       fontFamily: {
-        display: ['"Bricolage Grotesque"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
-        // legacy `font-serif` usages now resolve to the new display face
-        serif: ['"Bricolage Grotesque"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
-        sans: ['"Inter"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        display: ['"Manrope"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
+        serif: ['"Manrope"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
+        sans: ['"Manrope"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
+        mono: ['"Manrope"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
       },
       keyframes: {
         breathe: {

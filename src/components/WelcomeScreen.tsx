@@ -3,16 +3,12 @@ import { IndiaMap } from '@/components/IndiaMap';
 import { ALL_INDIAN_DISTRICTS } from '@/lib/districtsCatalog';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
-import { LanguageSelector } from '@/components/LanguageSelector';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { JourneyNav } from '@/components/JourneyNav';
 import { MagneticButton } from '@/components/ui/motion';
 import { usePrefersReducedMotion, useMounted } from '@/lib/hooks';
 import type { DistrictLocationItem } from '@/types/farm';
 import {
-  User,
-  LogOut,
   ArrowRight,
-  ArrowLeft,
   Search,
   Navigation,
   CheckCircle2,
@@ -272,53 +268,13 @@ export function WelcomeScreen({
 
   return (
     <div className="relative flex min-h-screen w-full flex-col text-[var(--ink)] selection:bg-[var(--field-tint)] selection:text-[var(--field-deep)]">
-      {/* ================================================================= */}
-      {/* FLOATING TOP CHROME                                               */}
-      {/* ================================================================= */}
-      <header className="relative z-30 flex flex-wrap items-center justify-between gap-3 px-5 py-5 sm:px-8">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onLogout}
-            className="btn-ghost grid h-9 w-9 place-items-center rounded-xl"
-            title={isHi ? 'लॉगिन पर वापस' : 'Back to login'}
-            aria-label={isHi ? 'लॉगिन पर वापस' : 'Back to login'}
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <div className="flex items-center gap-2.5">
-            <span className="font-display text-lg font-extrabold tracking-tight text-[var(--ink)]">
-              AgriOptima<span className="text-[var(--field)]"> AI</span>
-            </span>
-            <span className="chip chip-field font-data text-[10px] tracking-wider">
-              {isHi ? 'चरण 02 / 05 · स्थान' : 'Step 02 / 05 · Location'}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <LanguageSelector />
-          <ThemeToggle />
-          <span className="hidden items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs text-[var(--ink-soft)] backdrop-blur-sm sm:flex">
-            <User size={13} className="text-[var(--grain-deep)]" />
-            <span className="font-medium">{userName}</span>
-          </span>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="btn-ghost grid h-9 w-9 place-items-center rounded-xl"
-            title={isHi ? 'लॉगआउट' : 'Logout'}
-            aria-label={isHi ? 'लॉगआउट' : 'Logout'}
-          >
-            <LogOut size={16} />
-          </button>
-        </div>
-      </header>
+      {/* Floating chrome — the journey pill marks this as stage 01 */}
+      <JourneyNav stage={1} userName={userName} onLogout={onLogout} />
 
       {/* ================================================================= */}
       {/* MAIN                                                              */}
       {/* ================================================================= */}
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-5 py-4 sm:px-8">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-5 pb-6 pt-24 sm:px-8 sm:pt-28">
         <div className="mb-6" style={rise(0)}>
           <div className="t-eyebrow" style={{ color: 'var(--field)' }}>
             {isHi ? 'अपना खेत पिन करें' : 'Pin your field'}
@@ -483,7 +439,7 @@ export function WelcomeScreen({
                     <span className="t-eyebrow block text-[0.58rem] text-[var(--field-deep)]">
                       {isHi ? 'चुना गया स्थान' : 'Selected location'}
                     </span>
-                    <span className="text-sm font-bold text-[var(--ink)]">
+                    <span className="text-sm font-semibold text-[var(--ink)]">
                       {getDistrictDisplayName(chosenDistrict, language)}, {getStateDisplayName(chosenState, language)}
                     </span>
                   </div>
@@ -563,7 +519,7 @@ export function WelcomeScreen({
                           onClick={() => setChosenDistrict(d)}
                           className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors ${
                             isSelected
-                              ? 'bg-[var(--field)] font-bold text-white'
+                              ? 'bg-[var(--field)] font-semibold text-white'
                               : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:border-[var(--line-strong)] hover:text-[var(--ink)]'
                           }`}
                         >
@@ -583,7 +539,7 @@ export function WelcomeScreen({
       {/* ================================================================= */}
       {/* FOOTER                                                            */}
       {/* ================================================================= */}
-      <footer className="relative z-10 px-5 py-4 text-xs text-[var(--ink-faint)] sm:px-8">
+      <footer className="relative z-10 px-5 pb-24 pt-4 text-xs text-[var(--ink-faint)] sm:px-8 md:pb-4">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 text-[11px]">
           <span>
             {isHi

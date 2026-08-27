@@ -393,6 +393,14 @@ export function MainScreen({
           setPage('plan');
         }}
         onLogout={onLogout || onBack}
+        onEditDetails={() => {
+          setViewMode('farmer');
+          setPage('details');
+        }}
+        onChangeLocation={() => {
+          setViewMode('farmer');
+          onBack();
+        }}
       />
     );
   }
@@ -420,6 +428,7 @@ export function MainScreen({
           onRiskToleranceChange={setRiskTolerance}
           onGenerate={handleGeneratePlan}
           onChangeLocation={onBack}
+          onLogout={onLogout || onBack}
         />
       ) : (
         <FarmPlanScreen

@@ -1,5 +1,4 @@
 import React, { useRef } from 'react';
-import { useTheme } from '@/theme/ThemeContext';
 import { usePrefersReducedMotion, useRafLoop } from '@/lib/hooks';
 
 interface WorldBackgroundProps {
@@ -31,7 +30,6 @@ export function WorldBackground({
   survey = true,
   className = '',
 }: WorldBackgroundProps) {
-  const { isDark } = useTheme();
   const reduced = usePrefersReducedMotion();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const motesRef = useRef<Mote[]>([]);
@@ -74,7 +72,7 @@ export function WorldBackground({
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, isDark]);
+  }, [active]);
 
   useRafLoop((dt) => {
     const c = canvasRef.current;
@@ -84,8 +82,9 @@ export function WorldBackground({
     const { w, h, dpr } = sizeRef.current;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    const base = isDark ? [92, 240, 168] : [46, 158, 91];
-    const gold = isDark ? [240, 194, 75] : [215, 154, 34];
+    // fresh leaf green + sunlight, matching --field-bright / --grain
+    const base = [70, 169, 104];
+    const gold = [216, 166, 60];
     for (const m of motesRef.current) {
       m.x += m.vx * dt;
       m.y += m.vy * dt;

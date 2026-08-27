@@ -73,7 +73,7 @@ export function DetailedAnalysisView({
             🔬
           </span>
           <div>
-            <h3 className="font-serif text-sm sm:text-base font-bold text-[var(--ink)]">
+            <h3 className="font-serif text-sm sm:text-base font-semibold text-[var(--ink)]">
               {isHi
                 ? 'विशेषज्ञ एवं निर्णायक तकनीकी विश्लेषण'
                 : 'Expert & Technical Decision Analytics'}
@@ -89,7 +89,7 @@ export function DetailedAnalysisView({
         <button
           type="button"
           onClick={onReturnToFarmerView}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--field-deep)] px-3.5 py-2 text-xs font-bold text-[#FFFFFF] shadow-sm hover:bg-[var(--field-deep)] transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--field-deep)] px-3.5 py-2 text-xs font-semibold text-[#FFFFFF] shadow-sm hover:bg-[var(--field-deep)] transition-colors cursor-pointer"
         >
           <span>🌾 {t('farmerPlan.hideDetailedAnalysisBtn')}</span>
         </button>
@@ -106,7 +106,7 @@ export function DetailedAnalysisView({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-center text-xs font-bold transition-all ${
+                className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-center text-xs font-semibold transition-all ${
                   active
                     ? 'bg-[var(--field)] text-[#FFFFFF] shadow-xs'
                     : 'text-[var(--ink-soft)] hover:bg-[var(--paper)] hover:text-[var(--ink)]'
@@ -128,10 +128,10 @@ export function DetailedAnalysisView({
           {/* Mathematical Model Header */}
           <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-5 shadow-sm space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
-              <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
                 <Sparkles size={14} className="text-[var(--grain-deep)]" /> HiGHS Linear Programming Solver (Dual-Simplex / Interior-Point)
               </span>
-              <span className="rounded-full bg-[var(--field-tint)] px-2.5 py-0.5 text-[10px] text-[var(--field-deep)] border border-[var(--field-tint)] font-bold">
+              <span className="rounded-full bg-[var(--field-tint)] px-2.5 py-0.5 text-[10px] text-[var(--field-deep)] border border-[var(--field-tint)] font-semibold">
                 STATUS: OPTIMAL_FOUND (Primal Feasible)
               </span>
             </div>
@@ -142,14 +142,14 @@ export function DetailedAnalysisView({
 
           {/* Allocated Crops Table */}
           <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-5 shadow-sm space-y-3">
-            <h3 className="font-serif text-sm font-bold text-[var(--ink)]">
+            <h3 className="font-serif text-sm font-semibold text-[var(--ink)]">
               {t('overview.optimalAllocation')} (HiGHS LP Simplex Solution)
             </h3>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[var(--line)] text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+                  <tr className="border-b border-[var(--line)] text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
                     <th className="pb-2.5">{t('overview.crop')}</th>
                     <th className="pb-2.5">{t('overview.acres')}</th>
                     <th className="pb-2.5">{t('overview.percentage')}</th>
@@ -163,13 +163,13 @@ export function DetailedAnalysisView({
                 <tbody className="divide-y divide-[var(--line)] text-[11px]">
                   {allocated_crops.map((crop) => (
                     <tr key={crop.crop_name} className="hover:bg-[var(--paper)] transition-colors">
-                      <td className="py-3 font-serif text-xs font-bold text-[var(--ink)]">
+                      <td className="py-3 font-serif text-xs font-semibold text-[var(--ink)]">
                         {getCropDisplayName(crop.crop_name, language)}
                       </td>
-                      <td className="py-3 text-[var(--ink)] font-bold">
+                      <td className="py-3 text-[var(--ink)] font-semibold">
                         {formatArea(crop.allocated_acres, language)}
                       </td>
-                      <td className="py-3 text-[var(--grain-deep)] font-bold">
+                      <td className="py-3 text-[var(--grain-deep)] font-semibold">
                         {crop.acre_share_pct.toFixed(1)}%
                       </td>
                       <td className="py-3 text-[var(--ink-soft)]">
@@ -181,10 +181,10 @@ export function DetailedAnalysisView({
                       <td className="py-3 text-[var(--ink-soft)]">
                         {formatCurrency(crop.total_cost_inr, language)}
                       </td>
-                      <td className="py-3 text-[var(--field-deep)] font-bold">
+                      <td className="py-3 text-[var(--field-deep)] font-semibold">
                         {formatCurrency(crop.net_profit_inr, language)}
                       </td>
-                      <td className="py-3 text-[var(--field-deep)] font-bold">
+                      <td className="py-3 text-[var(--field-deep)] font-semibold">
                         +{crop.roi_pct.toFixed(1)}%
                       </td>
                     </tr>
@@ -213,7 +213,7 @@ export function DetailedAnalysisView({
       {activeTab === 'crops' && (
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-5 shadow-sm space-y-3">
           <div className="border-b border-[var(--line)] pb-2.5">
-            <h3 className="font-serif text-sm font-bold text-[var(--ink)]">
+            <h3 className="font-serif text-sm font-semibold text-[var(--ink)]">
               {t('crops.title')}
             </h3>
             <p className="text-[11px] text-[var(--ink-soft)]">
@@ -224,7 +224,7 @@ export function DetailedAnalysisView({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-[var(--line)] text-[10px] uppercase font-bold text-[var(--ink-soft)]">
+                <tr className="border-b border-[var(--line)] text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
                   <th className="pb-2.5">{t('crops.cropName')}</th>
                   <th className="pb-2.5">{isHi ? 'ऐतिहासिक उपज' : 'Hist. Baseline'}</th>
                   <th className="pb-2.5">{isHi ? 'मौसम गुणक' : 'Multiplier'}</th>
@@ -244,16 +244,16 @@ export function DetailedAnalysisView({
                       evalItem.is_allocated ? 'bg-[var(--field-tint)] font-semibold' : ''
                     }`}
                   >
-                    <td className="py-3 font-serif text-xs font-bold text-[var(--ink)]">
+                    <td className="py-3 font-serif text-xs font-semibold text-[var(--ink)]">
                       {getCropDisplayName(evalItem.crop_name, language)}
                     </td>
                     <td className="py-3 text-[var(--ink-soft)]">
                       {formatYield(evalItem.hist_yield_qtl_acre, language)}
                     </td>
-                    <td className="py-3 text-[var(--ink)] font-bold">
+                    <td className="py-3 text-[var(--ink)] font-semibold">
                       {evalItem.weather_multiplier.toFixed(2)}x
                     </td>
-                    <td className="py-3 text-[var(--ink)] font-bold">
+                    <td className="py-3 text-[var(--ink)] font-semibold">
                       {formatYield(evalItem.expected_yield_qtl_acre, language)}
                     </td>
                     <td className="py-3 text-[var(--ink-soft)]">
@@ -262,17 +262,17 @@ export function DetailedAnalysisView({
                     <td className="py-3 text-[var(--ink-soft)]">
                       {formatRatePerAcre(evalItem.cost_c2_per_acre, language)}
                     </td>
-                    <td className="py-3 text-[var(--field-deep)] font-bold">
+                    <td className="py-3 text-[var(--field-deep)] font-semibold">
                       {formatRatePerAcre(evalItem.risk_adjusted_profit_per_acre, language)}
                     </td>
                     <td className="py-3">
-                      <span className="rounded-full bg-[var(--paper)] border border-[var(--line)] px-2 py-0.5 text-[10px] text-[var(--ink-soft)] font-bold">
+                      <span className="rounded-full bg-[var(--paper)] border border-[var(--line)] px-2 py-0.5 text-[10px] text-[var(--ink-soft)] font-semibold">
                         {evalItem.risk_score.toFixed(2)}
                       </span>
                     </td>
                     <td className="py-3">
                       {evalItem.is_allocated ? (
-                        <span className="rounded-full border border-[var(--field-tint)] bg-[var(--field-tint)] px-2 py-0.5 text-[10px] font-bold text-[var(--field-deep)]">
+                        <span className="rounded-full border border-[var(--field-tint)] bg-[var(--field-tint)] px-2 py-0.5 text-[10px] font-semibold text-[var(--field-deep)]">
                           {t('crops.recommended')}
                         </span>
                       ) : (
@@ -295,7 +295,7 @@ export function DetailedAnalysisView({
       {activeTab === 'scenarios' && (
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-5 shadow-sm space-y-4">
           <div className="border-b border-[var(--line)] pb-2.5">
-            <h3 className="font-serif text-sm font-bold text-[var(--ink)]">
+            <h3 className="font-serif text-sm font-semibold text-[var(--ink)]">
               {t('scenarios.title')}
             </h3>
             <p className="text-[11px] text-[var(--ink-soft)]">
@@ -310,11 +310,11 @@ export function DetailedAnalysisView({
                 className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4 space-y-2.5 shadow-xs hover:border-[var(--line-strong)] transition-all"
               >
                 <div className="flex items-center justify-between border-b border-[var(--line)] pb-2">
-                  <h4 className="font-serif text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+                  <h4 className="font-serif text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
                     <span>{key === 'live' ? '☀️' : key === 'drought' ? '🏜️' : key === 'waterlogging' ? '🌧️' : '🔥'}</span>
                     <span>{translateScenarioName(key, sc.scenario_name, language)}</span>
                   </h4>
-                  <span className="text-xs font-bold text-[var(--field-deep)]">
+                  <span className="text-xs font-semibold text-[var(--field-deep)]">
                     {formatCurrency(sc.total_profit_inr, language)}
                   </span>
                 </div>
@@ -325,12 +325,12 @@ export function DetailedAnalysisView({
 
                 <div className="rounded-lg bg-[var(--surface-elevated)] p-2.5 text-[11px] text-[var(--ink-soft)] space-y-1 border border-[var(--line)]">
                   <div>
-                    <span className="text-[var(--ink)] font-bold">{isHi ? 'प्रणाली अनुकूलन:' : 'Adaptation:'} </span>
+                    <span className="text-[var(--ink)] font-semibold">{isHi ? 'प्रणाली अनुकूलन:' : 'Adaptation:'} </span>
                     {getScenarioAdaptationShift(key, sc, language)}
                   </div>
                   <div>
-                    <span className="text-[var(--ink)] font-bold">{isHi ? 'लाभ विचलन:' : 'Profit Delta:'} </span>
-                    <span className={sc.profit_delta_from_live_inr >= 0 ? 'text-[var(--field-deep)] font-bold' : 'text-[var(--grain-deep)] font-bold'}>
+                    <span className="text-[var(--ink)] font-semibold">{isHi ? 'लाभ विचलन:' : 'Profit Delta:'} </span>
+                    <span className={sc.profit_delta_from_live_inr >= 0 ? 'text-[var(--field-deep)] font-semibold' : 'text-[var(--grain-deep)] font-semibold'}>
                       {sc.profit_delta_from_live_inr >= 0 ? '+' : ''}
                       {formatCurrency(sc.profit_delta_from_live_inr, language)}
                     </span>
@@ -348,7 +348,7 @@ export function DetailedAnalysisView({
       {activeTab === 'causal' && (
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-5 shadow-sm space-y-4">
           <div className="border-b border-[var(--line)] pb-2.5">
-            <h3 className="font-serif text-sm font-bold text-[var(--ink)]">
+            <h3 className="font-serif text-sm font-semibold text-[var(--ink)]">
               {t('causal.title')}
             </h3>
             <p className="text-[11px] text-[var(--ink-soft)]">
@@ -362,11 +362,11 @@ export function DetailedAnalysisView({
                 key={stepNum}
                 className="flex items-start gap-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5 transition-all hover:bg-[var(--surface-elevated)] hover:border-[var(--field-tint)] shadow-xs"
               >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--field)] text-xs font-bold text-white">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--field)] text-xs font-semibold text-white">
                   {stepNum}
                 </div>
                 <div className="space-y-0.5">
-                  <h4 className="font-serif text-xs font-bold text-[var(--ink)]">
+                  <h4 className="font-serif text-xs font-semibold text-[var(--ink)]">
                     {getCausalStepTitle(stepNum, language)}
                   </h4>
                   <p className="text-xs text-[var(--ink-soft)] leading-relaxed">
@@ -385,7 +385,7 @@ export function DetailedAnalysisView({
       {activeTab === 'trust' && (
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-5 shadow-sm space-y-4">
           <div className="border-b border-[var(--line)] pb-2.5">
-            <h3 className="font-serif text-sm font-bold text-[var(--ink)]">
+            <h3 className="font-serif text-sm font-semibold text-[var(--ink)]">
               {t('trust.title')}
             </h3>
             <p className="text-[11px] text-[var(--ink-soft)]">
@@ -433,10 +433,10 @@ export function DetailedAnalysisView({
                 className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4 space-y-2 shadow-xs"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-serif text-xs font-bold text-[var(--ink)]">
+                  <span className="font-serif text-xs font-semibold text-[var(--ink)]">
                     {item.source}
                   </span>
-                  <span className="rounded-full bg-[var(--field-tint)] px-2 py-0.5 text-[9px] font-bold text-[var(--field-deep)] border border-[var(--field-tint)]">
+                  <span className="rounded-full bg-[var(--field-tint)] px-2 py-0.5 text-[9px] font-semibold text-[var(--field-deep)] border border-[var(--field-tint)]">
                     {item.badge}
                   </span>
                 </div>
@@ -451,7 +451,7 @@ export function DetailedAnalysisView({
           </div>
 
           <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4 text-xs text-[var(--ink-soft)] leading-relaxed">
-            <span className="text-[var(--ink)] font-bold block mb-1">
+            <span className="text-[var(--ink)] font-semibold block mb-1">
               Zero-Hallucination Architectural Guarantee:
             </span>
             All crop yield baselines, weather multipliers, cost C2 constants, and linear programming calculations are computed deterministically. The LLM/AI layer is strictly constrained to natural language synthesis and translation without performing numerical estimation.

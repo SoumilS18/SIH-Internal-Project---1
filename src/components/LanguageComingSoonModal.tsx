@@ -1,72 +1,112 @@
-import React from 'react';
+import { useEffect, useRef } from 'react';
 import { Globe, ArrowRight, ArrowLeft, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 
+/**
+ * Multilingual roadmap notice. Logic is untouched — it still reads
+ * `comingSoonModalTarget`, closes via `closeComingSoonModal`, and offers
+ * "Continue in English" which calls `setLanguage('en')`. Only the presentation
+ * moved into the light world, plus Escape-to-close for keyboard users.
+ */
 export function LanguageComingSoonModal() {
-  const { comingSoonModalTarget, closeComingSoonModal, setLanguage, languageOption, t } =
-    useLanguage();
+  const { comingSoonModalTarget, closeComingSoonModal, setLanguage } = useLanguage();
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Escape closes the dialog; focus moves into it on open.
+  useEffect(() => {
+    if (!comingSoonModalTarget) return;
+    panelRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeComingSoonModal();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [comingSoonModalTarget, closeComingSoonModal]);
 
   if (!comingSoonModalTarget) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-forest-950/80 px-4 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="coming-soon-title"
     >
-      <div className="relative w-full max-w-lg rounded-2xl border border-gold-300/30 bg-forest-900/95 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:p-8">
-        {/* Top Header Icon */}
-        <div className="flex items-center justify-between border-b border-gold-300/15 pb-4">
+      {/* scrim — warm ivory haze, never black */}
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden
+        onClick={closeComingSoonModal}
+        className="scrim absolute inset-0 cursor-default"
+      />
+
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="panel-modal relative w-full max-w-lg overflow-hidden p-6 outline-none sm:p-8"
+        style={{ animation: 'planFadeUp 0.4s var(--ease-out) both' }}
+      >
+        {/* corner sunlight, for depth without a border */}
+        <div
+          className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full blur-3xl"
+          style={{ background: 'var(--glow-grain)' }}
+          aria-hidden
+        />
+
+        <div className="relative flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold-300/30 bg-gold-400/10 text-gold-300">
-              <Globe className="h-5 w-5" />
-            </div>
+            <span className="leaf-radius grid h-11 w-11 place-items-center bg-[var(--sky-tint)] text-[var(--sky)]">
+              <Globe size={20} />
+            </span>
             <div>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-gold-300/80">
-                Multilingual Roadmap
-              </span>
-              <h3 id="coming-soon-title" className="font-serif text-lg font-bold text-cream-100">
-                {comingSoonModalTarget.label} ({comingSoonModalTarget.english})
+              <span className="t-eyebrow">Multilingual roadmap</span>
+              <h3 id="coming-soon-title" className="t-h3 mt-1 text-[var(--ink)]">
+                {comingSoonModalTarget.label}{' '}
+                <span className="font-normal text-[var(--ink-faint)]">
+                  ({comingSoonModalTarget.english})
+                </span>
               </h3>
             </div>
           </div>
 
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-amber-300">
-            COMING SOON
-          </span>
+          <span className="chip chip-grain shrink-0">Coming soon</span>
         </div>
 
-        {/* Modal Body */}
-        <div className="mt-5 space-y-3.5 text-xs leading-relaxed text-cream-200/90">
-          <p className="font-serif text-sm font-semibold text-gold-200">
-            {comingSoonModalTarget.english} support is coming soon.
+        <div className="relative mt-5 space-y-3">
+          <p className="text-[15px] font-medium text-[var(--ink)]">
+            {comingSoonModalTarget.english} support is on the way.
+          </p>
+          <p className="text-sm leading-relaxed text-[var(--ink-soft)]">
+            Full support for{' '}
+            <strong className="font-semibold text-[var(--ink)]">
+              {comingSoonModalTarget.english} ({comingSoonModalTarget.label})
+            </strong>{' '}
+            is in active development as part of our multilingual agritech roadmap.
           </p>
 
-          <p className="text-cream-300/80">
-            Full support for <strong>{comingSoonModalTarget.english} ({comingSoonModalTarget.label})</strong> is currently under active development as part of our multilingual agritech roadmap.
-          </p>
-
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3.5 text-emerald-200">
-            <div className="flex items-center gap-2 font-semibold">
-              <CheckCircle2 size={14} className="text-emerald-400" />
-              <span>AgriOptima AI currently supports English and हिन्दी (Hindi).</span>
+          <div className="inset flex gap-3 p-4">
+            <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[var(--field)]" />
+            <div>
+              <p className="text-sm font-medium text-[var(--ink)]">
+                AgriOptima AI currently supports English and हिन्दी.
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--ink-faint)]">
+                Your preference for {comingSoonModalTarget.english} is saved and will apply in a
+                future release.
+              </p>
             </div>
-            <p className="mt-1 text-[11px] text-emerald-300/80">
-              Your language preference for {comingSoonModalTarget.english} has been saved and will be available in a future release.
-            </p>
           </div>
         </div>
 
-        {/* Modal Actions */}
-        <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-end">
+        <div className="relative mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={closeComingSoonModal}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-gold-300/20 bg-forest-950/60 px-4 py-2.5 font-mono text-xs text-cream-200 transition-colors hover:border-gold-300/50 hover:text-cream-100 focus:outline-none"
+            className="btn btn-ghost text-sm"
           >
-            <ArrowLeft size={13} />
-            <span>Back to Languages</span>
+            <ArrowLeft size={15} />
+            <span>Back to languages</span>
           </button>
 
           <button
@@ -75,11 +115,11 @@ export function LanguageComingSoonModal() {
               setLanguage('en');
               closeComingSoonModal();
             }}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-gold-300/50 bg-gradient-to-r from-gold-400 to-gold-500 px-5 py-2.5 font-serif text-xs font-semibold text-forest-950 shadow-[0_0_20px_rgba(255,210,26,0.25)] transition-all hover:brightness-110 focus:outline-none"
+            className="btn btn-primary group text-sm"
           >
-            <Sparkles size={13} />
+            <Sparkles size={15} />
             <span>Continue in English</span>
-            <ArrowRight size={13} />
+            <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
           </button>
         </div>
       </div>
