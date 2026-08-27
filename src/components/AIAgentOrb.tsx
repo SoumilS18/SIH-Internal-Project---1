@@ -5,6 +5,7 @@ export type OrbState =
   | 'idle'
   | 'listening'
   | 'analyzing'
+  | 'thinking'
   | 'planning'
   | 'recommending'
   | 'complete';
@@ -39,8 +40,8 @@ const PALETTE: Palette = {
 
 /**
  * The AgriOptima intelligence core — a living "seed core" orb rendered on a
- * canvas. It expresses six states through motion. Signature product visual.
- * Reduced motion → a single calm static frame.
+ * canvas. It expresses 7 states through motion: idle, listening, analyzing,
+ * thinking, planning, recommending, complete.
  */
 export function AIAgentOrb({
   state = 'idle',
@@ -115,6 +116,39 @@ export function AIAgentOrb({
         ctx.arc(cx, cy, R * 2.4, 0, Math.PI * 2);
         ctx.fill();
       }
+    }
+
+    // ---- state: thinking — neural particle cloud with interconnects -----
+    if (state === 'thinking') {
+      const pCount = 8;
+      const pts: Array<[number, number]> = [];
+      for (let i = 0; i < pCount; i++) {
+        const a = (i / pCount) * Math.PI * 2 + Math.sin(t * 1.8 + i) * 0.4;
+        const rr = R * (1.4 + Math.sin(t * 2.2 + i * 1.5) * 0.5);
+        pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.75]);
+      }
+      ctx.strokeStyle = p.ring + '0.28)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < pCount; i++) {
+        for (let j = i + 1; j < pCount; j++) {
+          const dx = pts[i][0] - pts[j][0];
+          const dy = pts[i][1] - pts[j][1];
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < R * 1.8) {
+            ctx.beginPath();
+            ctx.moveTo(pts[i][0], pts[i][1]);
+            ctx.lineTo(pts[j][0], pts[j][1]);
+            ctx.stroke();
+          }
+        }
+      }
+      pts.forEach(([x, y], i) => {
+        const isGold = i % 2 === 0;
+        ctx.fillStyle = isGold ? p.gold + '0.85)' : p.ring + '0.85)';
+        ctx.beginPath();
+        ctx.arc(x, y, 2.8, 0, Math.PI * 2);
+        ctx.fill();
+      });
     }
 
     // ---- state: planning — constellation nodes connecting ----------------

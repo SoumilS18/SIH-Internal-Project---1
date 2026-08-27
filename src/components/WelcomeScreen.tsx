@@ -275,19 +275,35 @@ export function WelcomeScreen({
       {/* MAIN                                                              */}
       {/* ================================================================= */}
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-5 pb-6 pt-24 sm:px-8 sm:pt-28">
-        <div className="mb-6" style={rise(0)}>
-          <div className="t-eyebrow" style={{ color: 'var(--field)' }}>
-            {isHi ? 'अपना खेत पिन करें' : 'Pin your field'}
+        <div
+          className="relative mb-6 overflow-hidden rounded-[var(--radius-lg)] px-5 py-5 sm:px-7 sm:py-6"
+          style={{
+            background: 'linear-gradient(135deg, rgba(231,241,231,0.85) 0%, rgba(255,255,255,0.92) 55%, rgba(228,238,243,0.78) 100%)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 16px 48px rgb(52 58 44 / 0.07)',
+            ...rise(0),
+          }}
+        >
+
+          <div
+            className="pointer-events-none absolute -left-10 -top-10 h-48 w-48 rounded-full blur-3xl"
+            style={{ background: 'radial-gradient(circle, rgba(70,169,104,0.14) 0%, transparent 70%)' }}
+            aria-hidden
+          />
+          <div className="relative">
+            <div className="t-eyebrow" style={{ color: 'var(--field)' }}>
+              {isHi ? 'अपना खेत पिन करें' : 'Pin your field'}
+            </div>
+            <h1 className="t-h1 mt-2 text-[var(--ink)]">
+              {isHi ? 'आपका खेत कहाँ है?' : 'Where is your farm?'}
+            </h1>
+            <p className="t-lead mt-2 max-w-xl text-[0.98rem]">
+              {isHi
+                ? 'सटीक मौसम, मिट्टी और मंडी डेटा के लिए मानचित्र से अपना राज्य और जिला चुनें — या स्वतः पहचान का उपयोग करें।'
+                : 'Choose your state and district from the survey map — or let us detect it — so every forecast and recommendation is tuned to your exact field.'}
+            </p>
           </div>
-          <h1 className="t-h1 mt-2 text-[var(--ink)]">
-            {isHi ? 'आपका खेत कहाँ है?' : 'Where is your farm?'}
-          </h1>
-          <p className="t-lead mt-2 max-w-xl text-[0.98rem]">
-            {isHi
-              ? 'सटीक मौसम, मिट्टी और मंडी डेटा के लिए मानचित्र से अपना राज्य और जिला चुनें — या स्वतः पहचान का उपयोग करें।'
-              : 'Choose your state and district from the survey map — or let us detect it — so every forecast and recommendation is tuned to your exact field.'}
-          </p>
         </div>
+
 
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
           {/* ---------------------------------------------------------- */}
@@ -463,14 +479,26 @@ export function WelcomeScreen({
           {/* RIGHT — the survey chart (hero) + district picker            */}
           {/* ---------------------------------------------------------- */}
           <div className="lg:col-span-7 xl:col-span-8" style={rise(2)}>
-            <div className="panel flex flex-col items-center justify-between gap-5 p-4 sm:p-6 md:flex-row">
+            <div
+              className="relative flex flex-col items-center justify-between gap-5 overflow-hidden rounded-[var(--radius-lg)] p-4 sm:p-6 md:flex-row"
+              style={{
+                background: 'linear-gradient(135deg, rgba(240,248,252,0.95) 0%, rgba(255,255,255,0.97) 50%, rgba(236,247,236,0.92) 100%)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 20px 56px rgb(52 58 44 / 0.09)',
+              }}
+            >
+              {/* Atmospheric sky glow top-right */}
+              <div
+                className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full blur-3xl"
+                style={{ background: 'radial-gradient(circle, rgba(111,163,191,0.18) 0%, transparent 70%)' }}
+                aria-hidden
+              />
               {/* Illuminated survey chart plate */}
               <div className="relative w-full max-w-[430px]">
                 <div
-                  className="relative flex aspect-[612/696] items-center justify-center overflow-hidden rounded-2xl border border-[#9DC4D6] p-3 sm:p-4"
+                  className="relative flex aspect-[612/696] items-center justify-center overflow-hidden rounded-3xl border-2 border-[#8BBCD1] p-3 sm:p-4"
                   style={{
-                    background: 'linear-gradient(180deg, #C9E0EB 0%, #BCD8E5 55%, #B0D0DE 100%)',
-                    boxShadow: 'inset 0 2px 16px rgba(25,75,105,0.10)',
+                    background: 'linear-gradient(180deg, #D4ECF5 0%, #C4E0ED 40%, #B8D8E9 100%)',
+                    boxShadow: 'inset 0 2px 20px rgba(25,75,105,0.12), 0 8px 32px rgba(25,75,105,0.08)',
                   }}
                 >
                   {/* cartographic corner ticks */}
@@ -483,16 +511,33 @@ export function WelcomeScreen({
                       +
                     </span>
                   ))}
+                  {/* Selected state glow */}
+                  {chosenState && (
+                    <div
+                      className="pointer-events-none absolute inset-0 rounded-3xl"
+                      style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(70,169,104,0.06) 0%, transparent 80%)' }}
+                      aria-hidden
+                    />
+                  )}
                   <IndiaMap
                     selectedStateName={chosenState || undefined}
                     onSelect={handleMapStateSelect}
                     transitioning={false}
                   />
                 </div>
-                <span className="t-eyebrow mt-2 block text-center text-[0.58rem] text-[var(--ink-faint)] md:text-left">
-                  {isHi ? 'भारत कृषि सर्वेक्षण मानचित्र · राज्य चुनें' : 'India agri-survey chart · tap a state'}
-                </span>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="t-eyebrow text-[0.58rem] text-[var(--ink-faint)]">
+                    {isHi ? 'भारत कृषि सर्वेक्षण मानचित्र · राज्य चुनें' : 'India agri-survey chart · tap a state'}
+                  </span>
+                  {chosenState && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--field-tint)] px-2 py-0.5 text-[10px] font-semibold text-[var(--field-deep)]">
+                      <span className="h-1 w-1 animate-breathe rounded-full bg-[var(--field)]" />
+                      {getStateDisplayName(chosenState, language)}
+                    </span>
+                  )}
+                </div>
               </div>
+
 
               {/* District picker */}
               {chosenState && (

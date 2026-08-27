@@ -369,10 +369,29 @@ export function FarmPlanScreen({
         ) : (
           /* ---------- PLAN REVEAL (full width) ---------- */
           <div className="space-y-6" key={planKey}>
-                {/* PLAN SURFACE — headline on top, twin + cost parallel, stats below both */}
-                <Reveal className="panel-elevated overflow-hidden p-6 sm:p-7">
+                {/* PLAN SURFACE — cinematic gradient, atmospheric, de-boxed */}
+                <Reveal
+                  className="relative overflow-hidden rounded-[var(--radius-lg)] p-6 sm:p-8"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(231,241,231,0.92) 0%, rgba(255,255,255,0.97) 50%, rgba(248,238,214,0.88) 100%)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 24px 64px rgb(52 58 44 / 0.10), 0 4px 16px rgb(52 58 44 / 0.04)',
+                  }}
+                >
+                  {/* Atmospheric field glow — top-left */}
+                  <div
+                    className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full blur-3xl"
+                    style={{ background: 'radial-gradient(circle, rgba(70,169,104,0.12) 0%, transparent 70%)' }}
+                    aria-hidden
+                  />
+                  {/* Grain glow — bottom-right */}
+                  <div
+                    className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full blur-3xl"
+                    style={{ background: 'radial-gradient(circle, rgba(216,166,60,0.12) 0%, transparent 70%)' }}
+                    aria-hidden
+                  />
+
                   {/* headline — large brand-gradient block heading with a reveal wipe */}
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="relative flex flex-wrap items-start justify-between gap-3">
                     <div className="max-w-2xl">
                       <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
                         <span className="relative flex h-1.5 w-1.5">
@@ -389,8 +408,8 @@ export function FarmPlanScreen({
                   </div>
 
                   {/* TWIN + COST — the field and where the money goes, side by side */}
-                  <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-0">
-                    <div className="flex flex-col justify-center lg:col-span-3 lg:pr-7">
+                  <div className="relative mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-0">
+                    <div className="relative flex flex-col justify-center lg:col-span-3 lg:pr-7">
                       {/* twin centerpiece — now showing the REAL allocation */}
                       <div className="relative">
                         <FarmDigitalTwin
@@ -406,6 +425,26 @@ export function FarmPlanScreen({
                         <span className="t-eyebrow absolute bottom-1 left-1 text-[var(--ink-ghost)]">
                           {isHi ? 'आपका डिजिटल फार्म ट्विन' : 'Your digital farm twin'}
                         </span>
+                        {/* Floating profit badge — spatially over the twin */}
+                        <div
+                          className="animate-metric-pop pointer-events-none absolute right-3 top-3 flex flex-col items-end gap-0.5 rounded-2xl p-3"
+                          style={{
+                            background: 'rgba(255,255,255,0.88)',
+                            backdropFilter: 'blur(12px)',
+                            boxShadow: '0 4px 18px rgb(52 58 44 / 0.12), inset 0 1px 0 rgba(255,255,255,0.9)',
+                          }}
+                        >
+                          <span className="t-eyebrow text-[0.52rem]">{isHi ? 'अनुमानित लाभ' : 'Est. profit'}</span>
+                          <span
+                            className="font-display text-base font-semibold leading-none"
+                            style={{ color: 'var(--field-deep)' }}
+                          >
+                            ₹{Math.round(netProfit / 1000)}K
+                          </span>
+                          <span className="font-data text-[9px] font-semibold" style={{ color: 'var(--grain-deep)' }}>
+                            +{roiPct.toFixed(0)}% ROI
+                          </span>
+                        </div>
                       </div>
                     </div>
 

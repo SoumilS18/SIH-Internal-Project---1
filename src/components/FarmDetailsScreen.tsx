@@ -151,26 +151,40 @@ export function FarmDetailsScreen({
       {/* ===================================================================== */}
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-6 pt-24 sm:px-8 sm:pt-28">
         {/* hero band — the intelligence core invites the farmer to describe the field */}
-        <Reveal className="flex flex-wrap items-center justify-between gap-5">
-          <div className="max-w-2xl">
-            <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-[var(--field)]" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
-              </span>
-              {isHi ? 'खेत की जानकारी' : 'Farm setup'}
+        <Reveal
+          className="relative overflow-hidden rounded-[var(--radius-lg)] p-5 sm:p-7"
+          style={{
+            background: 'linear-gradient(135deg, rgba(231,241,231,0.88) 0%, rgba(255,255,255,0.94) 55%, rgba(228,238,243,0.80) 100%)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 16px 48px rgb(52 58 44 / 0.08)',
+          }}
+        >
+          {/* atmospheric corner glow */}
+          <div
+            className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full blur-3xl"
+            style={{ background: 'radial-gradient(circle, rgba(70,169,104,0.12) 0%, transparent 70%)' }}
+            aria-hidden
+          />
+          <div className="relative flex flex-wrap items-center justify-between gap-5">
+            <div className="max-w-2xl">
+              <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-[var(--field)]" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
+                </span>
+                {isHi ? 'खेत की जानकारी' : 'Farm setup'}
+              </div>
+              <h1 className="t-h1 mt-2.5 text-[var(--ink)]">
+                {isHi ? 'अपने खेत के बारे में बताएं' : 'Tell me about your farm'}
+              </h1>
+              <p className="t-lead mt-2 max-w-xl text-[0.95rem]">
+                {isHi
+                  ? '5 सरल कदम भरें — जमीन, बजट, पानी, मौसम और जोखिम। फिर “योजना बनाएं” दबाएं और AI आपके खेत का पूरा विश्लेषण करेगा।'
+                  : 'Fill five simple steps — land, budget, water, season and risk. Then tap “Generate plan” and the AI will analyze your exact field.'}
+              </p>
             </div>
-            <h1 className="t-h1 mt-2.5 text-[var(--ink)]">
-              {isHi ? 'अपने खेत के बारे में बताएं' : 'Tell me about your farm'}
-            </h1>
-            <p className="t-lead mt-2 max-w-xl text-[0.95rem]">
-              {isHi
-                ? '5 सरल कदम भरें — जमीन, बजट, पानी, मौसम और जोखिम। फिर “योजना बनाएं” दबाएं और AI आपके खेत का पूरा विश्लेषण करेगा।'
-                : 'Fill five simple steps — land, budget, water, season and risk. Then tap “Generate plan” and the AI will analyze your exact field.'}
-            </p>
-          </div>
-          <div className="shrink-0">
-            <AIAgentOrb state="listening" size={104} />
+            <div className="shrink-0">
+              <AIAgentOrb state="listening" size={104} />
+            </div>
           </div>
         </Reveal>
 
@@ -191,26 +205,31 @@ export function FarmDetailsScreen({
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <StepLabel n="01" icon={Sprout}>{isHi ? 'जमीन का आकार' : 'Land size'}</StepLabel>
-                  <input
-                    type="number"
-                    min="0.5"
-                    max="100"
-                    step="0.5"
-                    value={landAcres}
-                    onChange={(e) => onLandAcresChange(parseFloat(e.target.value) || 1)}
-                    className="field-input py-2.5 text-sm"
-                    aria-label={isHi ? 'जमीन का आकार (एकड़)' : 'Land size in acres'}
-                  />
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min="0.5"
+                      max="100"
+                      step="0.5"
+                      value={landAcres}
+                      onChange={(e) => onLandAcresChange(Math.max(0.5, parseFloat(e.target.value) || 0.5))}
+                      className="field-input py-2.5 text-sm font-semibold font-data w-32"
+                      aria-label={isHi ? 'जमीन का आकार (एकड़)' : 'Land size in acres'}
+                    />
+                    <span className="text-xs font-semibold text-[var(--ink-soft)]">
+                      {isHi ? 'एकड़' : 'Acres'}
+                    </span>
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
                     {landPresets.map((p) => (
                       <button
                         key={p.value}
                         type="button"
                         onClick={() => onLandAcresChange(p.value)}
-                        className={`rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
                           landAcres === p.value
-                            ? 'bg-[var(--field)] text-white'
-                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:text-[var(--ink)]'
+                            ? 'bg-[var(--field)] text-white shadow-sm ring-2 ring-[var(--field)]/20'
+                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:border-[var(--field)] hover:text-[var(--ink)]'
                         }`}
                       >
                         {p.label}
@@ -221,25 +240,30 @@ export function FarmDetailsScreen({
 
                 <div>
                   <StepLabel n="02" icon={IndianRupee}>{isHi ? 'निवेश बजट' : 'Investment budget'}</StepLabel>
-                  <input
-                    type="number"
-                    min="5000"
-                    step="5000"
-                    value={budgetInr}
-                    onChange={(e) => onBudgetInrChange(parseInt(e.target.value, 10) || 50000)}
-                    className="field-input py-2.5 text-sm"
-                    aria-label={isHi ? 'निवेश बजट रुपये में' : 'Investment budget in rupees'}
-                  />
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min="5000"
+                      step="5000"
+                      value={budgetInr}
+                      onChange={(e) => onBudgetInrChange(Math.max(5000, parseInt(e.target.value, 10) || 50000))}
+                      className="field-input py-2.5 text-sm font-semibold font-data w-36"
+                      aria-label={isHi ? 'निवेश बजट रुपये में' : 'Investment budget in rupees'}
+                    />
+                    <span className="text-xs font-semibold text-[var(--ink-soft)]">
+                      ₹{Math.round(budgetInr).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
                     {budgetPresets.map((p) => (
                       <button
                         key={p.value}
                         type="button"
                         onClick={() => onBudgetInrChange(p.value)}
-                        className={`rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
                           budgetInr === p.value
-                            ? 'bg-[var(--field)] text-white'
-                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:text-[var(--ink)]'
+                            ? 'bg-[var(--field)] text-white shadow-sm ring-2 ring-[var(--field)]/20'
+                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:border-[var(--field)] hover:text-[var(--ink)]'
                         }`}
                       >
                         {p.label}
@@ -251,82 +275,132 @@ export function FarmDetailsScreen({
 
               <div className="hairline" />
 
-              {/* STEP 03 — irrigation + reliability */}
+              {/* STEP 03 — visual water source + reliability */}
               <div>
-                <StepLabel n="03" icon={Droplets}>{isHi ? 'सिंचाई साधन' : 'Water source'}</StepLabel>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <select
-                    value={irrigationType}
-                    onChange={(e) => onIrrigationTypeChange(e.target.value as FarmDetailsScreenProps['irrigationType'])}
-                    className="field-input py-2.5 text-sm"
-                    aria-label={isHi ? 'सिंचाई साधन' : 'Irrigation source'}
-                  >
-                    <option value="Borewell">{isHi ? 'बोरवेल (Borewell)' : 'Borewell'}</option>
-                    <option value="Canal">{isHi ? 'नहर (Canal)' : 'Canal'}</option>
-                    <option value="Drip">{isHi ? 'ड्रिप सिंचाई (Drip)' : 'Drip'}</option>
-                    <option value="Sprinkler">{isHi ? 'फव्वारा (Sprinkler)' : 'Sprinkler'}</option>
-                    <option value="Rainfed">{isHi ? 'वर्षा आधारित (Rainfed)' : 'Rainfed'}</option>
-                  </select>
-                  <div>
-                    <span className="mb-1.5 block text-[11px] font-semibold text-[var(--ink-faint)]">
-                      {isHi ? 'जल आपूर्ति की विश्वसनीयता' : 'Water supply reliability'}
-                    </span>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {(['High', 'Medium', 'Low'] as const).map((r) => (
-                        <button
-                          key={r}
-                          type="button"
-                          onClick={() => onIrrigationReliabilityChange(r)}
-                          className={`rounded-lg py-2 text-[11px] font-semibold transition-all ${
-                            irrigationReliability === r
-                              ? 'bg-[var(--sky)] text-white'
-                              : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:text-[var(--ink)]'
-                          }`}
-                        >
-                          {translateIrrigationReliability(r, language)}
-                        </button>
-                      ))}
-                    </div>
+                <StepLabel n="03" icon={Droplets}>{isHi ? 'सिंचाई साधन व विश्वसनीयता' : 'Water source & reliability'}</StepLabel>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  {[
+                    { id: 'Borewell', en: 'Borewell', hi: 'बोरवेल', icon: '🚰' },
+                    { id: 'Canal', en: 'Canal', hi: 'नहर', icon: '🌊' },
+                    { id: 'Drip', en: 'Drip', hi: 'ड्रिप', icon: '💧' },
+                    { id: 'Sprinkler', en: 'Sprinkler', hi: 'फव्वारा', icon: '🌦️' },
+                    { id: 'Rainfed', en: 'Rainfed', hi: 'वर्षा आधारित', icon: '🌧️' },
+                  ].map((src) => {
+                    const isSel = irrigationType === src.id;
+                    return (
+                      <button
+                        key={src.id}
+                        type="button"
+                        onClick={() => onIrrigationTypeChange(src.id as any)}
+                        className={`flex flex-col items-center justify-center gap-1 rounded-2xl p-2.5 text-center transition-all ${
+                          isSel
+                            ? 'bg-[var(--sky-tint)] text-[var(--ink)] ring-2 ring-[var(--sky)] shadow-sm'
+                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:border-[var(--sky)] hover:text-[var(--ink)]'
+                        }`}
+                      >
+                        <span className="text-lg">{src.icon}</span>
+                        <span className="text-xs font-semibold leading-tight">
+                          {isHi ? src.hi : src.en}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[var(--line-soft)] bg-[var(--surface-inset)] p-3">
+                  <span className="text-xs font-semibold text-[var(--ink-soft)]">
+                    {isHi ? 'जल उपलब्धता विश्वसनीयता:' : 'Water availability reliability:'}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {(['High', 'Medium', 'Low'] as const).map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => onIrrigationReliabilityChange(r)}
+                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                          irrigationReliability === r
+                            ? 'bg-[var(--sky)] text-white shadow-xs'
+                            : 'border border-[var(--line)] bg-[var(--surface-solid)] text-[var(--ink-soft)] hover:text-[var(--ink)]'
+                        }`}
+                      >
+                        {translateIrrigationReliability(r, language)}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
               <div className="hairline" />
 
-              {/* STEP 04 + 05 — season & risk */}
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div>
-                  <StepLabel n="04" icon={CalendarDays}>{isHi ? 'फसल मौसम' : 'Crop season'}</StepLabel>
-                  <select
-                    value={season}
-                    onChange={(e) => onSeasonChange(e.target.value as FarmDetailsScreenProps['season'])}
-                    className="field-input py-2.5 text-sm"
-                    aria-label={isHi ? 'फसल मौसम' : 'Crop season'}
-                  >
-                    <option value="Kharif">{isHi ? 'खरीफ (Kharif)' : 'Kharif'}</option>
-                    <option value="Rabi">{isHi ? 'रबी (Rabi)' : 'Rabi'}</option>
-                    <option value="Zaid">{isHi ? 'जायद (Zaid)' : 'Zaid'}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <StepLabel n="05" icon={ShieldCheck}>{isHi ? 'जोखिम क्षमता' : 'Risk appetite'}</StepLabel>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {(['Conservative', 'Balanced', 'Aggressive'] as const).map((r) => (
+              {/* STEP 04 — visual crop season selection */}
+              <div>
+                <StepLabel n="04" icon={CalendarDays}>{isHi ? 'फसल मौसम' : 'Crop season'}</StepLabel>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                  {[
+                    { id: 'Kharif', en: 'Kharif (Monsoon)', hi: 'खरीफ (मानसून)', subEn: 'Rice, Cotton, Maize, Pulses', subHi: 'धान, कपास, मक्का, दालें', icon: '🌧️' },
+                    { id: 'Rabi', en: 'Rabi (Winter)', hi: 'रबी (सर्दी)', subEn: 'Wheat, Mustard, Gram, Potato', subHi: 'गेहूं, सरसों, चना, आलू', icon: '🌾' },
+                    { id: 'Zaid', en: 'Zaid (Summer)', hi: 'जायद (गर्मी)', subEn: 'Vegetables, Cash crops, Melons', subHi: 'सब्जियां, तरबूज, उड़द/मूंग', icon: '☀️' },
+                  ].map((seas) => {
+                    const isSel = season === seas.id;
+                    return (
                       <button
-                        key={r}
+                        key={seas.id}
                         type="button"
-                        onClick={() => onRiskToleranceChange(r)}
-                        className={`rounded-lg py-2.5 text-[11px] font-semibold transition-all ${
-                          riskTolerance === r
-                            ? 'bg-[var(--field-deep)] text-white'
-                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:text-[var(--ink)]'
+                        onClick={() => onSeasonChange(seas.id as any)}
+                        className={`flex flex-col items-start gap-1 rounded-2xl p-3.5 text-left transition-all ${
+                          isSel
+                            ? 'bg-[var(--field-tint)] text-[var(--field-deep)] ring-2 ring-[var(--field)] shadow-sm'
+                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink)] hover:border-[var(--field)]'
                         }`}
                       >
-                        {r === 'Conservative' ? (isHi ? 'सुरक्षित' : 'Safe') : r === 'Balanced' ? (isHi ? 'संतुलित' : 'Balanced') : (isHi ? 'साहसी' : 'Bold')}
+                        <div className="flex w-full items-center justify-between">
+                          <span className="text-base">{seas.icon}</span>
+                          <span className={`h-2 w-2 rounded-full ${isSel ? 'bg-[var(--field)]' : 'bg-transparent'}`} />
+                        </div>
+                        <span className="mt-1 text-xs font-bold">
+                          {isHi ? seas.hi : seas.en}
+                        </span>
+                        <span className="text-[10px] leading-tight text-[var(--ink-soft)]">
+                          {isHi ? seas.subHi : seas.subEn}
+                        </span>
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="hairline" />
+
+              {/* STEP 05 — visual risk appetite */}
+              <div>
+                <StepLabel n="05" icon={ShieldCheck}>{isHi ? 'जोखिम प्रबंधन व रणनीति' : 'Risk appetite & strategy'}</StepLabel>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                  {[
+                    { id: 'Conservative', en: 'Safe / Conservative', hi: 'सुरक्षित (कम जोखिम)', subEn: 'Guaranteed staple yields', subHi: 'न्यूनतम जोखिम, पक्की उपज' },
+                    { id: 'Balanced', en: 'Balanced / Optimal', hi: 'संतुलित (सुझावित)', subEn: 'Best profit vs stability', subHi: 'अधिकतम लाभ व स्थिरता' },
+                    { id: 'Aggressive', en: 'Bold / High Growth', hi: 'साहसी (उच्च लाभ)', subEn: 'High cash crops reward', subHi: 'उच्च बाजार लाभ अवसर' },
+                  ].map((r) => {
+                    const isSel = riskTolerance === r.id;
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => onRiskToleranceChange(r.id as any)}
+                        className={`flex flex-col items-start gap-1 rounded-2xl p-3.5 text-left transition-all ${
+                          isSel
+                            ? 'bg-[var(--grain-tint)] text-[var(--grain-deep)] ring-2 ring-[var(--grain)] shadow-sm'
+                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink)] hover:border-[var(--grain)]'
+                        }`}
+                      >
+                        <span className="text-xs font-bold">
+                          {isHi ? r.hi : r.en}
+                        </span>
+                        <span className="text-[10px] leading-tight text-[var(--ink-soft)]">
+                          {isHi ? r.subHi : r.subEn}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -334,12 +408,12 @@ export function FarmDetailsScreen({
               <MagneticButton
                 type="submit"
                 disabled={loading}
-                className="btn btn-primary group mt-1 w-full py-3 text-base disabled:opacity-60"
+                className="btn btn-primary group mt-2 w-full py-3.5 text-base font-semibold shadow-md disabled:opacity-60"
               >
                 <span>
                   {loading
-                    ? (isHi ? 'गणना हो रही है…' : 'Calculating…')
-                    : (isHi ? 'योजना बनाएं' : 'Generate plan')}
+                    ? (isHi ? 'खेत का विश्लेषण हो रहा है…' : 'Analyzing farm parameters…')
+                    : (isHi ? 'अनुकूलित योजना बनाएं' : 'Generate optimized plan')}
                 </span>
                 {!loading && <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />}
               </MagneticButton>

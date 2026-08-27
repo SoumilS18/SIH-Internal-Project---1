@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   ArrowRight,
   ShieldCheck,
@@ -62,10 +62,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     reduced
       ? {}
       : {
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'none' : 'translateY(18px)',
-          transition: `opacity 0.7s var(--ease-out) ${i * 90}ms, transform 0.8s var(--ease-out) ${i * 90}ms`,
-        };
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? 'none' : 'translateY(18px)',
+        transition: `opacity 0.7s var(--ease-out) ${i * 90}ms, transform 0.8s var(--ease-out) ${i * 90}ms`,
+      };
 
   const capabilities = [
     { icon: Sprout, en: 'AI crop plan', hi: 'AI फसल योजना' },

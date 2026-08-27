@@ -396,16 +396,95 @@ export function AutonomousSentinelScreen({
       {/* ===================================================================== */}
       <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 pb-24 pt-24 sm:px-8 sm:pt-28 md:pb-8">
         {/* ------------------------------------------------------------- */}
-        {/* WATCH BAND — the living core + the current verdict, one surface */}
+        {/* WATCH BAND — cinematic sentinel hero, de-boxed & spatial       */}
         {/* ------------------------------------------------------------- */}
-        <Reveal className="panel-elevated overflow-hidden p-6 sm:p-7">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-0">
-            {/* the sentinel itself */}
-            <div className="flex items-center gap-5 lg:col-span-2 lg:pr-7">
-              <div className="relative grid shrink-0 place-items-center">
-                <AIAgentOrb state={isChecking ? 'analyzing' : 'idle'} size={124} />
+        <Reveal
+          className="relative overflow-hidden rounded-[var(--radius-lg)] p-6 sm:p-8"
+          style={{
+            background: 'linear-gradient(135deg, rgba(231,241,231,0.9) 0%, rgba(255,255,255,0.95) 60%, rgba(228,238,243,0.85) 100%)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 20px 60px rgb(52 58 44 / 0.09), 0 4px 16px rgb(52 58 44 / 0.04)',
+          }}
+        >
+          {/* Atmospheric green glow — top-left corner */}
+          <div
+            className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full blur-3xl"
+            style={{ background: 'radial-gradient(circle, rgba(70,169,104,0.14) 0%, transparent 70%)' }}
+            aria-hidden
+          />
+          {/* Sky glow — right */}
+          <div
+            className="pointer-events-none absolute -right-16 top-8 h-56 w-56 rounded-full blur-3xl"
+            style={{ background: 'radial-gradient(circle, rgba(111,163,191,0.10) 0%, transparent 70%)' }}
+            aria-hidden
+          />
+
+          <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-0">
+            {/* THE SENTINEL AI CORE — orbital rings + live data badges */}
+            <div className="flex items-center gap-6 lg:col-span-2 lg:pr-8">
+              {/* Orbital ring composition */}
+              <div className="relative flex shrink-0 items-center justify-center" style={{ width: 148, height: 148 }}>
+                {/* Outer orbit ring */}
+                <span
+                  className="pointer-events-none absolute rounded-full border"
+                  style={{
+                    inset: 0,
+                    borderColor: 'rgba(70,169,104,0.20)',
+                    borderStyle: 'dashed',
+                    animation: 'spinSlow 30s linear infinite',
+                  }}
+                  aria-hidden
+                />
+                {/* Inner orbit ring */}
+                <span
+                  className="pointer-events-none absolute rounded-full border"
+                  style={{
+                    inset: 14,
+                    borderColor: 'rgba(111,163,191,0.22)',
+                    animation: 'spinRev 22s linear infinite',
+                  }}
+                  aria-hidden
+                />
+                {/* Orbiting data comet on outer ring */}
+                <span
+                  className="pointer-events-none absolute"
+                  style={{
+                    top: '50%', left: '50%',
+                    width: 8, height: 8,
+                    marginTop: -4, marginLeft: -4,
+                    transformOrigin: '0 0',
+                    animation: 'orbitRing 8s linear infinite',
+                    '--orbit-r': '74px',
+                  } as React.CSSProperties}
+                  aria-hidden
+                >
+                  <span
+                    className="block h-2 w-2 rounded-full"
+                    style={{ background: 'var(--field-bright)', boxShadow: '0 0 8px var(--glow-field)' }}
+                  />
+                </span>
+                {/* Orbiting grain comet on inner ring */}
+                <span
+                  className="pointer-events-none absolute"
+                  style={{
+                    top: '50%', left: '50%',
+                    width: 6, height: 6,
+                    marginTop: -3, marginLeft: -3,
+                    transformOrigin: '0 0',
+                    animation: 'orbitRing 12s linear infinite reverse',
+                    '--orbit-r': '60px',
+                  } as React.CSSProperties}
+                  aria-hidden
+                >
+                  <span
+                    className="block h-1.5 w-1.5 rounded-full"
+                    style={{ background: 'var(--grain)', boxShadow: '0 0 6px var(--glow-grain)' }}
+                  />
+                </span>
+                {/* Core AI orb */}
+                <AIAgentOrb state={isChecking ? 'analyzing' : 'idle'} size={116} />
               </div>
-              <div className="min-w-0">
+
+              <div className="min-w-0 flex-1">
                 <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-[var(--field)]" />
@@ -413,7 +492,7 @@ export function AutonomousSentinelScreen({
                   </span>
                   {isHi ? 'निगरानी सक्रिय' : 'Watching · live'}
                 </div>
-                <h1 className="t-h2 mt-2 text-[1.35rem] leading-tight text-[var(--ink)]">
+                <h1 className="t-h2 mt-2 text-[1.28rem] leading-tight text-[var(--ink)]">
                   {isHi ? 'सेंटीनेल आपके खेत पर नज़र रखे हुए है' : 'Sentinel is watching your farm'}
                 </h1>
                 <p className="mt-2 text-[13px] leading-relaxed text-[var(--ink-soft)]">
@@ -423,6 +502,16 @@ export function AutonomousSentinelScreen({
                   {isHi ? 'अंतिम जांच' : 'Last check'} ·{' '}
                   {latestLog ? latestLog.timestamp : isHi ? 'अभी-अभी' : 'just now'}
                 </p>
+                {/* Live data badge strip */}
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--field-tint)] px-2.5 py-0.5 text-[10px] font-semibold text-[var(--field-deep)]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)] animate-breathe" />
+                    {`${(soilMoisture * 100).toFixed(0)}% ${isHi ? 'मिट्टी नमी' : 'soil moisture'}`}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--sky-tint)] px-2.5 py-0.5 text-[10px] font-semibold" style={{ color: '#35657E' }}>
+                    🌧 {rain7d.toFixed(0)}mm 7d
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -473,7 +562,7 @@ export function AutonomousSentinelScreen({
         </Reveal>
 
         {/* ------------------------------------------------------------- */}
-        {/* TELEMETRY — the five streams, stated once with reading + cadence */}
+        {/* TELEMETRY — five streams as premium cards, not a flat grid     */}
         {/* ------------------------------------------------------------- */}
         <Reveal className="panel p-5 sm:p-6" delay={60}>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -489,25 +578,50 @@ export function AutonomousSentinelScreen({
             </button>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-y-4 border-t border-[var(--line)] pt-4 sm:grid-cols-2 lg:grid-cols-5 lg:gap-y-0 lg:divide-x lg:divide-[var(--line)]">
+          <div className="mt-4 grid grid-cols-1 gap-3 border-t border-[var(--line)] pt-4 sm:grid-cols-2 lg:grid-cols-5">
             {streams.map((s, i) => (
               <div
                 key={s.id}
-                className={`flex flex-col gap-1.5 ${i === 0 ? 'lg:pr-5' : i === streams.length - 1 ? 'lg:pl-5' : 'lg:px-5'}`}
+                className="animate-stream-slide relative flex flex-col gap-2 overflow-hidden rounded-2xl border border-[var(--line-soft)] bg-[var(--surface-inset)] p-3.5"
+                style={{ animationDelay: `${i * 60}ms` }}
               >
-                <span className="flex items-center gap-2 text-[11px] font-semibold" style={{ color: s.tone }}>
-                  <s.Icon size={14} />
+                {/* Colored left accent bar */}
+                <span
+                  className="absolute inset-y-0 left-0 w-0.5 rounded-r-full"
+                  style={{ background: s.tone }}
+                  aria-hidden
+                />
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: s.tone }}>
+                  <s.Icon size={13} />
                   {s.name}
                 </span>
-                <span className="font-data text-[12px] font-semibold text-[var(--ink)]">{s.reading}</span>
-                <span className="t-eyebrow flex items-center gap-1.5 text-[var(--ink-faint)]">
-                  {s.live && <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)] animate-breathe" />}
-                  {s.cadence}
+                <span className="font-data text-[13px] font-semibold leading-tight text-[var(--ink)]">
+                  {s.reading}
                 </span>
+                <div className="mt-auto flex items-center justify-between">
+                  <span className="t-eyebrow flex items-center gap-1.5 text-[var(--ink-faint)]">
+                    {s.live && (
+                      <span
+                        className="h-1.5 w-1.5 rounded-full animate-breathe"
+                        style={{ background: s.tone }}
+                      />
+                    )}
+                    {s.cadence}
+                  </span>
+                  {s.live && (
+                    <span
+                      className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                      style={{ background: s.tone + '18', color: s.tone }}
+                    >
+                      {isHi ? 'लाइव' : 'Live'}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </Reveal>
+
 
         {/* ------------------------------------------------------------- */}
         {/* GROUND TRUTH (left) + CONVERSATION (right)                     */}
