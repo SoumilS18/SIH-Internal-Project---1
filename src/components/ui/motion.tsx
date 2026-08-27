@@ -23,16 +23,24 @@ export function Reveal({
   style,
 }: RevealProps) {
   const [ref, inView] = useInView<HTMLDivElement>({ once });
+  const [forceVisible, setForceVisible] = React.useState(false);
   const reduced = usePrefersReducedMotion();
+
+  React.useEffect(() => {
+    const t = setTimeout(() => setForceVisible(true), 300);
+    return () => clearTimeout(t);
+  }, []);
+
+  const visible = inView || forceVisible || reduced;
   const Tag = as as any;
   return (
     <Tag
       ref={ref}
       className={className}
       style={{
-        opacity: inView || reduced ? 1 : 0,
-        transform: inView || reduced ? 'none' : `translateY(${y}px)`,
-        transition: `opacity 0.7s var(--ease-out) ${delay}ms, transform 0.8s var(--ease-out) ${delay}ms`,
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'none' : `translateY(${y}px)`,
+        transition: `opacity 0.6s var(--ease-out) ${delay}ms, transform 0.7s var(--ease-out) ${delay}ms`,
         willChange: 'opacity, transform',
         ...style,
       }}

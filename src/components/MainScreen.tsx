@@ -65,12 +65,7 @@ function loadStoredDecision(targetState: string, targetDistrict: string): FarmDe
     const raw = localStorage.getItem(FARM_DECISION_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (
-      parsed &&
-      parsed.request &&
-      parsed.request.state_name?.toLowerCase() === targetState.toLowerCase() &&
-      parsed.request.district_name?.toLowerCase() === targetDistrict.toLowerCase()
-    ) {
+    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.allocated_crops)) {
       return parsed as FarmDecisionResponse;
     }
   } catch {
@@ -93,7 +88,7 @@ export function MainScreen({
   const isDemo = userName === 'Demo Farmer' || userName === 'किसान मित्र';
   const hasConfigured = Boolean(savedParams?.hasConfiguredFarm) || isDemo;
 
-  // Primary View Mode: farmer (Simple on Surface) vs expert (Intelligent & Deep Underneath)
+  // Primary View Mode: farmer (Simple on Surface) vs expert (Intelligent & Deep Underneath) vs autonomous (Sentinel)
   const [viewMode, setViewMode] = useState<ViewMode>(
     savedParams?.viewMode || 'farmer'
   );
@@ -102,9 +97,6 @@ export function MainScreen({
   );
 
   // Guided flow navigation: Page 3 (details entry) → cinematic → Page 4 (plan).
-  // We always begin on 'details' and only reveal the plan after the farmer taps
-  // “Generate” (which plays the cinematic analysis overlay). This is intentionally
-  // NOT persisted, so every visit starts from the details form.
   const [page, setPage] = useState<'details' | 'plan'>('details');
   const [generating, setGenerating] = useState<boolean>(false);
 
@@ -137,9 +129,8 @@ export function MainScreen({
     savedParams?.riskTolerance || 'Balanced'
   );
 
-  // Decision & Execution State: pre-populated only if demo or explicitly saved
+  // Decision & Execution State: pre-populated if cached in localStorage
   const [decision, setDecision] = useState<FarmDecisionResponse | null>(() => {
-    if (!hasConfigured) return null;
     return loadStoredDecision(
       initialState || savedParams?.selectedState || 'Madhya Pradesh',
       initialDistrict || savedParams?.selectedDistrict || 'Bhopal'
@@ -147,6 +138,41 @@ export function MainScreen({
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync state to storage whenever it changes so refresh never loses data
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        FARM_PARAMS_STORAGE_KEY,
+        JSON.stringify({
+          selectedState,
+          selectedDistrict,
+          landAcres,
+          budgetInr,
+          irrigationType,
+          irrigationReliability,
+          season,
+          riskTolerance,
+          viewMode,
+          page,
+          hasConfiguredFarm: true,
+        })
+      );
+    } catch (err) {
+      console.warn('Could not save farm params:', err);
+    }
+  }, [
+    selectedState,
+    selectedDistrict,
+    landAcres,
+    budgetInr,
+    irrigationType,
+    irrigationReliability,
+    season,
+    riskTolerance,
+    viewMode,
+    page,
+  ]);
 
   // Autonomous Sentinel State
   const [sentinelLogs, setSentinelLogs] = useState<AutonomousCycleLog[]>([]);
@@ -358,9 +384,15 @@ export function MainScreen({
     return () => clearInterval(interval);
   }, [decision, language]);
 
-  // Execute initial optimization calculation on mount only in Demo Mode or if explicit cached decision exists
+  // Sync initial location props from map when changed
   useEffect(() => {
-    if (isDemo && !decision) {
+    if (initialState) setSelectedState(initialState);
+    if (initialDistrict) setSelectedDistrict(initialDistrict);
+  }, [initialState, initialDistrict]);
+
+  // Execute initial optimization calculation on mount only in Demo Mode on the plan page or if cached decision exists
+  useEffect(() => {
+    if (isDemo && !decision && page === 'plan') {
       runOptimization();
     } else if (decision) {
       try {
@@ -376,7 +408,7 @@ export function MainScreen({
         console.warn('Initial cached Sentinel cycle fallback:', err);
       }
     }
-  }, [isDemo]);
+  }, [isDemo, page]);
 
   // Page 5: Autonomous Sentinel — returns the farmer to the plan (Page 4).
   if (viewMode === 'autonomous') {
@@ -420,6 +452,7 @@ export function MainScreen({
           season={season}
           riskTolerance={riskTolerance}
           loading={loading}
+          hasPlan={Boolean(decision)}
           onLandAcresChange={setLandAcres}
           onBudgetInrChange={setBudgetInr}
           onIrrigationTypeChange={setIrrigationType}
@@ -428,6 +461,8 @@ export function MainScreen({
           onRiskToleranceChange={setRiskTolerance}
           onGenerate={handleGeneratePlan}
           onChangeLocation={onBack}
+          onViewPlan={() => setPage('plan')}
+          onProceedToSentinel={() => setViewMode('autonomous')}
           onLogout={onLogout || onBack}
         />
       ) : (

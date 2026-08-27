@@ -140,6 +140,7 @@ function AppContent() {
       {/* 3. MAIN FARM INTELLIGENCE DASHBOARD (guided Pages 3–5 live inside) */}
       {stage === 'dashboard' && (
         <MainScreen
+          key={`${selectedState}-${selectedDistrict}`}
           userName={userName}
           onBack={handleChangeFarm}
           onLogout={handleLogout}

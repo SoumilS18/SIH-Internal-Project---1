@@ -204,7 +204,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       placeholder={isHi ? '98765 43210 या farmer@agri.in' : '98765 43210 or farmer@example.com'}
-                      className="field-input pl-10 text-sm"
+                      className="field-input !pl-10 text-sm"
                     />
                   </div>
                 </div>
@@ -240,7 +240,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder={isHi ? '••••••••' : 'Enter your password'}
-                      className="field-input pl-10 pr-10 text-sm"
+                      className="field-input !pl-10 !pr-10 text-sm"
                     />
                     <button
                       type="button"

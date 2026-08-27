@@ -26,7 +26,8 @@ interface FarmDetailsScreenProps {
   irrigationReliability: 'High' | 'Medium' | 'Low';
   season: 'Kharif' | 'Rabi' | 'Zaid';
   riskTolerance: 'Conservative' | 'Balanced' | 'Aggressive';
-  loading: boolean;
+  loading?: boolean;
+  hasPlan?: boolean;
   onLandAcresChange: (acres: number) => void;
   onBudgetInrChange: (budget: number) => void;
   onIrrigationTypeChange: (type: 'Borewell' | 'Rainfed' | 'Canal' | 'Drip' | 'Sprinkler') => void;
@@ -35,6 +36,8 @@ interface FarmDetailsScreenProps {
   onRiskToleranceChange: (risk: 'Conservative' | 'Balanced' | 'Aggressive') => void;
   onGenerate: () => void;
   onChangeLocation: () => void;
+  onViewPlan?: () => void;
+  onProceedToSentinel?: () => void;
   onLogout?: () => void;
 }
 
@@ -77,7 +80,8 @@ export function FarmDetailsScreen({
   irrigationReliability,
   season,
   riskTolerance,
-  loading,
+  loading = false,
+  hasPlan = false,
   onLandAcresChange,
   onBudgetInrChange,
   onIrrigationTypeChange,
@@ -86,6 +90,8 @@ export function FarmDetailsScreen({
   onRiskToleranceChange,
   onGenerate,
   onChangeLocation,
+  onViewPlan,
+  onProceedToSentinel,
   onLogout,
 }: FarmDetailsScreenProps) {
   const { language } = useLanguage();
@@ -131,9 +137,11 @@ export function FarmDetailsScreen({
       <JourneyNav
         stage={2}
         userName={userName}
-        reachable={[1]}
+        reachable={hasPlan ? [1, 3, 4] : [1]}
         onNavigate={(target) => {
           if (target === 1) onChangeLocation();
+          if (target === 3 && onViewPlan) onViewPlan();
+          if (target === 4 && onProceedToSentinel) onProceedToSentinel();
         }}
         onLogout={onLogout}
       />

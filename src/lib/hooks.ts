@@ -60,6 +60,8 @@ export function useInView<T extends HTMLElement = HTMLDivElement>(
   const ref = useRef<T>(null);
   const [inView, setInView] = useState(false);
   const once = options?.once ?? true;
+  const threshold = options?.threshold ?? 0.02;
+  const rootMargin = options?.rootMargin ?? '0px 0px 80px 0px';
 
   useEffect(() => {
     const node = ref.current;
@@ -79,11 +81,11 @@ export function useInView<T extends HTMLElement = HTMLDivElement>(
           }
         });
       },
-      { threshold: 0.18, rootMargin: '0px 0px -8% 0px', ...options }
+      { threshold, rootMargin }
     );
     obs.observe(node);
     return () => obs.disconnect();
-  }, [once, options]);
+  }, [once, threshold, rootMargin]);
 
   return [ref, inView];
 }

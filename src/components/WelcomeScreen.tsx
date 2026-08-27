@@ -357,7 +357,7 @@ export function WelcomeScreen({
 
             {/* Search */}
             <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--ink-ghost)]">
+              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[var(--ink-ghost)]">
                 <Search size={15} />
               </span>
               <input
@@ -369,7 +369,7 @@ export function WelcomeScreen({
                 }}
                 onFocus={() => setIsSearchOpen(true)}
                 placeholder={isHi ? 'राज्य या जिला खोजें...' : 'Search state or district…'}
-                className="field-input py-2.5 pl-9 pr-8 text-xs"
+                className="field-input !py-2.5 !pl-10 !pr-8 text-xs"
               />
               {searchQuery && (
                 <button

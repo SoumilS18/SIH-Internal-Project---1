@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowRight,
   Layers,
   Pencil,
   X,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Check,
+  Calendar,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { JourneyNav } from '@/components/JourneyNav';
@@ -22,6 +27,143 @@ import { StatBlock, ProgressRing, AllocationBar, RiskMeter, DonutChart } from '@
 import { Reveal, MagneticButton, Counter } from '@/components/ui/motion';
 import { usePrefersReducedMotion } from '@/lib/hooks';
 import type { FarmDecisionResponse } from '@/types/farm';
+import {
+  getSeasonWeeksCount,
+  getWeeklyActionPlan,
+  getAllWeeksSummary,
+} from '@/lib/seasonalActionPlans';
+
+interface WeekDropdownProps {
+  selectedWeek: number;
+  totalWeeks: number;
+  allWeeks: Array<{ week: number; stageName: string; phaseLabel: string }>;
+  onSelectWeek: (w: number) => void;
+  isHi: boolean;
+  className?: string;
+}
+
+function WeekDropdown({
+  selectedWeek,
+  totalWeeks,
+  allWeeks,
+  onSelectWeek,
+  isHi,
+  className = '',
+}: WeekDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const activeItem = allWeeks.find((w) => w.week === selectedWeek) || allWeeks[0];
+
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      {/* Aesthetic Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex h-8 w-full min-w-[240px] sm:min-w-[320px] max-w-md items-center justify-between gap-2 rounded-xl border border-[var(--line-strong)] bg-[var(--surface-solid)] px-3 py-1 text-left text-xs font-semibold text-[var(--ink)] shadow-xs transition-all hover:border-[var(--field)] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--field)]/20 cursor-pointer"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[var(--field)] font-data text-[10px] font-bold text-white">
+            {selectedWeek}
+          </span>
+          <span className="truncate font-display font-medium text-[var(--ink)]">
+            {isHi ? `सप्ताह ${selectedWeek}: ` : `Week ${selectedWeek}: `}
+            <span className="font-semibold">{activeItem?.stageName}</span>
+          </span>
+        </div>
+        <ChevronDown
+          size={14}
+          className={`shrink-0 text-[var(--ink-faint)] transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-[var(--field)]' : ''
+          }`}
+        />
+      </button>
+
+      {/* Aesthetic Popover Menu */}
+      {isOpen && (
+        <div className="panel-elevated absolute left-0 sm:right-0 sm:left-auto top-full z-50 mt-1.5 max-h-80 w-full min-w-[290px] sm:min-w-[380px] overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--surface-solid)] p-1.5 shadow-xl animate-scale-in">
+          <div className="px-2.5 py-1.5 border-b border-[var(--line-soft)] mb-1 flex items-center justify-between">
+            <span className="t-eyebrow text-[9px] text-[var(--ink-faint)]">
+              {isHi ? `कुल ${totalWeeks} सप्ताह उपलब्ध` : `${totalWeeks} Seasonal Weeks`}
+            </span>
+            <span className="text-[10px] font-semibold text-[var(--grain-deep)]">
+              {isHi ? 'सप्ताह चुनें' : 'Select week'}
+            </span>
+          </div>
+          <div className="space-y-0.5">
+            {allWeeks.map((item) => {
+              const isSelected = item.week === selectedWeek;
+              const startDay = (item.week - 1) * 7 + 1;
+              const endDay = item.week * 7;
+              return (
+                <button
+                  key={item.week}
+                  type="button"
+                  onClick={() => {
+                    onSelectWeek(item.week);
+                    setIsOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all ${
+                    isSelected
+                      ? 'bg-[var(--field-tint)] text-[var(--field-deep)] font-semibold ring-1 ring-[var(--field)]/20'
+                      : 'text-[var(--ink)] hover:bg-[var(--surface-inset)]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span
+                      className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg font-data text-[10px] font-bold ${
+                        isSelected
+                          ? 'bg-[var(--field)] text-white shadow-xs'
+                          : 'bg-[var(--surface-inset)] text-[var(--ink-soft)] border border-[var(--line-soft)]'
+                      }`}
+                    >
+                      {item.week}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-semibold">
+                        {isHi ? `सप्ताह ${item.week}: ` : `Week ${item.week}: `}
+                        {item.stageName}
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[var(--ink-soft)]">
+                        <span className="font-data">
+                          {isHi ? `दिन ${startDay}–${endDay}` : `Days ${startDay}–${endDay}`}
+                        </span>
+                        <span className="h-1 w-1 rounded-full bg-[var(--line-strong)]" />
+                        <span className="text-[var(--ink-faint)] font-medium truncate">
+                          {item.phaseLabel}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <Check size={14} className="shrink-0 text-[var(--field)] font-bold" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface FarmPlanScreenProps {
   userName?: string;
@@ -91,9 +233,17 @@ export function FarmPlanScreen({
   const [showDetailedModal, setShowDetailedModal] = useState<boolean>(false);
   const [showFull7DayModal, setShowFull7DayModal] = useState<boolean>(false);
   const [activeCrop, setActiveCrop] = useState<string | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState<number>(1);
 
   // Derived decision values
   const allocatedCrops = decision?.allocated_crops || [];
+  const cropNames = allocatedCrops.map((c) => c.crop_name);
+
+  // Weeks & Seasonal Action Plan Calculation
+  const totalWeeks = getSeasonWeeksCount(season);
+  const clampedWeek = Math.max(1, Math.min(selectedWeek, totalWeeks));
+  const currentWeekPlan = getWeeklyActionPlan(season, clampedWeek, language, cropNames);
+  const allWeeksSummary = getAllWeeksSummary(season, language, cropNames);
   const farmTotals = decision?.farm_totals;
   const netProfit = farmTotals?.total_expected_net_profit_inr ?? 0;
   const totalInvestment = farmTotals?.total_investment_inr ?? budgetInr;
@@ -162,31 +312,24 @@ export function FarmPlanScreen({
         stage={3}
         accent="grain"
         userName={userName}
-        reachable={[1, 2]}
+        reachable={[1, 2, 4]}
         onNavigate={(target) => {
           if (target === 1) onChangeLocation();
           if (target === 2) onEditDetails();
+          if (target === 4) onProceedToSentinel();
         }}
         onLogout={onLogout}
         actions={
           <>
-            <button
-              type="button"
-              onClick={onEditDetails}
-              className="nav-pill hidden h-9 items-center gap-1.5 px-3 text-xs font-medium text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] sm:inline-flex"
-              title={isHi ? 'विवरण बदलें' : 'Edit details'}
-            >
-              <Pencil size={13} className="text-[var(--grain-deep)]" />
-              <span className="hidden sm:inline">{isHi ? 'विवरण बदलें' : 'Edit details'}</span>
-            </button>
             {decision && (
               <button
                 type="button"
                 onClick={() => setShowDetailedModal(true)}
-                className="nav-pill hidden h-9 items-center gap-1.5 px-3 text-xs font-medium text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] lg:inline-flex"
+                className="nav-pill flex h-9 items-center gap-1.5 px-3 text-xs font-medium text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
+                title={isHi ? 'विस्तृत विश्लेषण' : 'Detailed Analysis'}
               >
                 <Layers size={14} className="text-[var(--grain-deep)]" />
-                <span>{isHi ? 'विस्तृत विश्लेषण' : 'Detailed Analysis'}</span>
+                <span className="hidden sm:inline">{isHi ? 'विस्तृत विश्लेषण' : 'Detailed Analysis'}</span>
               </button>
             )}
             <button
@@ -243,10 +386,6 @@ export function FarmPlanScreen({
                         {landAcres} {isHi ? 'एकड़' : 'acres'} · {getDistrictDisplayName(selectedDistrict, language)}, {getStateDisplayName(selectedState, language)}
                       </p>
                     </div>
-                    <span className="chip chip-field shrink-0 text-[11px]">
-                      <CheckCircle2 size={13} />
-                      {isHi ? 'विश्वसनीयता: उच्च' : 'Confidence: High'}
-                    </span>
                   </div>
 
                   {/* TWIN + COST — the field and where the money goes, side by side */}
@@ -429,43 +568,122 @@ export function FarmPlanScreen({
                   </div>
                 </Reveal>
 
-                {/* 7-DAY — connected horizontal timeline */}
+                {/* 7-DAY ACTION PLAN WITH INTEGRATED WEEK DROPDOWN SELECTOR */}
                 <Reveal className="panel p-5 sm:p-6" delay={90}>
-                  <div className="flex items-center justify-between">
+                  {/* Top Bar: Title, Season Metadata, Dropdown Box & Navigation */}
+                  <div className="flex flex-col gap-3.5 border-b border-[var(--line)] pb-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
-                        {isHi ? '7-दिवसीय कार्ययोजना' : '7-day action plan'}
-                      </h3>
-                      <p className="text-[11px] text-[var(--ink-soft)]">
-                        {isHi ? 'इस सप्ताह आपके खेत के लिए' : 'For your farm, this week'}
+                      <div className="flex items-center gap-2">
+                        <span className="grid h-6 w-6 place-items-center rounded-lg bg-[var(--field-tint)] text-[var(--field-deep)]">
+                          <Calendar size={13} />
+                        </span>
+                        <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
+                          {isHi ? '7-दिवसीय कार्ययोजना' : '7-Day Action Plan'}
+                        </h3>
+                        <span className="chip chip-field py-0.5 px-2 text-[10px] font-semibold">
+                          {translateSeason(season, language)} · {totalWeeks} {isHi ? 'सप्ताह' : 'Weeks'}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
+                        {isHi
+                          ? `आपकी फसल योजना (${cropLine}) हेतु साप्ताहिक कृषि कार्य`
+                          : `Weekly operational schedule for your farm (${cropLine})`}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowFull7DayModal(true)}
-                      className="text-xs font-semibold text-[var(--grain-deep)] transition-colors hover:text-[var(--field)]"
-                    >
-                      {isHi ? 'पूरी योजना →' : 'Full plan →'}
-                    </button>
+
+                    {/* Dropdown Selector Controls */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedWeek((w) => Math.max(1, w - 1))}
+                          disabled={clampedWeek <= 1}
+                          className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface-solid)] text-[var(--ink-soft)] transition-colors hover:bg-[var(--paper-2)] hover:text-[var(--ink)] disabled:pointer-events-none disabled:opacity-30"
+                          title={isHi ? 'पिछला सप्ताह' : 'Previous week'}
+                          aria-label={isHi ? 'पिछला सप्ताह' : 'Previous week'}
+                        >
+                          <ChevronLeft size={15} />
+                        </button>
+
+                        {/* The Aesthetic Dropdown Box */}
+                        <WeekDropdown
+                          selectedWeek={clampedWeek}
+                          totalWeeks={totalWeeks}
+                          allWeeks={allWeeksSummary}
+                          onSelectWeek={setSelectedWeek}
+                          isHi={isHi}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedWeek((w) => Math.min(totalWeeks, w + 1))}
+                          disabled={clampedWeek >= totalWeeks}
+                          className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface-solid)] text-[var(--ink-soft)] transition-colors hover:bg-[var(--paper-2)] hover:text-[var(--ink)] disabled:pointer-events-none disabled:opacity-30"
+                          title={isHi ? 'अगला सप्ताह' : 'Next week'}
+                          aria-label={isHi ? 'अगला सप्ताह' : 'Next week'}
+                        >
+                          <ChevronRight size={15} />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowFull7DayModal(true)}
+                        className="btn btn-secondary h-8 px-3 text-xs font-semibold"
+                      >
+                        {isHi ? 'पूरी योजना →' : 'Full plan →'}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="mt-4 flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-                    {default7Days.map((step, i) => (
-                      <div key={step.day} className="relative flex min-w-[124px] flex-1 flex-col">
-                        {/* connector line */}
-                        {i < default7Days.length - 1 && (
-                          <span className="absolute left-[26px] top-[10px] hidden h-px w-full bg-[var(--line)] sm:block" aria-hidden />
-                        )}
-                        <div className="flex items-center gap-2">
-                          <span className="z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--field)] font-data text-[9px] font-semibold text-white">
-                            {step.day}
-                          </span>
-                          <span className="t-eyebrow text-[0.5rem]">{isHi ? `दिन ${step.day}` : `Day ${step.day}`}</span>
-                        </div>
-                        <h4 className="mt-2 text-xs font-semibold text-[var(--ink)]">{step.title}</h4>
-                        <p className="mt-0.5 text-[10px] leading-tight text-[var(--ink-soft)]">{step.desc}</p>
+                  {/* Active Week Stage Context Strip */}
+                  <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--line-soft)] bg-[var(--surface-inset)] px-3.5 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="chip chip-field py-0 px-2 text-[10px] font-bold">
+                          {isHi ? `सप्ताह ${clampedWeek}` : `Week ${clampedWeek}`} · {currentWeekPlan.phaseLabel}
+                        </span>
+                        <span className="font-display text-xs font-bold text-[var(--ink)]">
+                          {currentWeekPlan.stageName}
+                        </span>
+                        <span className="text-[10px] font-data text-[var(--ink-faint)]">
+                          ({isHi
+                            ? `दिन ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}`
+                            : `Days ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}`})
+                        </span>
                       </div>
-                    ))}
+                      <p className="mt-1 text-xs text-[var(--ink-soft)]">
+                        {currentWeekPlan.summary}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 7-Day Connected Horizontal Timeline */}
+                  <div className="mt-4 flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+                    {currentWeekPlan.days.map((step, i) => {
+                      const isLast = i === currentWeekPlan.days.length - 1;
+                      return (
+                        <div key={step.day} className="relative flex min-w-[124px] flex-1 flex-col">
+                          {/* Clean connector line running between nodes */}
+                          {!isLast && (
+                            <span
+                              className="absolute left-6 -right-3 top-[10px] hidden h-[1.5px] bg-[var(--line-strong)] sm:block"
+                              aria-hidden
+                            />
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <span className="relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--field)] font-data text-[9px] font-bold text-white ring-2 ring-[var(--surface-solid)] shadow-2xs">
+                              {step.day}
+                            </span>
+                            <span className="t-eyebrow relative z-10 rounded-md bg-[var(--surface-solid)] px-1 text-[0.55rem] font-bold text-[var(--ink-soft)] shadow-2xs">
+                              {isHi ? `दिन ${step.day}` : `Day ${step.day}`}
+                            </span>
+                          </div>
+                          <h4 className="mt-2 text-xs font-semibold text-[var(--ink)]">{step.title}</h4>
+                          <p className="mt-0.5 text-[10px] leading-tight text-[var(--ink-soft)]">{step.desc}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </Reveal>
 
@@ -518,14 +736,17 @@ export function FarmPlanScreen({
       {/* ===================================================================== */}
       {showFull7DayModal && (
         <div className="scrim fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="panel-modal max-h-[85vh] w-full max-w-2xl space-y-4 overflow-y-auto p-6">
+          <div className="panel-modal max-h-[88vh] w-full max-w-2xl space-y-4 overflow-y-auto p-6">
             <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
               <div>
                 <h3 className="font-display text-lg font-semibold text-[var(--ink)]">
-                  {isHi ? 'विस्तृत 7-दिवसीय खेत कार्ययोजना' : 'Comprehensive 7-Day Farm Action Plan'}
+                  {isHi
+                    ? `सप्ताह ${clampedWeek} की विस्तृत कार्ययोजना (${totalWeeks} में से)`
+                    : `Comprehensive 7-Day Plan · Week ${clampedWeek} of ${totalWeeks}`}
                 </h3>
                 <p className="text-xs text-[var(--ink-soft)]">
-                  {isHi ? 'आपके खेत व मिट्टी के अनुसार दैनिक कार्य' : 'Daily operational checklist tailored to your farm allocation'}
+                  {translateSeason(season, language)} · {currentWeekPlan.stageName} (
+                  {isHi ? `दिन ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}` : `Days ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}`})
                 </p>
               </div>
               <button
@@ -538,21 +759,62 @@ export function FarmPlanScreen({
               </button>
             </div>
 
+            {/* Aesthetic Dropdown Week Switcher in Modal */}
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[var(--surface-inset)] p-2.5">
+              <span className="text-xs font-semibold text-[var(--ink-soft)]">
+                {isHi ? 'सप्ताह चुनें:' : 'Select Week:'}
+              </span>
+              <WeekDropdown
+                selectedWeek={clampedWeek}
+                totalWeeks={totalWeeks}
+                allWeeks={allWeeksSummary}
+                onSelectWeek={setSelectedWeek}
+                isHi={isHi}
+                className="flex-1 max-w-md"
+              />
+            </div>
+
             <div className="space-y-3">
-              {default7Days.map((step) => (
-                <div key={step.day} className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-inset)] p-3.5">
+              {currentWeekPlan.days.map((step) => (
+                <div
+                  key={step.day}
+                  className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-inset)] p-3.5"
+                >
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--field)] text-xs font-semibold text-white">
                     {step.day}
                   </span>
-                  <div>
-                    <h4 className="text-xs font-semibold text-[var(--ink)]">{step.title}</h4>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h4 className="text-xs font-semibold text-[var(--ink)]">{step.title}</h4>
+                      <span className="shrink-0 font-data text-[10px] text-[var(--ink-faint)]">
+                        {isHi ? `दिन ${step.day}` : `Day ${step.day}`}
+                      </span>
+                    </div>
                     <p className="mt-0.5 text-xs text-[var(--ink-soft)]">{step.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-between items-center pt-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedWeek((w) => Math.max(1, w - 1))}
+                  disabled={clampedWeek <= 1}
+                  className="btn btn-secondary px-3 py-1.5 text-xs disabled:opacity-30"
+                >
+                  ← {isHi ? 'पिछला' : 'Prev Week'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedWeek((w) => Math.min(totalWeeks, w + 1))}
+                  disabled={clampedWeek >= totalWeeks}
+                  className="btn btn-secondary px-3 py-1.5 text-xs disabled:opacity-30"
+                >
+                  {isHi ? 'अगला' : 'Next Week'} →
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowFull7DayModal(false)}

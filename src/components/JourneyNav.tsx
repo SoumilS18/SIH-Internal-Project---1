@@ -75,7 +75,7 @@ function StageButton({
   const isHi = language === 'hi';
   const label = isHi ? stage.hi : stage.en;
   const Icon = stage.icon;
-  const clickable = state === 'done' && !!onClick;
+  const clickable = Boolean(onClick);
 
   const base =
     'group relative inline-flex items-center gap-2 rounded-full transition-all duration-300 focus-visible:outline-none';
@@ -106,15 +106,19 @@ function StageButton({
       aria-disabled={!clickable}
       title={label}
       aria-label={
-        state === 'done'
-          ? isHi
-            ? `${label} पर वापस जाएं`
-            : `Back to ${label}`
+        clickable
+          ? state === 'done'
+            ? isHi
+              ? `${label} पर वापस जाएं`
+              : `Back to ${label}`
+            : isHi
+            ? `${label} पर जाएं`
+            : `Proceed to ${label}`
           : `${label}${isHi ? ' — अभी उपलब्ध नहीं' : ' — not yet available'}`
       }
       className={`${base} ${compact ? 'h-8 w-8' : 'h-9 w-9'} justify-center ${
         clickable
-          ? 'text-[var(--field)] hover:bg-[var(--field-tint)] cursor-pointer'
+          ? 'text-[var(--field)] hover:bg-[var(--field-tint)] cursor-pointer hover:scale-105 transition-all'
           : 'text-[var(--ink-ghost)] cursor-default'
       }`}
     >
@@ -215,9 +219,9 @@ export function JourneyNav({
           style={frost('to bottom')}
           aria-hidden
         />
-        <div className="relative mx-auto flex max-w-[1560px] flex-wrap items-start justify-between gap-2 px-4 pt-4 sm:px-6">
+        <div className="relative mx-auto flex max-w-[1560px] items-center justify-between gap-3 px-4 pt-4 sm:px-6">
           {/* ---------------- brand: floating, no container ---------------- */}
-          <div className="pointer-events-auto flex items-center gap-2.5">
+          <div className="pointer-events-auto flex items-center gap-2.5 shrink-0">
             <span
               className="leaf-radius grid h-9 w-9 place-items-center text-white"
               style={{
@@ -233,9 +237,9 @@ export function JourneyNav({
             </span>
           </div>
 
-          {/* ---------------- journey pill (desktop, centred) -------------- */}
+          {/* ---------------- journey pill (desktop, centered without collision) -------------- */}
           {stage > 0 && (
-            <div className="pointer-events-auto absolute left-1/2 top-4 hidden -translate-x-1/2 md:block">
+            <div className="pointer-events-auto hidden md:flex justify-center flex-1 min-w-0 px-2">
               <StageTrack
                 stage={stage as JourneyStage}
                 reachable={reachable}
@@ -246,10 +250,12 @@ export function JourneyNav({
           )}
 
           {/* ---------------- utilities: screen actions, then one group ---- */}
-          <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-            <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-              {actions}
-            </div>
+          <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-2">
+            {actions && (
+              <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
+                {actions}
+              </div>
+            )}
 
             <div className="nav-pill pointer-events-auto flex items-center gap-0.5 p-1">
               <LanguageSelector variant="bare" />
