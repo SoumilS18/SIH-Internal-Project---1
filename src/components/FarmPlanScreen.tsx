@@ -2,29 +2,24 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowRight,
   Layers,
-  Pencil,
   X,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   Check,
-  Calendar,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { JourneyNav } from '@/components/JourneyNav';
 import { getCropDisplayName } from '@/i18n/cropNames';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
 import { formatCurrency, formatCurrencyWords } from '@/i18n/formatters';
-import {
-  translateRiskLevel,
-  translateSeason,
-} from '@/i18n/enums';
+import { translateRiskLevel, translateSeason } from '@/i18n/enums';
 import { DetailedAnalysisView } from '@/components/DetailedAnalysisView';
 import { FarmDigitalTwin } from '@/components/FarmDigitalTwin';
-import { AIAgentOrb } from '@/components/AIAgentOrb';
 import { StatBlock, ProgressRing, AllocationBar, RiskMeter, DonutChart } from '@/components/ui/dataviz';
 import { Reveal, MagneticButton, Counter } from '@/components/ui/motion';
+import { ReadingRow } from '@/components/ui/ReadingRow';
+import { CropStandArt } from '@/components/ui/CropStandArt';
 import { usePrefersReducedMotion } from '@/lib/hooks';
 import type { FarmDecisionResponse } from '@/types/farm';
 import {
@@ -42,6 +37,11 @@ interface WeekDropdownProps {
   className?: string;
 }
 
+/**
+ * The week switcher. Behaviour is unchanged — a listbox over every week of the
+ * real season — but it now reads as a line of type with a caret rather than a
+ * bordered control, so the schedule strip stays part of the sheet.
+ */
 function WeekDropdown({
   selectedWeek,
   totalWeeks,
@@ -71,37 +71,35 @@ function WeekDropdown({
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
-      {/* Aesthetic Trigger Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-8 w-full min-w-[240px] sm:min-w-[320px] max-w-md items-center justify-between gap-2 rounded-xl border border-[var(--line-strong)] bg-[var(--surface-solid)] px-3 py-1 text-left text-xs font-semibold text-[var(--ink)] shadow-xs transition-all hover:border-[var(--field)] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--field)]/20 cursor-pointer"
+        className="flex h-8 w-full min-w-[228px] max-w-md items-center justify-between gap-2 border-b border-[var(--line)] px-0.5 text-left text-[13px] text-[var(--ink)] transition-colors hover:border-[var(--field)] focus-visible:border-[var(--field)] focus-visible:outline-none sm:min-w-[300px]"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[var(--field)] font-data text-[10px] font-bold text-white">
-            {selectedWeek}
+        <span className="flex min-w-0 flex-1 items-baseline gap-2">
+          <span className="font-data shrink-0 text-[11px] font-semibold text-[var(--field)]">
+            {String(selectedWeek).padStart(2, '0')}
           </span>
-          <span className="truncate font-display font-medium text-[var(--ink)]">
-            {isHi ? `सप्ताह ${selectedWeek}: ` : `Week ${selectedWeek}: `}
+          <span className="truncate">
+            <span className="text-[var(--ink-soft)]">{isHi ? 'सप्ताह · ' : 'Week · '}</span>
             <span className="font-semibold">{activeItem?.stageName}</span>
           </span>
-        </div>
+        </span>
         <ChevronDown
           size={14}
-          className={`shrink-0 text-[var(--ink-faint)] transition-transform duration-200 ${
+          className={`shrink-0 text-[var(--ink-ghost)] transition-transform duration-200 ${
             isOpen ? 'rotate-180 text-[var(--field)]' : ''
           }`}
         />
       </button>
 
-      {/* Aesthetic Popover Menu */}
       {isOpen && (
-        <div className="panel-elevated absolute left-0 sm:right-0 sm:left-auto top-full z-50 mt-1.5 max-h-80 w-full min-w-[290px] sm:min-w-[380px] overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--surface-solid)] p-1.5 shadow-xl animate-scale-in">
-          <div className="px-2.5 py-1.5 border-b border-[var(--line-soft)] mb-1 flex items-center justify-between">
-            <span className="t-eyebrow text-[9px] text-[var(--ink-faint)]">
-              {isHi ? `कुल ${totalWeeks} सप्ताह उपलब्ध` : `${totalWeeks} Seasonal Weeks`}
+        <div className="panel-elevated animate-scale-in absolute left-0 top-full z-50 mt-2 max-h-80 w-full min-w-[290px] overflow-y-auto p-1.5 sm:min-w-[380px]">
+          <div className="mb-1 flex items-center justify-between border-b border-[var(--line-soft)] px-2.5 py-1.5">
+            <span className="t-eyebrow text-[9px] text-[var(--ink-ghost)]">
+              {isHi ? `कुल ${totalWeeks} सप्ताह` : `${totalWeeks} seasonal weeks`}
             </span>
             <span className="text-[10px] font-semibold text-[var(--grain-deep)]">
               {isHi ? 'सप्ताह चुनें' : 'Select week'}
@@ -116,45 +114,39 @@ function WeekDropdown({
                 <button
                   key={item.week}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => {
                     onSelectWeek(item.week);
                     setIsOpen(false);
                   }}
-                  className={`flex w-full items-center justify-between gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all ${
+                  className={`flex w-full items-center justify-between gap-2.5 rounded-[14px] px-2.5 py-2 text-left transition-colors ${
                     isSelected
-                      ? 'bg-[var(--field-tint)] text-[var(--field-deep)] font-semibold ring-1 ring-[var(--field)]/20'
+                      ? 'bg-[var(--field-tint)] font-semibold text-[var(--field-deep)]'
                       : 'text-[var(--ink)] hover:bg-[var(--surface-inset)]'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <span className="flex min-w-0 flex-1 items-baseline gap-2.5">
                     <span
-                      className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg font-data text-[10px] font-bold ${
-                        isSelected
-                          ? 'bg-[var(--field)] text-white shadow-xs'
-                          : 'bg-[var(--surface-inset)] text-[var(--ink-soft)] border border-[var(--line-soft)]'
+                      className={`font-data shrink-0 text-[11px] font-semibold ${
+                        isSelected ? 'text-[var(--field)]' : 'text-[var(--ink-ghost)]'
                       }`}
                     >
-                      {item.week}
+                      {String(item.week).padStart(2, '0')}
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-xs font-semibold">
-                        {isHi ? `सप्ताह ${item.week}: ` : `Week ${item.week}: `}
-                        {item.stageName}
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[var(--ink-soft)]">
+                    <span className="block min-w-0 flex-1">
+                      <span className="block truncate text-xs font-semibold">{item.stageName}</span>
+                      <span className="mt-0.5 flex items-center gap-2 text-[10px] text-[var(--ink-soft)]">
                         <span className="font-data">
                           {isHi ? `दिन ${startDay}–${endDay}` : `Days ${startDay}–${endDay}`}
                         </span>
                         <span className="h-1 w-1 rounded-full bg-[var(--line-strong)]" />
-                        <span className="text-[var(--ink-faint)] font-medium truncate">
+                        <span className="truncate font-medium text-[var(--ink-faint)]">
                           {item.phaseLabel}
                         </span>
-                      </div>
-                    </div>
-                  </div>
-                  {isSelected && (
-                    <Check size={14} className="shrink-0 text-[var(--field)] font-bold" />
-                  )}
+                      </span>
+                    </span>
+                  </span>
+                  {isSelected && <Check size={14} className="shrink-0 text-[var(--field)]" />}
                 </button>
               );
             })}
@@ -180,29 +172,8 @@ interface FarmPlanScreenProps {
   onLogout: () => void;
 }
 
-// Crop icon mapper for friendly visual representation
-function getCropIcon(cropName: string): string {
-  const c = cropName.toLowerCase();
-  if (c.includes('sugarcane') || c.includes('गन्ना')) return '🎋';
-  if (c.includes('rice') || c.includes('paddy') || c.includes('चावल') || c.includes('धान')) return '🌾';
-  if (c.includes('wheat') || c.includes('गेहूँ')) return '🌾';
-  if (c.includes('maize') || c.includes('corn') || c.includes('मक्का')) return '🌽';
-  if (c.includes('cotton') || c.includes('कपास')) return '☁️';
-  if (c.includes('soyabean') || c.includes('soybean') || c.includes('सोयाबीन')) return '🫘';
-  if (c.includes('pigeonpea') || c.includes('arhar') || c.includes('tur') || c.includes('अरहर')) return '🌿';
-  if (c.includes('gram') || c.includes('chana') || c.includes('चना')) return '🌱';
-  if (c.includes('mustard') || c.includes('सरसों')) return '🌼';
-  if (c.includes('groundnut') || c.includes('peanut') || c.includes('मूंगफली')) return '🥜';
-  if (c.includes('potato') || c.includes('आलू')) return '🥔';
-  if (c.includes('onion') || c.includes('प्याज')) return '🧅';
-  if (c.includes('tomato') || c.includes('टमाटर')) return '🍅';
-  if (c.includes('sunflower') || c.includes('सूरजमुखी')) return '🌻';
-  if (c.includes('mung') || c.includes('moong') || c.includes('मूंग')) return '🌱';
-  if (c.includes('urad') || c.includes('उड़द')) return '🌿';
-  return '🌱';
-}
-
-// palette for allocation segments (theme-aware tokens, matches the twin's language)
+// palette for allocation segments — the same order the twin tints its plots in,
+// so a colour means the same crop in the field, the bar and the key.
 const ALLOC_COLORS = [
   'var(--field)',
   'var(--grain)',
@@ -212,6 +183,36 @@ const ALLOC_COLORS = [
   'var(--grain-deep)',
 ];
 
+/**
+ * A section label on a drawing sheet: caps, then a rule running to the edge.
+ * Deliberately un-numbered — the parts of a plan are not a sequence the way the
+ * five planning questions are, so numbering them would be decoration.
+ */
+function SheetHead({ title, children }: { title: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-3">
+      <div className="flex min-w-0 flex-1 items-baseline gap-3">
+        <h3 className="t-eyebrow shrink-0 text-[0.66rem] text-[var(--ink-soft)]">{title}</h3>
+        <span className="h-px min-w-4 flex-1 -translate-y-[3px]" style={{ background: 'var(--line)' }} aria-hidden />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * THE ISSUED SHEET — the plan reveal.
+ *
+ * A plan is a document, so this page is drawn as one: a title block that names
+ * the drawing and registers the facts it was drawn for, then the field itself
+ * with the money beside it, then the outcome dimensions, then a key that maps
+ * every colour in the field to a crop, then the schedule. Hairlines and section
+ * rules carry the structure — there are no cards, no gradient plates and no
+ * second AI floating on the page; the intelligence lives inside the twin.
+ *
+ * Every number is real payload. The one modelled figure (the cost split) is
+ * labelled "Estimated" because the backend returns a single total.
+ */
 export function FarmPlanScreen({
   userName,
   selectedState,
@@ -233,7 +234,11 @@ export function FarmPlanScreen({
   const [showDetailedModal, setShowDetailedModal] = useState<boolean>(false);
   const [showFull7DayModal, setShowFull7DayModal] = useState<boolean>(false);
   const [activeCrop, setActiveCrop] = useState<string | null>(null);
+  // Pointing at a crop in the key previews it in the field; clicking pins it.
+  // Kept separate so `aria-pressed` reports the pinned state, not the hover.
+  const [hoverCrop, setHoverCrop] = useState<string | null>(null);
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
+  const shownCrop = hoverCrop ?? activeCrop;
 
   // Derived decision values
   const allocatedCrops = decision?.allocated_crops || [];
@@ -242,8 +247,11 @@ export function FarmPlanScreen({
   // Weeks & Seasonal Action Plan Calculation
   const totalWeeks = getSeasonWeeksCount(season);
   const clampedWeek = Math.max(1, Math.min(selectedWeek, totalWeeks));
-  const currentWeekPlan = getWeeklyActionPlan(season, clampedWeek, language, cropNames);
-  const allWeeksSummary = getAllWeeksSummary(season, language, cropNames);
+  // The seasonal plan tables only exist in these two languages; every other
+  // locale falls back to English rather than rendering blank stages.
+  const planLang: 'en' | 'hi' = isHi ? 'hi' : 'en';
+  const currentWeekPlan = getWeeklyActionPlan(season, clampedWeek, planLang, cropNames);
+  const allWeeksSummary = getAllWeeksSummary(season, planLang, cropNames);
   const farmTotals = decision?.farm_totals;
   const netProfit = farmTotals?.total_expected_net_profit_inr ?? 0;
   const totalInvestment = farmTotals?.total_investment_inr ?? budgetInr;
@@ -292,16 +300,10 @@ export function FarmPlanScreen({
         ? 'अनुकूलित फसल योजना'
         : 'Optimized crop plan';
 
-  // 7-day micro-plan summary days
-  const default7Days = [
-    { day: 1, title: isHi ? 'खेत की जुताई' : 'Land Prep', desc: isHi ? 'खेत की गहरी जुताई व पाटा लगाना' : 'Deep ploughing & seedbed preparation' },
-    { day: 2, title: isHi ? 'बीजोपचार' : 'Seed Treatment', desc: isHi ? 'प्रमाणित बीज व ट्राइकोडर्मा बीजोपचार' : 'Certified seed & bio-fungicide treatment' },
-    { day: 3, title: isHi ? 'बुवाई / रोपाई' : 'Sowing', desc: isHi ? 'नमी अनुसार कतारबद्ध बुवाई' : 'Line sowing aligned with soil moisture' },
-    { day: 4, title: isHi ? 'सिंचाई जांच' : 'Irrigation', desc: isHi ? 'हल्की नमी जांच व जल निकासी' : 'Moisture check & drip/drainage check' },
-    { day: 5, title: isHi ? 'आधार खाद' : 'Fertilizer 1', desc: isHi ? 'संतुलित डीएपी/एनपीके आधार खुराक' : 'Basal DAP/NPK balanced dosage' },
-    { day: 6, title: isHi ? 'खरपतवार नियंत्रण' : 'Weed Control', desc: isHi ? 'निराई-गुड़ाई व खेत की सफाई' : 'Manual weeding & inter-culture' },
-    { day: 7, title: isHi ? 'फसल निरीक्षण' : 'Field Check', desc: isHi ? 'अंकुरण प्रतिशत व कीट जांच' : 'Germination percentage & health check' },
-  ];
+  // Title-block registry — the facts this drawing was made for. All real payload.
+  const plantedAcres = farmTotals?.total_allocated_acres ?? landAcres;
+  const fallowAcres = farmTotals?.fallow_acres ?? 0;
+  const budgetUsedPct = farmTotals?.budget_utilization_pct;
 
   return (
     <div className="relative flex min-h-screen w-full flex-col justify-between text-[var(--ink)] selection:bg-[var(--grain-tint)] selection:text-[var(--grain-deep)]">
@@ -332,11 +334,7 @@ export function FarmPlanScreen({
                 <span className="hidden sm:inline">{isHi ? 'विस्तृत विश्लेषण' : 'Detailed Analysis'}</span>
               </button>
             )}
-            <button
-              type="button"
-              onClick={onProceedToSentinel}
-              className="btn btn-primary btn-sm"
-            >
+            <button type="button" onClick={onProceedToSentinel} className="btn btn-primary btn-sm">
               <span>{isHi ? 'सेंटीनेल' : 'Sentinel'}</span>
               <ArrowRight size={13} />
             </button>
@@ -345,429 +343,454 @@ export function FarmPlanScreen({
       />
 
       {/* ===================================================================== */}
-      {/* 2. MAIN WORKSPACE                                                      */}
+      {/* 2. THE SHEET                                                           */}
       {/* ===================================================================== */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-24 pt-24 sm:px-8 sm:pt-28 md:pb-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-5 pb-24 pt-24 sm:px-8 sm:pt-28 md:pb-10">
         {!decision ? (
           /* ---------- DEFENSIVE: plan still finalizing ---------- */
           <div className="grid min-h-[60vh] place-items-center">
-            <div className="flex max-w-md flex-col items-center gap-4 text-center">
-              <AIAgentOrb state="analyzing" size={120} />
-              <div>
-                <h2 className="t-h3 text-[var(--ink)]">
-                  {isHi ? 'आपकी योजना तैयार की जा रही है…' : 'Finalizing your plan…'}
-                </h2>
-                <p className="mt-1 text-sm text-[var(--ink-soft)]">
-                  {isHi ? 'कृपया एक क्षण प्रतीक्षा करें।' : 'This will only take a moment.'}
-                </p>
-              </div>
-              <button type="button" onClick={onEditDetails} className="btn-ghost text-sm">
-                {isHi ? '← विवरण पर लौटें' : '← Back to details'}
+            <div className="w-full max-w-xl text-center">
+              <FarmDigitalTwin height={260} showWeather aiState="analyzing" className="w-full" />
+              <h2 className="t-h3 mt-6 text-[var(--ink)]">
+                {isHi ? 'आपकी योजना तैयार की जा रही है…' : 'Finalizing your plan…'}
+              </h2>
+              <p className="mt-1.5 text-sm text-[var(--ink-soft)]">
+                {isHi ? 'कृपया एक क्षण प्रतीक्षा करें।' : 'This will only take a moment.'}
+              </p>
+              <button type="button" onClick={onEditDetails} className="btn btn-ghost btn-sm mt-5">
+                <ChevronLeft size={13} />
+                {isHi ? 'विवरण पर लौटें' : 'Back to details'}
               </button>
             </div>
           </div>
         ) : (
-          /* ---------- PLAN REVEAL (full width) ---------- */
-          <div className="space-y-6" key={planKey}>
-                {/* PLAN SURFACE — cinematic gradient, atmospheric, de-boxed */}
-                <Reveal
-                  className="relative overflow-hidden rounded-[var(--radius-lg)] p-6 sm:p-8"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(231,241,231,0.92) 0%, rgba(255,255,255,0.97) 50%, rgba(248,238,214,0.88) 100%)',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 24px 64px rgb(52 58 44 / 0.10), 0 4px 16px rgb(52 58 44 / 0.04)',
-                  }}
-                >
-                  {/* Atmospheric field glow — top-left */}
-                  <div
-                    className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full blur-3xl"
-                    style={{ background: 'radial-gradient(circle, rgba(70,169,104,0.12) 0%, transparent 70%)' }}
-                    aria-hidden
-                  />
-                  {/* Grain glow — bottom-right */}
-                  <div
-                    className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full blur-3xl"
-                    style={{ background: 'radial-gradient(circle, rgba(216,166,60,0.12) 0%, transparent 70%)' }}
-                    aria-hidden
-                  />
+          /* ---------- THE PLAN, ISSUED ---------- */
+          <div className="space-y-12" key={planKey}>
+            {/* =============================================================== */}
+            {/* TITLE BLOCK — what this drawing is, and what it was drawn for    */}
+            {/* =============================================================== */}
+            <Reveal className="border-b border-[var(--line)] pb-8">
+              <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-10">
+                <div className="lg:col-span-7">
+                  <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-[var(--field)]" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
+                    </span>
+                    {isHi
+                      ? `योजना जारी · ${translateSeason(season, language)} 2026`
+                      : `Plan issued · ${translateSeason(season, language)} 2026`}
+                  </div>
 
-                  {/* headline — large brand-gradient block heading with a reveal wipe */}
-                  <div className="relative flex flex-wrap items-start justify-between gap-3">
-                    <div className="max-w-2xl">
-                      <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
-                        <span className="relative flex h-1.5 w-1.5">
-                          <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-[var(--field)]" />
-                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
-                        </span>
-                        {isHi ? `सर्वोत्तम योजना · ${translateSeason(season, language)} 2026` : `Recommended plan · ${translateSeason(season, language)} 2026`}
-                      </div>
-                      <h2 className="plan-title animate-plan-title mt-3">{cropLine}</h2>
-                      <p className="animate-plan-sub mt-3 text-[0.95rem] font-medium text-[var(--ink-soft)]">
-                        {landAcres} {isHi ? 'एकड़' : 'acres'} · {getDistrictDisplayName(selectedDistrict, language)}, {getStateDisplayName(selectedState, language)}
-                      </p>
+                  <h2 className="plan-title animate-plan-title mt-3">{cropLine}</h2>
+
+                  {decision.explanation?.headline && (
+                    <p className="animate-plan-sub mt-3.5 max-w-xl text-[0.95rem] leading-relaxed text-[var(--ink-soft)]">
+                      {decision.explanation.headline}
+                    </p>
+                  )}
+                </div>
+
+                {/* the registry — the same fact row used on the location and
+                    planning pages, so the sheet reads back in a familiar hand */}
+                <div className="space-y-3 lg:col-span-5 lg:border-l lg:border-[var(--line)] lg:pl-10">
+                  <ReadingRow
+                    label={isHi ? 'मौसम' : 'Season'}
+                    value={`${translateSeason(season, language)} 2026`}
+                  />
+                  <ReadingRow
+                    label={isHi ? 'स्थान' : 'Location'}
+                    value={`${getDistrictDisplayName(selectedDistrict, language)}, ${getStateDisplayName(selectedState, language)}`}
+                  />
+                  <ReadingRow
+                    label={isHi ? 'बोया गया' : 'Planted'}
+                    value={
+                      isHi
+                        ? `${plantedAcres.toFixed(1)} / ${landAcres} एकड़`
+                        : `${plantedAcres.toFixed(1)} of ${landAcres} acres`
+                    }
+                  />
+                  {fallowAcres > 0.05 && (
+                    <ReadingRow
+                      label={isHi ? 'परती' : 'Left fallow'}
+                      value={`${fallowAcres.toFixed(1)} ${isHi ? 'एकड़' : 'acres'}`}
+                    />
+                  )}
+                  {typeof budgetUsedPct === 'number' && (
+                    <ReadingRow
+                      label={isHi ? 'बजट उपयोग' : 'Budget used'}
+                      value={`${budgetUsedPct.toFixed(0)}%`}
+                    />
+                  )}
+                </div>
+              </div>
+            </Reveal>
+
+            {/* =============================================================== */}
+            {/* THE DRAWING — the field, and the money, side by side             */}
+            {/* =============================================================== */}
+            <Reveal delay={60}>
+              <div className="grid grid-cols-1 gap-8 lg:grid-cols-5 lg:gap-0">
+                {/* the field */}
+                <div className="relative flex flex-col justify-center lg:col-span-3 lg:pr-10">
+                  <div className="relative">
+                    <FarmDigitalTwin
+                      decision={decision}
+                      height={400}
+                      interactive
+                      showWeather
+                      scanning={loading}
+                      selectedCrop={shownCrop}
+                      onSelectCrop={setActiveCrop}
+                      className="w-full"
+                    />
+
+                    {/* the one number that matters, pinned into the sky over the
+                        farm it comes from — §21, data anchored in the world */}
+                    <div className="animate-metric-pop pointer-events-none absolute right-3 top-3 text-right">
+                      <span className="t-eyebrow block text-[0.55rem] text-[var(--ink-ghost)]">
+                        {isHi ? 'अनुमानित लाभ' : 'Est. profit'}
+                      </span>
+                      <span
+                        className="block text-[1.6rem] font-light leading-none tracking-tight"
+                        style={{ color: 'var(--field-deep)' }}
+                      >
+                        ₹{Math.round(netProfit / 1000)}K
+                      </span>
+                      <span
+                        className="font-data mt-0.5 block text-[10px] font-semibold"
+                        style={{ color: 'var(--grain-deep)' }}
+                      >
+                        +{roiPct.toFixed(0)}% ROI
+                      </span>
                     </div>
                   </div>
 
-                  {/* TWIN + COST — the field and where the money goes, side by side */}
-                  <div className="relative mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-0">
-                    <div className="relative flex flex-col justify-center lg:col-span-3 lg:pr-7">
-                      {/* twin centerpiece — now showing the REAL allocation */}
-                      <div className="relative">
-                        <FarmDigitalTwin
-                          decision={decision}
-                          height={380}
-                          interactive
-                          showWeather
-                          scanning={loading}
-                          selectedCrop={activeCrop}
-                          onSelectCrop={setActiveCrop}
-                          className="w-full"
-                        />
-                        <span className="t-eyebrow absolute bottom-1 left-1 text-[var(--ink-ghost)]">
-                          {isHi ? 'आपका डिजिटल फार्म ट्विन' : 'Your digital farm twin'}
-                        </span>
-                        {/* Floating profit badge — spatially over the twin */}
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)]" aria-hidden />
+                    <span className="t-eyebrow text-[0.6rem] text-[var(--ink-ghost)]">
+                      {isHi
+                        ? 'आपका डिजिटल फार्म ट्विन · खेत पर टैप करें'
+                        : 'Your digital farm twin · tap a plot'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* the money */}
+                <div className="flex flex-col border-t border-[var(--line)] pt-8 lg:col-span-2 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0">
+                  <SheetHead title={isHi ? 'आपका पैसा कहाँ लगेगा' : 'Where your money goes'}>
+                    <span className="chip chip-grain shrink-0 text-[10px]">
+                      {isHi ? 'अनुमानित' : 'Estimated'}
+                    </span>
+                  </SheetHead>
+
+                  <div className="mt-6 flex flex-1 flex-col items-center justify-center gap-7">
+                    <DonutChart
+                      segments={costSegments}
+                      size={210}
+                      thickness={24}
+                      className="shrink-0"
+                      centerTop={<Counter value={Math.round(totalInvestment)} prefix="₹" />}
+                      centerBottom={isHi ? 'कुल लागत' : 'Total cost'}
+                    />
+                    <div className="grid w-full grid-cols-1 gap-x-8 gap-y-0.5 sm:grid-cols-2 lg:grid-cols-1">
+                      {costSegments.map((s) => (
                         <div
-                          className="animate-metric-pop pointer-events-none absolute right-3 top-3 flex flex-col items-end gap-0.5 rounded-2xl p-3"
-                          style={{
-                            background: 'rgba(255,255,255,0.88)',
-                            backdropFilter: 'blur(12px)',
-                            boxShadow: '0 4px 18px rgb(52 58 44 / 0.12), inset 0 1px 0 rgba(255,255,255,0.9)',
-                          }}
+                          key={s.name}
+                          className="flex items-center justify-between gap-3 border-b border-[var(--line-soft)] py-2"
                         >
-                          <span className="t-eyebrow text-[0.52rem]">{isHi ? 'अनुमानित लाभ' : 'Est. profit'}</span>
-                          <span
-                            className="font-display text-base font-semibold leading-none"
-                            style={{ color: 'var(--field-deep)' }}
-                          >
-                            ₹{Math.round(netProfit / 1000)}K
+                          <span className="inline-flex items-center gap-2 text-[13px] text-[var(--ink-soft)]">
+                            <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
+                            {s.name}
                           </span>
-                          <span className="font-data text-[9px] font-semibold" style={{ color: 'var(--grain-deep)' }}>
-                            +{roiPct.toFixed(0)}% ROI
+                          <span className="font-data text-[13px] font-semibold text-[var(--ink)]">
+                            {Math.round(s.pct * 100)}%
                           </span>
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col border-t border-[var(--line)] pt-5 lg:col-span-2 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div>
-                          <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
-                            {isHi ? 'आपका पैसा कहाँ लगेगा' : 'Where your money goes'}
-                          </h3>
-                          <p className="mt-1 text-[13px] text-[var(--ink-soft)]">
-                            {isHi ? 'अनुमानित कुल लागत' : 'Estimated total cost'} ·{' '}
-                            <span className="font-data font-semibold text-[var(--ink)]">
-                              ₹{Math.round(totalInvestment).toLocaleString('en-IN')}
-                            </span>
-                          </p>
-                        </div>
-                        <span className="chip chip-grain shrink-0 text-[10px]">{isHi ? 'अनुमानित' : 'Estimated'}</span>
-                      </div>
-                      <div className="mt-5 flex flex-1 flex-col items-center justify-center gap-6">
-                        <DonutChart
-                          segments={costSegments}
-                          size={210}
-                          thickness={26}
-                          className="shrink-0"
-                          centerTop={<Counter value={Math.round(totalInvestment)} prefix="₹" />}
-                          centerBottom={isHi ? 'कुल लागत' : 'Total cost'}
-                        />
-                        <div className="grid w-full grid-cols-1 gap-x-6 gap-y-2.5 sm:grid-cols-2">
-                          {costSegments.map((s) => (
-                            <div
-                              key={s.name}
-                              className="flex items-center justify-between gap-3 border-b border-[var(--line)] pb-2"
-                            >
-                              <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--ink-soft)]">
-                                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: s.color }} />
-                                {s.name}
-                              </span>
-                              <span className="font-data text-sm font-semibold text-[var(--ink)]">
-                                {Math.round(s.pct * 100)}%
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* animated stats — open, hairline-divided (no inner cards) */}
-                  <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-[var(--line)] pt-6 lg:grid-cols-4 lg:gap-x-0 lg:divide-x lg:divide-[var(--line)]">
-                    <StatBlock
-                      label={isHi ? 'कुल अनुमानित लाभ' : 'Expected profit'}
-                      value={netProfit}
-                      prefix="₹"
-                      compactINR
-                      tone="field"
-                      className="lg:pr-4"
-                      sub={formatCurrencyWords(netProfit, language)}
-                    />
-                    <div className="grid place-items-center lg:px-2">
-                      <ProgressRing
-                        value={Math.max(0, Math.min(100, roiPct))}
-                        size={116}
-                        stroke={9}
-                        tone="grain"
-                        centerTop={<Counter value={roiPct} decimals={0} prefix="+" suffix="%" />}
-                        centerBottom={isHi ? 'रिटर्न' : 'ROI'}
-                      />
-                    </div>
-                    <StatBlock
-                      label={isHi ? 'कुल निवेश' : 'Total investment'}
-                      value={totalInvestment}
-                      prefix="₹"
-                      compactINR
-                      tone="sky"
-                      className="lg:px-4"
-                      sub={formatCurrencyWords(totalInvestment, language)}
-                    />
-                    <div className="lg:pl-4">
-                      <div className="t-eyebrow mb-2">{isHi ? 'जोखिम स्तर' : 'Risk level'}</div>
-                      <RiskMeter
-                        label={translateRiskLevel(riskLabel, language)}
-                        level={riskLevelNum}
-                        caption={`${allocatedCrops.length} ${isHi ? 'फसलें' : 'crops'}`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* allocation bar + legend */}
-                  <div className="mt-6 border-t border-[var(--line)] pt-5">
-                    <div className="t-eyebrow mb-2.5">{isHi ? 'फसल आवंटन' : 'Crop allocation'}</div>
-                    <AllocationBar segments={allocSegments} />
-                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-                      {allocSegments.map((s) => (
-                        <span key={s.name} className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ink-soft)]">
-                          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: s.color }} />
-                          {s.name} · {s.share.toFixed(0)}%
-                        </span>
                       ))}
                     </div>
                   </div>
-                </Reveal>
+                </div>
+              </div>
 
-                {/* CROP DETAIL — clean hairline rows (not a 3-col card grid) */}
-                <Reveal className="panel p-5 sm:p-6" delay={60}>
-                  <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
-                    {isHi ? 'फसलें, रकबा और अनुमानित लाभ' : 'Crops, acreage & expected profit'}
-                  </h3>
-                  <div className="mt-3 divide-y divide-[var(--line)]">
-                    {allocatedCrops.map((crop, idx) => {
-                      const share = crop.acre_share_pct;
-                      const isActive = activeCrop === crop.crop_name;
-                      return (
-                        <button
-                          type="button"
-                          key={idx}
-                          onMouseEnter={() => setActiveCrop(crop.crop_name)}
-                          onFocus={() => setActiveCrop(crop.crop_name)}
-                          onMouseLeave={() => setActiveCrop(null)}
-                          onBlur={() => setActiveCrop(null)}
-                          className={`flex w-full items-center gap-4 py-3.5 text-left transition-colors ${isActive ? 'bg-[var(--surface-inset)]' : ''}`}
-                        >
-                          <span
-                            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-xl leaf-radius"
-                            style={{ background: 'var(--field-tint)' }}
-                          >
-                            {getCropIcon(crop.crop_name)}
-                          </span>
+              {/* ---- the outcome dimensions, under the whole drawing ---- */}
+              <div className="mt-9 grid grid-cols-2 gap-x-6 gap-y-8 border-t border-[var(--line)] pt-8 lg:grid-cols-4 lg:gap-x-0 lg:divide-x lg:divide-[var(--line)]">
+                <StatBlock
+                  label={isHi ? 'कुल अनुमानित लाभ' : 'Expected profit'}
+                  value={netProfit}
+                  prefix="₹"
+                  compactINR
+                  tone="field"
+                  className="lg:pr-6"
+                  sub={formatCurrencyWords(netProfit, language)}
+                />
+                <div className="grid place-items-center lg:px-2">
+                  <ProgressRing
+                    value={Math.max(0, Math.min(100, roiPct))}
+                    size={116}
+                    stroke={8}
+                    tone="grain"
+                    centerTop={<Counter value={roiPct} decimals={0} prefix="+" suffix="%" />}
+                    centerBottom={isHi ? 'रिटर्न' : 'ROI'}
+                  />
+                </div>
+                <StatBlock
+                  label={isHi ? 'कुल निवेश' : 'Total investment'}
+                  value={totalInvestment}
+                  prefix="₹"
+                  compactINR
+                  tone="sky"
+                  className="lg:px-6"
+                  sub={formatCurrencyWords(totalInvestment, language)}
+                />
+                <div className="lg:pl-6">
+                  <div className="t-eyebrow mb-2.5">{isHi ? 'जोखिम स्तर' : 'Risk level'}</div>
+                  <RiskMeter
+                    label={translateRiskLevel(riskLabel, language)}
+                    level={riskLevelNum}
+                    caption={`${allocatedCrops.length} ${isHi ? 'फसलें' : 'crops'}`}
+                  />
+                </div>
+              </div>
+            </Reveal>
 
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-baseline justify-between gap-2">
-                              <span className="truncate font-display text-sm font-semibold text-[var(--ink)]">
-                                {getCropDisplayName(crop.crop_name, language)}
-                              </span>
-                              <span className="shrink-0 font-data text-[11px] text-[var(--ink-faint)]">
-                                {crop.allocated_acres.toFixed(1)} {isHi ? 'एकड़' : 'ac'} · {share.toFixed(0)}%
-                              </span>
-                            </div>
-                            {/* per-crop share track */}
-                            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-inset)]">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${Math.max(4, Math.min(100, share))}%`,
-                                  background: ALLOC_COLORS[idx % ALLOC_COLORS.length],
-                                  transition: reduced ? undefined : 'width 1s var(--ease-out)',
-                                }}
-                              />
-                            </div>
-                          </div>
+            {/* =============================================================== */}
+            {/* THE KEY — every colour in the field, named                      */}
+            {/* =============================================================== */}
+            <Reveal delay={90}>
+              <SheetHead title={isHi ? 'फसल कुंजी · रकबा और लाभ' : 'Key · acreage and profit'}>
+                <span className="t-eyebrow text-[0.6rem] text-[var(--ink-ghost)]">
+                  {isHi ? 'खेत में यही रंग दिखता है' : 'Same colours as the field'}
+                </span>
+              </SheetHead>
 
-                          <div className="hidden shrink-0 text-right sm:block">
-                            <span className="t-eyebrow block text-[0.5rem]">{isHi ? 'लाभ' : 'Profit'}</span>
-                            <span className="font-display text-sm font-semibold text-[var(--field-deep)]">
-                              {formatCurrency(crop.net_profit_inr, language)}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </Reveal>
+              {/* the land strip: one bar, every crop's share of the ground */}
+              <div className="mt-5">
+                <AllocationBar segments={allocSegments} />
+              </div>
 
-                {/* 7-DAY ACTION PLAN WITH INTEGRATED WEEK DROPDOWN SELECTOR */}
-                <Reveal className="panel p-5 sm:p-6" delay={90}>
-                  {/* Top Bar: Title, Season Metadata, Dropdown Box & Navigation */}
-                  <div className="flex flex-col gap-3.5 border-b border-[var(--line)] pb-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="grid h-6 w-6 place-items-center rounded-lg bg-[var(--field-tint)] text-[var(--field-deep)]">
-                          <Calendar size={13} />
-                        </span>
-                        <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
-                          {isHi ? '7-दिवसीय कार्ययोजना' : '7-Day Action Plan'}
-                        </h3>
-                        <span className="chip chip-field py-0.5 px-2 text-[10px] font-semibold">
-                          {translateSeason(season, language)} · {totalWeeks} {isHi ? 'सप्ताह' : 'Weeks'}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
-                        {isHi
-                          ? `आपकी फसल योजना (${cropLine}) हेतु साप्ताहिक कृषि कार्य`
-                          : `Weekly operational schedule for your farm (${cropLine})`}
-                      </p>
-                    </div>
+              <div className="mt-2">
+                {allocatedCrops.map((crop, idx) => {
+                  const share = crop.acre_share_pct;
+                  const isPinned = activeCrop === crop.crop_name;
+                  const isShown = shownCrop === crop.crop_name;
+                  const color = ALLOC_COLORS[idx % ALLOC_COLORS.length];
+                  return (
+                    <button
+                      type="button"
+                      key={idx}
+                      onClick={() => setActiveCrop(isPinned ? null : crop.crop_name)}
+                      onMouseEnter={() => setHoverCrop(crop.crop_name)}
+                      onMouseLeave={() => setHoverCrop(null)}
+                      onFocus={() => setHoverCrop(crop.crop_name)}
+                      onBlur={() => setHoverCrop(null)}
+                      aria-pressed={isPinned}
+                      className={`flex w-full items-end gap-4 border-b py-3 text-left transition-colors focus-visible:bg-[var(--surface-inset)] focus-visible:outline-none sm:gap-6 ${
+                        isShown ? 'border-[var(--field)]' : 'border-[var(--line-soft)]'
+                      }`}
+                    >
+                      {/* the crop, standing on the ground line — the same
+                          morphology the twin grows in the field */}
+                      <span className="flex h-[46px] w-[26px] shrink-0 items-end justify-center">
+                        <CropStandArt name={crop.crop_name} delayMs={idx * 90} scale={0.62} />
+                      </span>
 
-                    {/* Dropdown Selector Controls */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedWeek((w) => Math.max(1, w - 1))}
-                          disabled={clampedWeek <= 1}
-                          className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface-solid)] text-[var(--ink-soft)] transition-colors hover:bg-[var(--paper-2)] hover:text-[var(--ink)] disabled:pointer-events-none disabled:opacity-30"
-                          title={isHi ? 'पिछला सप्ताह' : 'Previous week'}
-                          aria-label={isHi ? 'पिछला सप्ताह' : 'Previous week'}
-                        >
-                          <ChevronLeft size={15} />
-                        </button>
-
-                        {/* The Aesthetic Dropdown Box */}
-                        <WeekDropdown
-                          selectedWeek={clampedWeek}
-                          totalWeeks={totalWeeks}
-                          allWeeks={allWeeksSummary}
-                          onSelectWeek={setSelectedWeek}
-                          isHi={isHi}
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() => setSelectedWeek((w) => Math.min(totalWeeks, w + 1))}
-                          disabled={clampedWeek >= totalWeeks}
-                          className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface-solid)] text-[var(--ink-soft)] transition-colors hover:bg-[var(--paper-2)] hover:text-[var(--ink)] disabled:pointer-events-none disabled:opacity-30"
-                          title={isHi ? 'अगला सप्ताह' : 'Next week'}
-                          aria-label={isHi ? 'अगला सप्ताह' : 'Next week'}
-                        >
-                          <ChevronRight size={15} />
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowFull7DayModal(true)}
-                        className="btn btn-secondary h-8 px-3 text-xs font-semibold"
-                      >
-                        {isHi ? 'पूरी योजना →' : 'Full plan →'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Active Week Stage Context Strip */}
-                  <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--line-soft)] bg-[var(--surface-inset)] px-3.5 py-2.5">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="chip chip-field py-0 px-2 text-[10px] font-bold">
-                          {isHi ? `सप्ताह ${clampedWeek}` : `Week ${clampedWeek}`} · {currentWeekPlan.phaseLabel}
-                        </span>
-                        <span className="font-display text-xs font-bold text-[var(--ink)]">
-                          {currentWeekPlan.stageName}
-                        </span>
-                        <span className="text-[10px] font-data text-[var(--ink-faint)]">
-                          ({isHi
-                            ? `दिन ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}`
-                            : `Days ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}`})
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-[var(--ink-soft)]">
-                        {currentWeekPlan.summary}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* 7-Day Connected Horizontal Timeline */}
-                  <div className="mt-4 flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-                    {currentWeekPlan.days.map((step, i) => {
-                      const isLast = i === currentWeekPlan.days.length - 1;
-                      return (
-                        <div key={step.day} className="relative flex min-w-[124px] flex-1 flex-col">
-                          {/* Clean connector line running between nodes */}
-                          {!isLast && (
+                      <span className="block min-w-0 flex-1">
+                        <span className="flex items-baseline justify-between gap-2">
+                          <span className="flex min-w-0 items-baseline gap-2">
                             <span
-                              className="absolute left-6 -right-3 top-[10px] hidden h-[1.5px] bg-[var(--line-strong)] sm:block"
+                              className="h-2 w-2 shrink-0 -translate-y-px rounded-full"
+                              style={{ background: color }}
                               aria-hidden
                             />
-                          )}
-                          <div className="flex items-center gap-1.5">
-                            <span className="relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--field)] font-data text-[9px] font-bold text-white ring-2 ring-[var(--surface-solid)] shadow-2xs">
-                              {step.day}
+                            <span
+                              className={`truncate text-[15px] transition-colors ${
+                                isShown ? 'font-semibold text-[var(--field-deep)]' : 'font-medium text-[var(--ink)]'
+                              }`}
+                            >
+                              {getCropDisplayName(crop.crop_name, language)}
                             </span>
-                            <span className="t-eyebrow relative z-10 rounded-md bg-[var(--surface-solid)] px-1 text-[0.55rem] font-bold text-[var(--ink-soft)] shadow-2xs">
-                              {isHi ? `दिन ${step.day}` : `Day ${step.day}`}
-                            </span>
-                          </div>
-                          <h4 className="mt-2 text-xs font-semibold text-[var(--ink)]">{step.title}</h4>
-                          <p className="mt-0.5 text-[10px] leading-tight text-[var(--ink-soft)]">{step.desc}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Reveal>
+                            {isPinned && <Check size={12} className="shrink-0 text-[var(--field)]" />}
+                          </span>
+                          <span className="font-data shrink-0 text-[11px] text-[var(--ink-faint)]">
+                            {crop.allocated_acres.toFixed(1)} {isHi ? 'एकड़' : 'ac'} · {share.toFixed(0)}%
+                          </span>
+                        </span>
 
-                {/* DEEPER — the full scientific & mathematical breakdown */}
-                <Reveal className="flex justify-end" delay={120}>
+                        {/* dimension line — this crop's share of the land */}
+                        <span className="mt-2 block h-[3px] w-full rounded-full bg-[var(--surface-inset)]">
+                          <span
+                            className="block h-full rounded-full"
+                            style={{
+                              width: `${Math.max(3, Math.min(100, share))}%`,
+                              background: color,
+                              transition: reduced ? undefined : 'width 1s var(--ease-out)',
+                            }}
+                          />
+                        </span>
+                      </span>
+
+                      <span className="hidden shrink-0 text-right sm:block">
+                        <span className="t-eyebrow block text-[0.52rem] text-[var(--ink-ghost)]">
+                          {isHi ? 'लाभ' : 'Profit'}
+                        </span>
+                        <span className="block text-[15px] font-medium text-[var(--field-deep)]">
+                          {formatCurrency(crop.net_profit_inr, language)}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Reveal>
+
+            {/* =============================================================== */}
+            {/* THE SCHEDULE — what to do, week by week                         */}
+            {/* =============================================================== */}
+            <Reveal delay={120}>
+              <SheetHead title={isHi ? 'कार्य अनुसूची' : 'Work schedule'}>
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowDetailedModal(true)}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--grain-deep)] transition-colors hover:text-[var(--field)]"
+                    onClick={() => setSelectedWeek((w) => Math.max(1, w - 1))}
+                    disabled={clampedWeek <= 1}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-inset)] hover:text-[var(--ink)] disabled:pointer-events-none disabled:opacity-25"
+                    title={isHi ? 'पिछला सप्ताह' : 'Previous week'}
+                    aria-label={isHi ? 'पिछला सप्ताह' : 'Previous week'}
                   >
-                    {isHi ? 'वैज्ञानिक व गणितीय विश्लेषण देखें →' : 'See the scientific & mathematical analysis →'}
+                    <ChevronLeft size={16} />
                   </button>
-                </Reveal>
 
-                {/* SENTINEL CTA — de-boxed gradient banner with the intelligence core */}
-                <Reveal
-                  className="relative flex flex-col items-center justify-between gap-4 overflow-hidden rounded-3xl border border-[var(--grain-tint)] p-5 sm:flex-row sm:p-6"
-                  delay={150}
-                  style={{ background: 'linear-gradient(100deg, var(--grain-tint), var(--surface))' }}
-                >
-                  <div className="flex items-center gap-4">
-                    <AIAgentOrb state="idle" size={52} />
-                    <div>
-                      <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
-                        {isHi ? 'स्वायत्त सेंटीनेल सक्रिय करें' : 'Activate the autonomous Sentinel'}
-                      </h3>
-                      <p className="mt-0.5 max-w-lg text-xs text-[var(--ink-soft)]">
-                        {isHi
-                          ? 'योजना बनने के बाद सेंटीनेल मौसम, फसल तनाव और मंडी भाव की 24/7 निगरानी करता है।'
-                          : 'Once the plan is set, Sentinel watches weather, crop stress and mandi prices 24/7.'}
+                  <WeekDropdown
+                    selectedWeek={clampedWeek}
+                    totalWeeks={totalWeeks}
+                    allWeeks={allWeeksSummary}
+                    onSelectWeek={setSelectedWeek}
+                    isHi={isHi}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedWeek((w) => Math.min(totalWeeks, w + 1))}
+                    disabled={clampedWeek >= totalWeeks}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-inset)] hover:text-[var(--ink)] disabled:pointer-events-none disabled:opacity-25"
+                    title={isHi ? 'अगला सप्ताह' : 'Next week'}
+                    aria-label={isHi ? 'अगला सप्ताह' : 'Next week'}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowFull7DayModal(true)}
+                    className="btn btn-ghost btn-sm"
+                  >
+                    {isHi ? 'पूरी योजना' : 'Full plan'}
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
+              </SheetHead>
+
+              {/* the active week, stated on a rule rather than in a tinted box */}
+              <div className="mt-5 border-l-2 border-[var(--field)] pl-4">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="font-data text-[11px] font-semibold text-[var(--field)]">
+                    {isHi
+                      ? `सप्ताह ${clampedWeek} / ${totalWeeks}`
+                      : `Week ${clampedWeek} / ${totalWeeks}`}
+                  </span>
+                  <span className="text-[15px] font-medium text-[var(--ink)]">
+                    {currentWeekPlan.stageName}
+                  </span>
+                  <span className="text-[11px] text-[var(--ink-ghost)]">
+                    {currentWeekPlan.phaseLabel}
+                  </span>
+                  <span className="font-data text-[11px] text-[var(--ink-ghost)]">
+                    {isHi
+                      ? `दिन ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}`
+                      : `Days ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}`}
+                  </span>
+                </div>
+                <p className="mt-1.5 max-w-3xl text-[13px] leading-relaxed text-[var(--ink-soft)]">
+                  {currentWeekPlan.summary}
+                </p>
+              </div>
+
+              {/* seven days on one continuous rule — a schedule, not seven cards */}
+              <div className="no-scrollbar mt-7 overflow-x-auto pb-1">
+                <div className="relative flex min-w-[720px] gap-4">
+                  {/* the rule the whole week hangs from */}
+                  <span
+                    className="absolute left-2 right-2 top-[5px] h-px"
+                    style={{ background: 'var(--line)' }}
+                    aria-hidden
+                  />
+                  {currentWeekPlan.days.map((step, i) => (
+                    <div key={step.day} className="relative flex flex-1 flex-col">
+                      <span
+                        className="relative z-10 h-[11px] w-[11px] rounded-full"
+                        style={{
+                          background: i === 0 ? 'var(--field)' : 'var(--surface-solid)',
+                          boxShadow: `inset 0 0 0 ${i === 0 ? 0 : 1.5}px var(--field)`,
+                        }}
+                        aria-hidden
+                      />
+                      <span className="t-eyebrow mt-3 text-[0.55rem] text-[var(--ink-ghost)]">
+                        {isHi ? `दिन ${step.day}` : `Day ${step.day}`}
+                      </span>
+                      <h4 className="mt-1 text-[13px] font-semibold leading-snug text-[var(--ink)]">
+                        {step.title}
+                      </h4>
+                      <p className="mt-1 pr-3 text-[11px] leading-relaxed text-[var(--ink-soft)]">
+                        {step.desc}
                       </p>
                     </div>
-                  </div>
-
-                  <MagneticButton
-                    type="button"
-                    onClick={onProceedToSentinel}
-                    className="btn btn-primary group shrink-0 text-sm"
-                  >
-                    <span>{isHi ? 'सेंटीनेल चालू करें' : 'Proceed to Sentinel'}</span>
-                    <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-                  </MagneticButton>
-                </Reveal>
+                  ))}
+                </div>
               </div>
-            )}
+            </Reveal>
+
+            {/* =============================================================== */}
+            {/* THE ISSUE LINE — hand the sheet over to the Sentinel             */}
+            {/* =============================================================== */}
+            <Reveal
+              className="flex flex-col gap-6 border-t border-[var(--line)] pt-8 sm:flex-row sm:items-center sm:justify-between"
+              delay={150}
+            >
+              <div className="max-w-xl">
+                <div className="t-eyebrow flex items-center gap-2 text-[var(--grain-deep)]">
+                  <span className="animate-breathe h-1.5 w-1.5 rounded-full bg-[var(--grain)]" aria-hidden />
+                  {isHi ? 'अगला चरण' : 'Next'}
+                </div>
+                <h3 className="t-h3 mt-2 text-[1.15rem] text-[var(--ink)]">
+                  {isHi ? 'स्वायत्त सेंटीनेल सक्रिय करें' : 'Activate the autonomous Sentinel'}
+                </h3>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--ink-soft)]">
+                  {isHi
+                    ? 'योजना बनने के बाद सेंटीनेल मौसम, फसल तनाव और मंडी भाव की 24/7 निगरानी करता है — और बदलाव होने पर आपको बताता है।'
+                    : 'With the plan set, Sentinel watches weather, crop stress and mandi prices 24/7 — and tells you when something changes.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowDetailedModal(true)}
+                  className="mt-3 inline-flex items-center gap-1.5 border-b border-[var(--line-strong)] pb-0.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:border-[var(--field)] hover:text-[var(--field-deep)]"
+                >
+                  {isHi ? 'वैज्ञानिक व गणितीय विश्लेषण देखें' : 'See the scientific & mathematical analysis'}
+                  <ArrowRight size={12} />
+                </button>
+              </div>
+
+              <MagneticButton
+                type="button"
+                onClick={onProceedToSentinel}
+                className="btn btn-primary btn-lg group shrink-0"
+              >
+                <span>{isHi ? 'सेंटीनेल चालू करें' : 'Proceed to Sentinel'}</span>
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+              </MagneticButton>
+            </Reveal>
+          </div>
+        )}
       </main>
 
       {/* ===================================================================== */}
@@ -775,33 +798,36 @@ export function FarmPlanScreen({
       {/* ===================================================================== */}
       {showFull7DayModal && (
         <div className="scrim fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="panel-modal max-h-[88vh] w-full max-w-2xl space-y-4 overflow-y-auto p-6">
-            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
+          <div className="panel-modal max-h-[88vh] w-full max-w-2xl space-y-5 overflow-y-auto p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
               <div>
-                <h3 className="font-display text-lg font-semibold text-[var(--ink)]">
+                <h3 className="t-h3 text-[1.15rem] text-[var(--ink)]">
                   {isHi
-                    ? `सप्ताह ${clampedWeek} की विस्तृत कार्ययोजना (${totalWeeks} में से)`
-                    : `Comprehensive 7-Day Plan · Week ${clampedWeek} of ${totalWeeks}`}
+                    ? `सप्ताह ${clampedWeek} की विस्तृत कार्ययोजना`
+                    : `Full 7-day plan · Week ${clampedWeek} of ${totalWeeks}`}
                 </h3>
-                <p className="text-xs text-[var(--ink-soft)]">
-                  {translateSeason(season, language)} · {currentWeekPlan.stageName} (
-                  {isHi ? `दिन ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}` : `Days ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}`})
+                <p className="mt-1 text-xs text-[var(--ink-soft)]">
+                  {translateSeason(season, language)} · {currentWeekPlan.stageName} ·{' '}
+                  <span className="font-data">
+                    {isHi
+                      ? `दिन ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}`
+                      : `Days ${(clampedWeek - 1) * 7 + 1}–${clampedWeek * 7}`}
+                  </span>
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowFull7DayModal(false)}
-                className="rounded-full p-1 text-[var(--ink-soft)] hover:bg-[var(--surface-inset)]"
+                className="rounded-full p-1 text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-inset)] hover:text-[var(--ink)]"
                 aria-label={isHi ? 'बंद करें' : 'Close'}
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Aesthetic Dropdown Week Switcher in Modal */}
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[var(--surface-inset)] p-2.5">
-              <span className="text-xs font-semibold text-[var(--ink-soft)]">
-                {isHi ? 'सप्ताह चुनें:' : 'Select Week:'}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="t-eyebrow text-[0.6rem] text-[var(--ink-ghost)]">
+                {isHi ? 'सप्ताह चुनें' : 'Select week'}
               </span>
               <WeekDropdown
                 selectedWeek={clampedWeek}
@@ -809,55 +835,54 @@ export function FarmPlanScreen({
                 allWeeks={allWeeksSummary}
                 onSelectWeek={setSelectedWeek}
                 isHi={isHi}
-                className="flex-1 max-w-md"
+                className="max-w-md flex-1"
               />
             </div>
 
-            <div className="space-y-3">
+            <div>
               {currentWeekPlan.days.map((step) => (
                 <div
                   key={step.day}
-                  className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-inset)] p-3.5"
+                  className="flex items-start gap-4 border-b border-[var(--line-soft)] py-3.5"
                 >
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--field)] text-xs font-semibold text-white">
-                    {step.day}
+                  <span className="font-data w-7 shrink-0 pt-0.5 text-[11px] font-semibold text-[var(--field)]">
+                    {String(step.day).padStart(2, '0')}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <h4 className="text-xs font-semibold text-[var(--ink)]">{step.title}</h4>
-                      <span className="shrink-0 font-data text-[10px] text-[var(--ink-faint)]">
-                        {isHi ? `दिन ${step.day}` : `Day ${step.day}`}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-[var(--ink-soft)]">{step.desc}</p>
+                    <h4 className="text-[13px] font-semibold text-[var(--ink)]">{step.title}</h4>
+                    <p className="mt-0.5 text-[13px] leading-relaxed text-[var(--ink-soft)]">
+                      {step.desc}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-between items-center pt-2">
+            <div className="flex items-center justify-between pt-1">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setSelectedWeek((w) => Math.max(1, w - 1))}
                   disabled={clampedWeek <= 1}
-                  className="btn btn-secondary px-3 py-1.5 text-xs disabled:opacity-30"
+                  className="btn btn-ghost btn-sm disabled:opacity-30"
                 >
-                  ← {isHi ? 'पिछला' : 'Prev Week'}
+                  <ChevronLeft size={13} />
+                  {isHi ? 'पिछला' : 'Previous'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedWeek((w) => Math.min(totalWeeks, w + 1))}
                   disabled={clampedWeek >= totalWeeks}
-                  className="btn btn-secondary px-3 py-1.5 text-xs disabled:opacity-30"
+                  className="btn btn-ghost btn-sm disabled:opacity-30"
                 >
-                  {isHi ? 'अगला' : 'Next Week'} →
+                  {isHi ? 'अगला' : 'Next'}
+                  <ChevronRight size={13} />
                 </button>
               </div>
               <button
                 type="button"
                 onClick={() => setShowFull7DayModal(false)}
-                className="btn btn-primary px-4 py-2 text-xs"
+                className="btn btn-primary btn-sm"
               >
                 {isHi ? 'बंद करें' : 'Close'}
               </button>
@@ -872,25 +897,20 @@ export function FarmPlanScreen({
       {showDetailedModal && decision && (
         <div className="scrim fixed inset-0 z-50 flex items-center justify-center px-2 sm:px-4">
           <div className="panel-modal max-h-[92vh] w-full max-w-5xl space-y-4 overflow-y-auto p-4 text-[var(--ink)] sm:p-6">
-            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--grain-tint)] text-lg text-[var(--grain-deep)]">
-                  🔬
-                </span>
-                <div>
-                  <h3 className="font-display text-base font-semibold text-[var(--ink)] sm:text-lg">
-                    {isHi ? 'वैज्ञानिक एवं गणितीय निर्णय विश्लेषण' : 'Expert Decision & Optimization Analysis'}
-                  </h3>
-                  <p className="text-xs text-[var(--ink-soft)]">
-                    HiGHS Simplex Engine • ICAR Scientific Agronomy • Open-Meteo Professional Telemetry
-                  </p>
-                </div>
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
+              <div>
+                <h3 className="t-h3 text-[1.15rem] text-[var(--ink)]">
+                  {isHi ? 'वैज्ञानिक एवं गणितीय निर्णय विश्लेषण' : 'Expert decision & optimization analysis'}
+                </h3>
+                <p className="mt-1 text-xs text-[var(--ink-soft)]">
+                  HiGHS Simplex Engine · ICAR Scientific Agronomy · Open-Meteo Professional Telemetry
+                </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => setShowDetailedModal(false)}
-                className="rounded-full border border-[var(--line)] bg-[var(--surface-inset)] p-2 text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
+                className="rounded-full p-1 text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-inset)] hover:text-[var(--ink)]"
                 aria-label={isHi ? 'बंद करें' : 'Close'}
               >
                 <X size={18} />
@@ -898,7 +918,7 @@ export function FarmPlanScreen({
             </div>
 
             {/* Render full existing DetailedAnalysisView with all solvers, scenarios, and causality */}
-            <div className="pt-2">
+            <div className="pt-1">
               <DetailedAnalysisView
                 decision={decision}
                 onReturnToFarmerView={() => setShowDetailedModal(false)}
@@ -909,11 +929,15 @@ export function FarmPlanScreen({
       )}
 
       {/* ===================================================================== */}
-      {/* 5. FOOTER                                                              */}
+      {/* 5. SHEET FOOTER                                                        */}
       {/* ===================================================================== */}
-      <footer className="border-t border-[var(--line)] px-4 py-3 text-xs text-[var(--ink-soft)] sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 text-[11px]">
-          <span>{isHi ? 'ICAR कृषि इंजन एवं रीयल-टाइम मंडी डेटा द्वारा संचालित' : 'Powered by ICAR Agronomy Engine & Real-time Mandi Telemetry'}</span>
+      <footer className="px-5 py-4 text-xs text-[var(--ink-faint)] sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 border-t border-[var(--line-soft)] pt-3 text-[11px]">
+          <span>
+            {isHi
+              ? 'ICAR कृषि इंजन एवं रीयल-टाइम मंडी डेटा द्वारा संचालित'
+              : 'Powered by the ICAR agronomy engine & real-time mandi telemetry'}
+          </span>
           <span>© 2026 AgriOptima AI</span>
         </div>
       </footer>

@@ -312,8 +312,14 @@ export function MainScreen({
     runOptimization();
   }, [runOptimization]);
 
-  // Cinematic hand-off → reveal the plan (Page 4). If the optimizer is still
-  // running, FarmPlanScreen shows its own “finalizing” state until it resolves.
+  // The cinematic swaps the page while it is still covering the screen, so its
+  // fade lands on the plan rather than flashing the form the farmer just left.
+  const handleGenerationPrepare = useCallback(() => {
+    setPage('plan');
+  }, []);
+
+  // Cinematic hand-off → the plan (Page 4) is already mounted underneath. If the
+  // optimizer is still running, FarmPlanScreen shows its own “finalizing” state.
   const handleGenerationReady = useCallback(() => {
     setGenerating(false);
     setPage('plan');
@@ -482,11 +488,20 @@ export function MainScreen({
         />
       )}
 
-      {/* Cinematic analysis overlay — plays after “Generate”, then reveals the plan */}
+      {/* Cinematic analysis overlay — the AI reads the farm factor by factor
+          using these very inputs, swaps the page underneath while it is still
+          covering, then cross-fades away onto the finished plan. */}
       {generating && (
         <InitializingScreen
           stateName={selectedState}
           districtName={selectedDistrict}
+          landAcres={landAcres}
+          budgetInr={budgetInr}
+          irrigationType={irrigationType}
+          irrigationReliability={irrigationReliability}
+          season={season}
+          decision={decision}
+          onPrepare={handleGenerationPrepare}
           onReady={handleGenerationReady}
         />
       )}

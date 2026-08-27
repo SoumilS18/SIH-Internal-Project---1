@@ -8,6 +8,11 @@ import {
   ShieldCheck,
   CheckCircle2,
   Sparkles,
+  ArrowLeft,
+  Sun,
+  CloudRain,
+  Flame,
+  Wind,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { EnvironmentalIntelligence } from '@/components/EnvironmentalIntelligence';
@@ -69,11 +74,8 @@ export function DetailedAnalysisView({
       {/* Top Banner with Return Button */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 sm:p-5 shadow-sm">
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--grain-tint)] text-[var(--grain-deep)] text-lg">
-            🔬
-          </span>
           <div>
-            <h3 className="font-serif text-sm sm:text-base font-semibold text-[var(--ink)]">
+            <h3 className="text-sm sm:text-base font-semibold text-[var(--ink)]">
               {isHi
                 ? 'विशेषज्ञ एवं निर्णायक तकनीकी विश्लेषण'
                 : 'Expert & Technical Decision Analytics'}
@@ -91,7 +93,8 @@ export function DetailedAnalysisView({
           onClick={onReturnToFarmerView}
           className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--field-deep)] px-3.5 py-2 text-xs font-semibold text-[#FFFFFF] shadow-sm hover:bg-[var(--field-deep)] transition-colors cursor-pointer"
         >
-          <span>🌾 {t('farmerPlan.hideDetailedAnalysisBtn')}</span>
+          <ArrowLeft size={13} />
+          <span>{t('farmerPlan.hideDetailedAnalysisBtn')}</span>
         </button>
       </div>
 

@@ -1,20 +1,30 @@
 import React from 'react';
-import {
-  ArrowRight,
-  Sprout,
-  IndianRupee,
-  Droplets,
-  CalendarDays,
-  ShieldCheck,
-  MapPin,
-} from 'lucide-react';
+import { ArrowRight, MapPin } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { JourneyNav } from '@/components/JourneyNav';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
-import { translateIrrigationReliability } from '@/i18n/enums';
+import { getCropDisplayName } from '@/i18n/cropNames';
 import { FarmDigitalTwin } from '@/components/FarmDigitalTwin';
-import { AIAgentOrb } from '@/components/AIAgentOrb';
 import { Reveal, MagneticButton } from '@/components/ui/motion';
+import { ReadingRow } from '@/components/ui/ReadingRow';
+import { CropStandArt } from '@/components/ui/CropStandArt';
+import {
+  IRRIGATION,
+  RELIABILITY,
+  SEASONS,
+  RISK,
+  SEASON_CROPS,
+  formatAcres,
+  formatInrCompact,
+  irrigationEntry,
+  reliabilityEntry,
+  riskEntry,
+  seasonEntry,
+  type IrrigationType,
+  type Reliability,
+  type RiskTolerance,
+  type Season,
+} from '@/lib/farmVocab';
 
 interface FarmDetailsScreenProps {
   userName?: string;
@@ -22,18 +32,18 @@ interface FarmDetailsScreenProps {
   selectedDistrict: string;
   landAcres: number;
   budgetInr: number;
-  irrigationType: 'Borewell' | 'Rainfed' | 'Canal' | 'Drip' | 'Sprinkler';
-  irrigationReliability: 'High' | 'Medium' | 'Low';
-  season: 'Kharif' | 'Rabi' | 'Zaid';
-  riskTolerance: 'Conservative' | 'Balanced' | 'Aggressive';
+  irrigationType: IrrigationType;
+  irrigationReliability: Reliability;
+  season: Season;
+  riskTolerance: RiskTolerance;
   loading?: boolean;
   hasPlan?: boolean;
   onLandAcresChange: (acres: number) => void;
   onBudgetInrChange: (budget: number) => void;
-  onIrrigationTypeChange: (type: 'Borewell' | 'Rainfed' | 'Canal' | 'Drip' | 'Sprinkler') => void;
-  onIrrigationReliabilityChange: (rel: 'High' | 'Medium' | 'Low') => void;
-  onSeasonChange: (season: 'Kharif' | 'Rabi' | 'Zaid') => void;
-  onRiskToleranceChange: (risk: 'Conservative' | 'Balanced' | 'Aggressive') => void;
+  onIrrigationTypeChange: (type: IrrigationType) => void;
+  onIrrigationReliabilityChange: (rel: Reliability) => void;
+  onSeasonChange: (season: Season) => void;
+  onRiskToleranceChange: (risk: RiskTolerance) => void;
   onGenerate: () => void;
   onChangeLocation: () => void;
   onViewPlan?: () => void;
@@ -41,34 +51,172 @@ interface FarmDetailsScreenProps {
   onLogout?: () => void;
 }
 
-/** Guided step eyebrow — turns the setup form into a STEP 01–05 journey. */
-function StepLabel({
-  n,
-  icon: Icon,
-  children,
-}: {
-  n: string;
-  icon: React.ComponentType<{ size?: number | string; className?: string }>;
-  children: React.ReactNode;
-}) {
+/* The drag range of each control. Typing goes further — a farmer with 60 acres
+   is not locked out, the slider simply sits at its far end. */
+const LAND_MIN = 0.5;
+const LAND_MAX = 25;
+const BUDGET_MIN = 5000;
+const BUDGET_MAX = 500000;
+
+const fillStyle = (pct: number): React.CSSProperties =>
+  ({ ['--fill']: `${Math.max(0, Math.min(100, pct))}%` } as React.CSSProperties);
+
+/* -------------------------------------------------------------------------- */
+/* DRAWN MARKS — the water and the sky, in the same hairline hand as the rest  */
+/* of the world. Deliberately not emoji: emoji is the fastest way to make an   */
+/* agritech product look like a game.                                          */
+/* -------------------------------------------------------------------------- */
+const svgProps = {
+  width: 28,
+  height: 28,
+  viewBox: '0 0 28 28',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.4,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true,
+};
+
+function WaterMark({ id, className }: { id: IrrigationType; className?: string }) {
   return (
-    <div className="mb-2.5 flex items-center gap-2">
-      <span className="font-data text-xs font-semibold tracking-wider text-[var(--field)]">{n}</span>
-      <span className="h-3.5 w-px bg-[var(--line-strong)]" aria-hidden />
-      <Icon size={14} className="text-[var(--field)]" />
-      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-soft)]">
-        {children}
-      </span>
+    <svg {...svgProps} className={className}>
+      {id === 'Rainfed' && (
+        <>
+          <path d="M6.5 12a4.6 4.6 0 0 1 8.8-1.5A3.7 3.7 0 0 1 21.5 12" />
+          <path d="M9.6 16.4 8.3 20" />
+          <path d="M14.2 16.4 12.9 20" />
+          <path d="M18.8 16.4 17.5 20" />
+        </>
+      )}
+      {id === 'Borewell' && (
+        <>
+          <path d="M14 21V8" />
+          <path d="M11 8h6" />
+          <path d="M14 3.4c1.5 1.7 2.2 2.7 2.2 3.5a2.2 2.2 0 0 1-4.4 0c0-.8.7-1.8 2.2-3.5z" />
+          <path d="M4 21h20" />
+          <path d="M7.5 24.4q6.5-2.6 13 0" strokeDasharray="2 2.5" />
+        </>
+      )}
+      {id === 'Canal' && (
+        <>
+          <path d="M3.5 9.5h21" />
+          <path d="M3.5 19.5h21" />
+          <path d="M4.5 14.5q3-2.6 6 0t6 0t6 0" />
+          <path d="M4.5 17q3-2.6 6 0t6 0t6 0" strokeDasharray="3 3" />
+        </>
+      )}
+      {id === 'Sprinkler' && (
+        <>
+          <path d="M14 21.5V13" />
+          <path d="M10 21.5h8" />
+          <path d="M5.5 12.5q8.5-8 17 0" />
+          <path d="M8.5 14.5q5.5-4.8 11 0" strokeDasharray="2.5 3" />
+          <circle cx="6.4" cy="16.6" r="1" />
+          <circle cx="21.6" cy="16.6" r="1" />
+        </>
+      )}
+      {id === 'Drip' && (
+        <>
+          <path d="M3.5 9h21" />
+          <path d="M8.5 9v3.6" />
+          <path d="M14 9v4.4" />
+          <path d="M19.5 9v3.6" />
+          <circle cx="8.5" cy="15.4" r="1.1" />
+          <circle cx="14" cy="16.6" r="1.1" />
+          <circle cx="19.5" cy="15.4" r="1.1" />
+          <path d="M3.5 21h21" strokeDasharray="2 3" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function SkyMark({ id, className }: { id: Season; className?: string }) {
+  return (
+    <svg {...svgProps} className={className}>
+      {id === 'Kharif' && (
+        <>
+          <path d="M5.5 11.5a5 5 0 0 1 9.6-1.6A4 4 0 0 1 22.5 11.5" />
+          <path d="M9.4 15.4 8 19.2" />
+          <path d="M14.2 15.4 12.8 19.2" />
+          <path d="M19 15.4 17.6 19.2" />
+          <path d="M4 23.5h20" />
+        </>
+      )}
+      {id === 'Rabi' && (
+        <>
+          <path d="M3.5 18.5h21" />
+          <path d="M9 18.5a5 5 0 0 1 10 0" />
+          <path d="M14 8.4V6" />
+          <path d="M20.4 11.6 22 10.2" />
+          <path d="M7.6 11.6 6 10.2" />
+          <path d="M6 22.5h16" strokeDasharray="2 3" />
+        </>
+      )}
+      {id === 'Zaid' && (
+        <>
+          <circle cx="14" cy="11" r="4.2" />
+          <path d="M14 3.6V5" />
+          <path d="M14 17v1.4" />
+          <path d="M6.6 11H5.2" />
+          <path d="M22.8 11h-1.4" />
+          <path d="M8.8 5.8 7.8 4.8" />
+          <path d="M19.2 5.8 20.2 4.8" />
+          <path d="M5.5 22.5h17" strokeDasharray="2 3" />
+          <path d="M8 25h12" strokeDasharray="2 3" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+/** One acre, one parcel — the ribbon grows as the farmer drags. */
+function ParcelRibbon({ acres }: { acres: number }) {
+  const shown = Math.max(1, Math.min(14, Math.ceil(acres)));
+  const extra = Math.max(0, Math.ceil(acres) - 14);
+  return (
+    <div className="flex items-end gap-[3px]" aria-hidden>
+      {Array.from({ length: shown }).map((_, i) => (
+        /* the entrance animation owns the outer transform slot, the skew the inner */
+        <span key={i} className="animate-grow block" style={{ animationDelay: `${i * 32}ms` }}>
+          <span
+            className="block"
+            style={{
+              width: 15,
+              height: 20 + (i % 3) * 4,
+              borderRadius: 3,
+              transform: 'skewX(-12deg)',
+              background: 'linear-gradient(180deg, var(--field-tint), var(--sage-tint))',
+              boxShadow: 'inset 0 2px 0 var(--field-bright), inset 0 0 0 1px rgb(var(--sh-color) / 0.06)',
+            }}
+          />
+        </span>
+      ))}
+      {extra > 0 && (
+        <span className="font-data ml-2 pb-1 text-[11px] text-[var(--ink-faint)]">+{extra}</span>
+      )}
+    </div>
+  );
+}
+
+function SectionHead({ n, title }: { n: string; title: string }) {
+  return (
+    <div className="mb-4 flex items-center gap-3">
+      <span className="font-data text-[11px] tracking-[0.18em] text-[var(--field)]">{n}</span>
+      <h2 className="t-h3 whitespace-nowrap text-[var(--ink)]">{title}</h2>
+      <span className="h-px flex-1" style={{ background: 'var(--line-soft)' }} aria-hidden />
     </div>
   );
 }
 
 /**
- * PAGE 3 — Farm details entry.
+ * PAGE 3 — DESCRIBING THE LAND.
  *
- * A dedicated, full-width guided journey where the farmer describes their field
- * (land, budget, water, season, risk). Nothing is computed here: submitting hands
- * off to the cinematic analysis + full-screen plan reveal via onGenerate().
+ * Five questions, asked in the open rather than inside a form panel: the land
+ * ribbon grows as it is dragged, the water is drawn rather than labelled, and
+ * choosing a season stands its crops up out of the soil. Nothing is computed
+ * here — submitting hands off to the analysis cinematic via onGenerate().
  */
 export function FarmDetailsScreen({
   userName,
@@ -97,43 +245,22 @@ export function FarmDetailsScreen({
   const { language } = useLanguage();
   const isHi = language === 'hi';
 
-  const landPresets = [
-    { label: isHi ? '1 एकड़' : '1 Ac', value: 1 },
-    { label: isHi ? '2 एकड़' : '2 Ac', value: 2 },
-    { label: isHi ? '5 एकड़' : '5 Ac', value: 5 },
-    { label: isHi ? '10 एकड़' : '10 Ac', value: 10 },
-  ];
+  const district = getDistrictDisplayName(selectedDistrict, language);
+  const state = getStateDisplayName(selectedState, language);
 
-  const budgetPresets = [
-    { label: isHi ? '₹50 हज़ार' : '₹50K', value: 50000 },
-    { label: isHi ? '₹1.2 लाख' : '₹1.2L', value: 120000 },
-    { label: isHi ? '₹2 लाख' : '₹2 Lakh', value: 200000 },
-    { label: isHi ? '₹5 लाख' : '₹5 Lakh', value: 500000 },
-  ];
+  const waterEntry = irrigationEntry(irrigationType);
+  const relEntry = reliabilityEntry(irrigationReliability);
+  const seasonInfo = seasonEntry(season);
+  const risk = riskEntry(riskTolerance);
 
-  const nextSteps = [
-    {
-      n: '01',
-      t: isHi ? 'जमीन व बजट' : 'Land & budget',
-      d: isHi ? 'उपलब्ध भूमि और कार्यशील पूंजी।' : 'Your available land and working capital.',
-    },
-    {
-      n: '02',
-      t: isHi ? 'सिंचाई व मौसम' : 'Water & season',
-      d: isHi ? 'बोरवेल, नहर, ड्रिप या वर्षा आधारित।' : 'Borewell, canal, drip, sprinkler or rainfed.',
-    },
-    {
-      n: '03',
-      t: isHi ? 'अनुकूलित AI योजना' : 'Optimized AI plan',
-      d: isHi ? 'गणितीय LP इंजन अधिकतम मुनाफ़े हेतु।' : 'A deterministic LP solver maximizes profit.',
-    },
-  ];
+  const landPct = ((Math.min(landAcres, LAND_MAX) - LAND_MIN) / (LAND_MAX - LAND_MIN)) * 100;
+  const budgetPct = ((Math.min(budgetInr, BUDGET_MAX) - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100;
+  const perAcre = landAcres > 0 ? budgetInr / landAcres : 0;
+
+  const seasonCrops = SEASON_CROPS[season] ?? [];
 
   return (
     <div className="relative flex min-h-screen w-full flex-col justify-between text-[var(--ink)] selection:bg-[var(--field-tint)] selection:text-[var(--field-deep)]">
-      {/* ===================================================================== */}
-      {/* 1. FLOATING JOURNEY NAV — brand, growth line, utilities                */}
-      {/* ===================================================================== */}
       <JourneyNav
         stage={2}
         userName={userName}
@@ -146,341 +273,352 @@ export function FarmDetailsScreen({
         onLogout={onLogout}
       />
 
-      {/* ===================================================================== */}
-      {/* 2. DETAILS WORKSPACE                                                   */}
-      {/* ===================================================================== */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-6 pt-24 sm:px-8 sm:pt-28">
-        {/* hero band — the intelligence core invites the farmer to describe the field */}
-        <Reveal
-          className="relative overflow-hidden rounded-[var(--radius-lg)] p-5 sm:p-7"
-          style={{
-            background: 'linear-gradient(135deg, rgba(231,241,231,0.88) 0%, rgba(255,255,255,0.94) 55%, rgba(228,238,243,0.80) 100%)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 16px 48px rgb(52 58 44 / 0.08)',
-          }}
-        >
-          {/* atmospheric corner glow */}
-          <div
-            className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full blur-3xl"
-            style={{ background: 'radial-gradient(circle, rgba(70,169,104,0.12) 0%, transparent 70%)' }}
-            aria-hidden
-          />
-          <div className="relative flex flex-wrap items-center justify-between gap-5">
-            <div className="max-w-2xl">
-              <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-[var(--field)]" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
-                </span>
-                {isHi ? 'खेत की जानकारी' : 'Farm setup'}
-              </div>
-              <h1 className="t-h1 mt-2.5 text-[var(--ink)]">
-                {isHi ? 'अपने खेत के बारे में बताएं' : 'Tell me about your farm'}
-              </h1>
-              <p className="t-lead mt-2 max-w-xl text-[0.95rem]">
-                {isHi
-                  ? '5 सरल कदम भरें — जमीन, बजट, पानी, मौसम और जोखिम। फिर “योजना बनाएं” दबाएं और AI आपके खेत का पूरा विश्लेषण करेगा।'
-                  : 'Fill five simple steps — land, budget, water, season and risk. Then tap “Generate plan” and the AI will analyze your exact field.'}
-              </p>
-            </div>
-            <div className="shrink-0">
-              <AIAgentOrb state="listening" size={104} />
-            </div>
-          </div>
-        </Reveal>
-
-        {/* body — guided form (left) + location & living-twin context (right) */}
-        <div className="mt-7 grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          {/* =============================================================== */}
-          {/* LEFT — the guided STEP 01–05 form                               */}
-          {/* =============================================================== */}
-          <Reveal className="lg:col-span-7" delay={60}>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                onGenerate();
-              }}
-              className="panel space-y-6 p-6 sm:p-7"
-            >
-              {/* STEP 01 + 02 — land & budget */}
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div>
-                  <StepLabel n="01" icon={Sprout}>{isHi ? 'जमीन का आकार' : 'Land size'}</StepLabel>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      min="0.5"
-                      max="100"
-                      step="0.5"
-                      value={landAcres}
-                      onChange={(e) => onLandAcresChange(Math.max(0.5, parseFloat(e.target.value) || 0.5))}
-                      className="field-input py-2.5 text-sm font-semibold font-data w-32"
-                      aria-label={isHi ? 'जमीन का आकार (एकड़)' : 'Land size in acres'}
-                    />
-                    <span className="text-xs font-semibold text-[var(--ink-soft)]">
-                      {isHi ? 'एकड़' : 'Acres'}
-                    </span>
-                  </div>
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    {landPresets.map((p) => (
-                      <button
-                        key={p.value}
-                        type="button"
-                        onClick={() => onLandAcresChange(p.value)}
-                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                          landAcres === p.value
-                            ? 'bg-[var(--field)] text-white shadow-sm ring-2 ring-[var(--field)]/20'
-                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:border-[var(--field)] hover:text-[var(--ink)]'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <StepLabel n="02" icon={IndianRupee}>{isHi ? 'निवेश बजट' : 'Investment budget'}</StepLabel>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      min="5000"
-                      step="5000"
-                      value={budgetInr}
-                      onChange={(e) => onBudgetInrChange(Math.max(5000, parseInt(e.target.value, 10) || 50000))}
-                      className="field-input py-2.5 text-sm font-semibold font-data w-36"
-                      aria-label={isHi ? 'निवेश बजट रुपये में' : 'Investment budget in rupees'}
-                    />
-                    <span className="text-xs font-semibold text-[var(--ink-soft)]">
-                      ₹{Math.round(budgetInr).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    {budgetPresets.map((p) => (
-                      <button
-                        key={p.value}
-                        type="button"
-                        onClick={() => onBudgetInrChange(p.value)}
-                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                          budgetInr === p.value
-                            ? 'bg-[var(--field)] text-white shadow-sm ring-2 ring-[var(--field)]/20'
-                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:border-[var(--field)] hover:text-[var(--ink)]'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="hairline" />
-
-              {/* STEP 03 — visual water source + reliability */}
-              <div>
-                <StepLabel n="03" icon={Droplets}>{isHi ? 'सिंचाई साधन व विश्वसनीयता' : 'Water source & reliability'}</StepLabel>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                  {[
-                    { id: 'Borewell', en: 'Borewell', hi: 'बोरवेल', icon: '🚰' },
-                    { id: 'Canal', en: 'Canal', hi: 'नहर', icon: '🌊' },
-                    { id: 'Drip', en: 'Drip', hi: 'ड्रिप', icon: '💧' },
-                    { id: 'Sprinkler', en: 'Sprinkler', hi: 'फव्वारा', icon: '🌦️' },
-                    { id: 'Rainfed', en: 'Rainfed', hi: 'वर्षा आधारित', icon: '🌧️' },
-                  ].map((src) => {
-                    const isSel = irrigationType === src.id;
-                    return (
-                      <button
-                        key={src.id}
-                        type="button"
-                        onClick={() => onIrrigationTypeChange(src.id as any)}
-                        className={`flex flex-col items-center justify-center gap-1 rounded-2xl p-2.5 text-center transition-all ${
-                          isSel
-                            ? 'bg-[var(--sky-tint)] text-[var(--ink)] ring-2 ring-[var(--sky)] shadow-sm'
-                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:border-[var(--sky)] hover:text-[var(--ink)]'
-                        }`}
-                      >
-                        <span className="text-lg">{src.icon}</span>
-                        <span className="text-xs font-semibold leading-tight">
-                          {isHi ? src.hi : src.en}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[var(--line-soft)] bg-[var(--surface-inset)] p-3">
-                  <span className="text-xs font-semibold text-[var(--ink-soft)]">
-                    {isHi ? 'जल उपलब्धता विश्वसनीयता:' : 'Water availability reliability:'}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    {(['High', 'Medium', 'Low'] as const).map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => onIrrigationReliabilityChange(r)}
-                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                          irrigationReliability === r
-                            ? 'bg-[var(--sky)] text-white shadow-xs'
-                            : 'border border-[var(--line)] bg-[var(--surface-solid)] text-[var(--ink-soft)] hover:text-[var(--ink)]'
-                        }`}
-                      >
-                        {translateIrrigationReliability(r, language)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="hairline" />
-
-              {/* STEP 04 — visual crop season selection */}
-              <div>
-                <StepLabel n="04" icon={CalendarDays}>{isHi ? 'फसल मौसम' : 'Crop season'}</StepLabel>
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-                  {[
-                    { id: 'Kharif', en: 'Kharif (Monsoon)', hi: 'खरीफ (मानसून)', subEn: 'Rice, Cotton, Maize, Pulses', subHi: 'धान, कपास, मक्का, दालें', icon: '🌧️' },
-                    { id: 'Rabi', en: 'Rabi (Winter)', hi: 'रबी (सर्दी)', subEn: 'Wheat, Mustard, Gram, Potato', subHi: 'गेहूं, सरसों, चना, आलू', icon: '🌾' },
-                    { id: 'Zaid', en: 'Zaid (Summer)', hi: 'जायद (गर्मी)', subEn: 'Vegetables, Cash crops, Melons', subHi: 'सब्जियां, तरबूज, उड़द/मूंग', icon: '☀️' },
-                  ].map((seas) => {
-                    const isSel = season === seas.id;
-                    return (
-                      <button
-                        key={seas.id}
-                        type="button"
-                        onClick={() => onSeasonChange(seas.id as any)}
-                        className={`flex flex-col items-start gap-1 rounded-2xl p-3.5 text-left transition-all ${
-                          isSel
-                            ? 'bg-[var(--field-tint)] text-[var(--field-deep)] ring-2 ring-[var(--field)] shadow-sm'
-                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink)] hover:border-[var(--field)]'
-                        }`}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <span className="text-base">{seas.icon}</span>
-                          <span className={`h-2 w-2 rounded-full ${isSel ? 'bg-[var(--field)]' : 'bg-transparent'}`} />
-                        </div>
-                        <span className="mt-1 text-xs font-bold">
-                          {isHi ? seas.hi : seas.en}
-                        </span>
-                        <span className="text-[10px] leading-tight text-[var(--ink-soft)]">
-                          {isHi ? seas.subHi : seas.subEn}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="hairline" />
-
-              {/* STEP 05 — visual risk appetite */}
-              <div>
-                <StepLabel n="05" icon={ShieldCheck}>{isHi ? 'जोखिम प्रबंधन व रणनीति' : 'Risk appetite & strategy'}</StepLabel>
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-                  {[
-                    { id: 'Conservative', en: 'Safe / Conservative', hi: 'सुरक्षित (कम जोखिम)', subEn: 'Guaranteed staple yields', subHi: 'न्यूनतम जोखिम, पक्की उपज' },
-                    { id: 'Balanced', en: 'Balanced / Optimal', hi: 'संतुलित (सुझावित)', subEn: 'Best profit vs stability', subHi: 'अधिकतम लाभ व स्थिरता' },
-                    { id: 'Aggressive', en: 'Bold / High Growth', hi: 'साहसी (उच्च लाभ)', subEn: 'High cash crops reward', subHi: 'उच्च बाजार लाभ अवसर' },
-                  ].map((r) => {
-                    const isSel = riskTolerance === r.id;
-                    return (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => onRiskToleranceChange(r.id as any)}
-                        className={`flex flex-col items-start gap-1 rounded-2xl p-3.5 text-left transition-all ${
-                          isSel
-                            ? 'bg-[var(--grain-tint)] text-[var(--grain-deep)] ring-2 ring-[var(--grain)] shadow-sm'
-                            : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink)] hover:border-[var(--grain)]'
-                        }`}
-                      >
-                        <span className="text-xs font-bold">
-                          {isHi ? r.hi : r.en}
-                        </span>
-                        <span className="text-[10px] leading-tight text-[var(--ink-soft)]">
-                          {isHi ? r.subHi : r.subEn}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* generate CTA */}
-              <MagneticButton
-                type="submit"
-                disabled={loading}
-                className="btn btn-primary group mt-2 w-full py-3.5 text-base font-semibold shadow-md disabled:opacity-60"
-              >
-                <span>
-                  {loading
-                    ? (isHi ? 'खेत का विश्लेषण हो रहा है…' : 'Analyzing farm parameters…')
-                    : (isHi ? 'अनुकूलित योजना बनाएं' : 'Generate optimized plan')}
-                </span>
-                {!loading && <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />}
-              </MagneticButton>
-            </form>
-          </Reveal>
-
-          {/* =============================================================== */}
-          {/* RIGHT — location + living twin + what happens next              */}
-          {/* =============================================================== */}
-          <Reveal className="space-y-5 lg:col-span-5" delay={120}>
-            {/* location */}
-            <div className="flex items-center justify-between rounded-2xl border border-[var(--line)] bg-[var(--surface-inset)] p-4">
-              <div className="flex items-center gap-2.5">
-                <MapPin size={16} className="shrink-0 text-[var(--grain-deep)]" />
-                <div>
-                  <span className="t-eyebrow block text-[0.55rem]">
-                    {isHi ? 'खेत का स्थान' : 'Farm location'}
-                  </span>
-                  <span className="text-sm font-semibold text-[var(--ink)]">
-                    {getDistrictDisplayName(selectedDistrict, language)}, {getStateDisplayName(selectedState, language)}
-                  </span>
-                </div>
-              </div>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-10 pt-24 sm:px-8 sm:pt-28">
+        {/* ================================================================= */}
+        {/* THE ASK — no panel, no card. Just the question.                    */}
+        {/* ================================================================= */}
+        <Reveal>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            <span className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-[var(--field)]" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
+              </span>
+              {isHi ? 'खेत की जानकारी' : 'Farm setup'}
+            </span>
+            <span className="flex items-center gap-1.5 text-xs text-[var(--ink-faint)]">
+              <MapPin size={13} className="text-[var(--grain-deep)]" />
+              {district}, {state}
               <button
                 type="button"
                 onClick={onChangeLocation}
-                className="text-xs font-semibold text-[var(--field-deep)] hover:underline"
+                className="ml-1 rounded-full px-2 py-0.5 text-[var(--field-deep)] transition-colors hover:bg-[var(--field-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--field)]"
               >
                 {isHi ? 'बदलें' : 'Change'}
               </button>
-            </div>
+            </span>
+          </div>
+          <h1 className="t-h1 mt-3 max-w-3xl text-[var(--ink)]">
+            {isHi ? 'अपने खेत के बारे में बताइए' : 'Tell me about your farm'}
+          </h1>
+          <p className="t-lead mt-2.5 max-w-xl text-[0.95rem]">
+            {isHi
+              ? 'पाँच बातें — ज़मीन, पूँजी, पानी, मौसम और आपका रुख। इसके बाद AI आपके खेत को पढ़कर योजना बनाएगा।'
+              : 'Five things — your land, your money, your water, the season and how you like to play it. The AI reads the farm after that.'}
+          </p>
+        </Reveal>
 
-            {/* living demo twin — the object that carries through the whole flow */}
-            <div className="panel-elevated overflow-hidden p-4">
-              <div className="relative">
-                <FarmDigitalTwin height={300} interactive showWeather className="w-full" />
-                <span className="t-eyebrow absolute bottom-1 left-1 text-[var(--ink-ghost)]">
-                  {isHi ? 'लाइव डिजिटल फार्म ट्विन · पूर्वावलोकन' : 'Live digital farm twin · preview'}
+        <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
+          {/* =============================================================== */}
+          {/* THE QUESTIONS                                                   */}
+          {/* =============================================================== */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              onGenerate();
+            }}
+            className="order-2 space-y-11 lg:order-1 lg:col-span-7"
+          >
+            {/* --- 01 LAND ------------------------------------------------- */}
+            <Reveal>
+              <SectionHead n="01" title={isHi ? 'आपकी ज़मीन' : 'Your land'} />
+              <div className="flex items-end gap-4">
+                <div className="w-[8.5rem]">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={LAND_MIN}
+                    max={100}
+                    step={0.5}
+                    value={landAcres}
+                    onChange={(e) => onLandAcresChange(Math.max(LAND_MIN, parseFloat(e.target.value) || LAND_MIN))}
+                    className="figure-input text-[clamp(2.1rem,6vw,3rem)] leading-none"
+                    aria-label={isHi ? 'ज़मीन का आकार, एकड़ में' : 'Land size in acres'}
+                  />
+                </div>
+                <span className="pb-2 text-sm text-[var(--ink-faint)]">
+                  {isHi ? 'एकड़' : landAcres === 1 ? 'acre' : 'acres'}
+                </span>
+                <div className="ml-auto pb-1">
+                  <ParcelRibbon acres={landAcres} />
+                </div>
+              </div>
+              <input
+                type="range"
+                min={LAND_MIN}
+                max={LAND_MAX}
+                step={0.5}
+                value={Math.min(landAcres, LAND_MAX)}
+                onChange={(e) => onLandAcresChange(parseFloat(e.target.value))}
+                className="range-field mt-5"
+                style={fillStyle(landPct)}
+                aria-label={isHi ? 'ज़मीन का आकार खींचकर चुनें' : 'Drag to set land size'}
+              />
+              <p className="mt-1 text-xs text-[var(--ink-ghost)]">
+                {landAcres > LAND_MAX
+                  ? isHi
+                    ? `${formatAcres(landAcres, true)} — स्लाइडर की सीमा से अधिक, संख्या टाइप करके बदलें।`
+                    : `${formatAcres(landAcres)} — past the slider, type to change it.`
+                  : isHi
+                    ? 'एक पट्टी = एक एकड़। खींचिए या संख्या टाइप कीजिए।'
+                    : 'One parcel, one acre. Drag it or type the exact size.'}
+              </p>
+            </Reveal>
+
+            {/* --- 02 BUDGET ----------------------------------------------- */}
+            <Reveal>
+              <SectionHead n="02" title={isHi ? 'इस मौसम की पूँजी' : 'What you can invest'} />
+              <div className="flex items-end gap-3">
+                <span className="pb-2 text-[clamp(1.3rem,3.5vw,1.8rem)] font-light text-[var(--ink-faint)]">₹</span>
+                <div className="w-[11rem]">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={BUDGET_MIN}
+                    step={5000}
+                    value={budgetInr}
+                    onChange={(e) =>
+                      onBudgetInrChange(Math.max(BUDGET_MIN, parseInt(e.target.value, 10) || BUDGET_MIN))
+                    }
+                    className="figure-input text-[clamp(1.8rem,5vw,2.6rem)] leading-none"
+                    aria-label={isHi ? 'निवेश बजट, रुपये में' : 'Investment budget in rupees'}
+                  />
+                </div>
+                <span className="ml-auto pb-2 text-right text-sm text-[var(--ink-faint)]">
+                  {formatInrCompact(budgetInr, isHi)}
                 </span>
               </div>
-            </div>
+              <input
+                type="range"
+                min={BUDGET_MIN}
+                max={BUDGET_MAX}
+                step={5000}
+                value={Math.min(budgetInr, BUDGET_MAX)}
+                onChange={(e) => onBudgetInrChange(parseInt(e.target.value, 10))}
+                className="range-field range-grain mt-5"
+                style={fillStyle(budgetPct)}
+                aria-label={isHi ? 'बजट खींचकर चुनें' : 'Drag to set your budget'}
+              />
+              <p className="mt-1 text-xs text-[var(--ink-ghost)]">
+                {isHi
+                  ? `आपके बताए आकार पर ${formatInrCompact(perAcre, true)} प्रति एकड़।`
+                  : `${formatInrCompact(perAcre)} per acre across the land you entered.`}
+              </p>
+            </Reveal>
 
-            {/* what happens next */}
-            <div className="rounded-2xl border border-[var(--line)] p-5">
-              <span className="t-eyebrow">{isHi ? 'आगे क्या होगा' : 'What happens next'}</span>
-              <div className="mt-3 space-y-3">
-                {nextSteps.map((s) => (
-                  <div key={s.n} className="flex items-start gap-3">
-                    <span className="font-data text-sm font-semibold text-[var(--field)]">{s.n}</span>
-                    <div>
-                      <div className="text-sm font-semibold text-[var(--ink)]">{s.t}</div>
-                      <p className="mt-0.5 text-[11px] leading-snug text-[var(--ink-soft)]">{s.d}</p>
-                    </div>
+            {/* --- 03 WATER ------------------------------------------------ */}
+            <Reveal>
+              <SectionHead n="03" title={isHi ? 'पानी कहाँ से आता है' : 'Where the water comes from'} />
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-2.5">
+                {IRRIGATION.map((e) => {
+                  const sel = irrigationType === e.id;
+                  return (
+                    <button
+                      key={e.id}
+                      type="button"
+                      aria-pressed={sel}
+                      onClick={() => onIrrigationTypeChange(e.id)}
+                      className="choice choice-sky group flex-col items-center gap-1.5 px-2 py-3.5 text-center"
+                    >
+                      <WaterMark
+                        id={e.id}
+                        className={
+                          sel
+                            ? 'text-[var(--sky)]'
+                            : 'text-[var(--ink-ghost)] transition-colors group-hover:text-[var(--sky)]'
+                        }
+                      />
+                      <span className="text-xs font-medium leading-tight">{isHi ? e.hi : e.en}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span className="t-eyebrow text-[var(--ink-ghost)]">
+                  {isHi ? 'कितना भरोसेमंद' : 'How dependable'}
+                </span>
+                <div className="flex gap-1.5">
+                  {RELIABILITY.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      aria-pressed={irrigationReliability === r.id}
+                      onClick={() => onIrrigationReliabilityChange(r.id)}
+                      className="choice choice-sky items-center px-3.5 py-1.5 text-xs font-medium"
+                    >
+                      {isHi ? r.hi : r.en}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-[var(--ink-ghost)]">
+                {waterEntry && (isHi ? waterEntry.hiSub : waterEntry.enSub)}
+                {waterEntry && relEntry ? ' · ' : ''}
+                {relEntry && (isHi ? relEntry.hiSub : relEntry.enSub)}
+              </p>
+            </Reveal>
+
+            {/* --- 04 SEASON ----------------------------------------------- */}
+            <Reveal>
+              <SectionHead n="04" title={isHi ? 'कौन सा मौसम बो रहे हैं' : 'The season you are sowing'} />
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                {SEASONS.map((s) => {
+                  const sel = season === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      aria-pressed={sel}
+                      onClick={() => onSeasonChange(s.id)}
+                      className="choice group flex-col items-start gap-1.5 p-4 text-left"
+                    >
+                      <SkyMark
+                        id={s.id}
+                        className={
+                          sel
+                            ? 'text-[var(--field)]'
+                            : 'text-[var(--ink-ghost)] transition-colors group-hover:text-[var(--field)]'
+                        }
+                      />
+                      <span className="mt-1 text-sm font-medium">{isHi ? s.hi : s.en}</span>
+                      <span className="text-[11px] leading-snug text-[var(--ink-faint)]">
+                        {isHi ? s.hiSub : s.enSub}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* the crops of that window stand up out of the soil */}
+              <div className="mt-6">
+                <div className="flex items-end justify-between gap-4">
+                  <div key={season} className="flex items-end gap-5">
+                    {seasonCrops.map((c, i) => (
+                      <div key={c} className="flex flex-col items-center gap-1.5">
+                        <CropStandArt name={c} delayMs={i * 110} />
+                        <span className="text-[11px] text-[var(--ink-faint)]">
+                          {getCropDisplayName(c, language)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                  <span className="max-w-[13rem] pb-1 text-right text-[11px] leading-snug text-[var(--ink-ghost)]">
+                    {isHi
+                      ? 'इस मौसम में आम तौर पर बोई जाने वाली फसलें। आपकी असल फसलें AI चुनेगा।'
+                      : 'Commonly sown in this window. Your actual crops are chosen by the AI.'}
+                  </span>
+                </div>
+                <div className="mt-1.5 h-px" style={{ background: 'var(--line)' }} aria-hidden />
+              </div>
+            </Reveal>
+
+            {/* --- 05 RISK ------------------------------------------------- */}
+            <Reveal>
+              <SectionHead n="05" title={isHi ? 'आपका रुख' : 'How you want to play it'} />
+              <div className="grid grid-cols-3 gap-2.5">
+                {RISK.map((r) => {
+                  const sel = riskTolerance === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      aria-pressed={sel}
+                      onClick={() => onRiskToleranceChange(r.id)}
+                      className="choice choice-grain flex-col items-start gap-1 px-3.5 py-3 text-left"
+                    >
+                      <span className="text-sm font-medium">{isHi ? r.hi : r.en}</span>
+                      <span className="text-[11px] leading-snug text-[var(--ink-faint)]">
+                        {isHi ? r.hiSub : r.enSub}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Reveal>
+
+            {/* --- HAND OFF ------------------------------------------------ */}
+            <div>
+              <MagneticButton
+                type="submit"
+                disabled={loading}
+                className="btn btn-primary btn-lg group w-full disabled:opacity-60"
+              >
+                <span>
+                  {loading
+                    ? isHi
+                      ? 'खेत पढ़ा जा रहा है…'
+                      : 'Reading your farm…'
+                    : isHi
+                      ? 'मेरे खेत की योजना बनाइए'
+                      : 'Plan my farm'}
+                </span>
+                {!loading && <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />}
+              </MagneticButton>
+              <p className="mt-2.5 text-center text-xs text-[var(--ink-ghost)]">
+                {isHi
+                  ? 'अभी कुछ भी गणना नहीं हुई — अगले कदम पर AI आपके खेत को पढ़ेगा।'
+                  : 'Nothing is calculated yet — next, the AI reads the farm you just described.'}
+              </p>
+            </div>
+          </form>
+
+          {/* =============================================================== */}
+          {/* THE LAND ITSELF — stays in view while the questions are answered */}
+          {/* =============================================================== */}
+          <aside className="order-1 lg:order-2 lg:col-span-5">
+            <div className="lg:sticky lg:top-28">
+              <FarmDigitalTwin
+                height={320}
+                interactive
+                showWeather
+                aiState="listening"
+                className="w-full"
+              />
+              <div className="mt-1 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)]" aria-hidden />
+                <span className="t-eyebrow text-[var(--ink-ghost)]">
+                  {isHi ? 'आपकी ज़मीन · जीवित पूर्वावलोकन' : 'Your land · live preview'}
+                </span>
+              </div>
+
+              <div className="mt-6 space-y-2.5">
+                <ReadingRow
+                  label={isHi ? 'स्थान' : 'Location'}
+                  value={`${district}, ${state}`}
+                />
+                <ReadingRow label={isHi ? 'भूमि' : 'Land'} value={formatAcres(landAcres, isHi)} />
+                <ReadingRow
+                  label={isHi ? 'निवेश' : 'Investment'}
+                  value={formatInrCompact(budgetInr, isHi)}
+                />
+                <ReadingRow
+                  label={isHi ? 'पानी' : 'Water'}
+                  value={`${waterEntry ? (isHi ? waterEntry.hi : waterEntry.en) : '—'}${
+                    relEntry ? ` · ${isHi ? relEntry.hi : relEntry.en}` : ''
+                  }`}
+                />
+                <ReadingRow
+                  label={isHi ? 'मौसम' : 'Season'}
+                  value={seasonInfo ? (isHi ? seasonInfo.hi : seasonInfo.en) : '—'}
+                />
+                <ReadingRow
+                  label={isHi ? 'रुख' : 'Approach'}
+                  value={risk ? (isHi ? risk.hi : risk.en) : '—'}
+                />
               </div>
             </div>
-          </Reveal>
+          </aside>
         </div>
       </main>
 
-      {/* ===================================================================== */}
-      {/* 3. FOOTER                                                              */}
-      {/* ===================================================================== */}
-      <footer className="border-t border-[var(--line-soft)] px-4 pb-24 pt-3 text-xs text-[var(--ink-soft)] sm:px-8 md:pb-3">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 text-[11px]">
-          <span>{isHi ? 'ICAR कृषि इंजन एवं रीयल-टाइम मंडी डेटा द्वारा संचालित' : 'Powered by ICAR Agronomy Engine & Real-time Mandi Telemetry'}</span>
+      <footer className="px-5 pb-24 pt-4 text-xs text-[var(--ink-ghost)] sm:px-8 md:pb-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-[var(--line-soft)] pt-3 text-[11px]">
+          <span>
+            {isHi
+              ? 'ICAR कृषि इंजन एवं रीयल-टाइम मंडी डेटा द्वारा संचालित'
+              : 'Powered by the ICAR agronomy engine and live mandi telemetry'}
+          </span>
           <span>© 2026 AgriOptima AI</span>
         </div>
       </footer>

@@ -380,6 +380,13 @@
     font-size: 0.75rem; font-weight: 600; gap: 0.35rem;
   }
 
+  /* The one primary commitment on a page — page 3's "Plan my farm". Same reason
+     as .btn-sm: it has to be a class, because py-* / text-* cannot outrank .btn. */
+  .btn-lg {
+    padding: 1.05rem 1.75rem;
+    font-size: 1rem; gap: 0.6rem;
+  }
+
   .chip {
     display: inline-flex; align-items: center; gap: 0.4rem;
     padding: 0.4rem 0.8rem; border-radius: 999px;
@@ -632,3 +639,177 @@
 }
 .animate-plan-title { animation: planTitleWipe 0.95s var(--ease-out) both; }
 .animate-plan-sub   { animation: planFadeUp 0.7s var(--ease-out) 0.35s both; }
+
+/* =========================================================================
+   DESCRIBING THE LAND — page 3 controls.
+   A drag control should feel like a furrow being opened, not an OS widget, so
+   the track is a sunken groove and the filled part is living green. WebKit has
+   no ::-*-progress pseudo for range inputs, so the fill is painted into the
+   track with a --fill percentage the call site sets inline.
+   ========================================================================= */
+.range-field {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 30px;
+  background: transparent;
+  cursor: grab;
+}
+.range-field:active { cursor: grabbing; }
+.range-field:focus { outline: none; }
+
+.range-field::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg,
+      var(--field-bright) 0%,
+      var(--field) var(--fill, 0%),
+      var(--surface-sunken) var(--fill, 0%),
+      var(--surface-sunken) 100%);
+  box-shadow: inset 0 1px 2px rgb(var(--sh-color) / 0.14);
+}
+.range-field::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  box-shadow: inset 0 1px 2px rgb(var(--sh-color) / 0.14);
+}
+.range-field::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--field-bright), var(--field));
+}
+
+.range-field::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -9px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--canvas);
+  box-shadow: 0 4px 14px rgb(var(--sh-color) / 0.2), inset 0 0 0 5px var(--field);
+  transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-out);
+}
+.range-field::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--canvas);
+  box-shadow: 0 4px 14px rgb(var(--sh-color) / 0.2), inset 0 0 0 5px var(--field);
+}
+.range-field:hover::-webkit-slider-thumb { transform: scale(1.09); }
+.range-field:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--glow-field), inset 0 0 0 5px var(--field);
+}
+.range-field:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px var(--glow-field), inset 0 0 0 5px var(--field);
+}
+
+/* money reads in grain, not green */
+.range-grain::-webkit-slider-runnable-track {
+  background:
+    linear-gradient(90deg,
+      var(--grain-bright) 0%,
+      var(--grain) var(--fill, 0%),
+      var(--surface-sunken) var(--fill, 0%),
+      var(--surface-sunken) 100%);
+}
+.range-grain::-moz-range-progress { background: linear-gradient(90deg, var(--grain-bright), var(--grain)); }
+.range-grain::-webkit-slider-thumb {
+  box-shadow: 0 4px 14px rgb(var(--sh-color) / 0.2), inset 0 0 0 5px var(--grain);
+}
+.range-grain::-moz-range-thumb {
+  box-shadow: 0 4px 14px rgb(var(--sh-color) / 0.2), inset 0 0 0 5px var(--grain);
+}
+.range-grain:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--glow-grain), inset 0 0 0 5px var(--grain);
+}
+.range-grain:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px var(--glow-grain), inset 0 0 0 5px var(--grain);
+}
+
+/* The big number the farmer types into: no box, just a line under it. */
+.figure-input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 0 0 0.25rem;
+  color: var(--ink);
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  transition: border-color 0.3s var(--ease-out);
+  -moz-appearance: textfield;
+}
+.figure-input:focus { outline: none; border-bottom-color: var(--field); }
+.figure-input::-webkit-outer-spin-button,
+.figure-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* A text field as a ruled line rather than a filled box — the sign-in gate and
+   any other single-line entry. Sets padding on the BLOCK axis only so Tailwind's
+   inline padding utilities still work for leading icons and reveal buttons, and
+   no `position` (unlayered here, so it would beat positioning utilities). */
+.line-input {
+  width: 100%;
+  padding-top: 0.5rem;
+  padding-bottom: 0.55rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--ink);
+  appearance: none;
+  transition: border-color 0.3s var(--ease-out);
+}
+.line-input::placeholder { color: var(--ink-ghost); }
+.line-input:focus { outline: none; border-bottom-color: var(--field); }
+.line-input:focus-visible { outline: none; }
+
+/* One selectable surface for every choice on the page: no border at rest, a
+   soft ivory lift on hover, an inset brand edge when chosen. Declares no
+   `position` — this block is unlayered and would beat Tailwind's own. */
+.choice {
+  display: flex;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line-soft);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background-color 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out),
+    color 0.3s var(--ease-out), transform 0.3s var(--ease-spring);
+}
+.choice:hover { background: var(--surface); color: var(--ink); transform: translateY(-1px); }
+.choice:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--line-soft), 0 0 0 4px var(--glow-field); }
+.choice[aria-pressed='true'] {
+  background: var(--field-tint);
+  color: var(--field-deep);
+  box-shadow: inset 0 0 0 1.5px var(--field), 0 6px 18px rgb(var(--sh-color) / 0.07);
+}
+.choice-sky[aria-pressed='true'] {
+  background: var(--sky-tint);
+  color: #2F5F79;
+  box-shadow: inset 0 0 0 1.5px var(--sky), 0 6px 18px rgb(var(--sh-color) / 0.07);
+}
+.choice-grain[aria-pressed='true'] {
+  background: var(--grain-tint);
+  color: var(--grain-deep);
+  box-shadow: inset 0 0 0 1.5px var(--grain), 0 6px 18px rgb(var(--sh-color) / 0.07);
+}
+
+/* Focus has to stay visible on the option that is ALREADY chosen: the pressed
+   fills above replace box-shadow at equal specificity and would otherwise
+   swallow the ring, leaving a keyboard user with no idea where they are. One
+   ring colour everywhere, so focus always looks like focus. */
+.choice[aria-pressed='true']:focus-visible {
+  box-shadow: inset 0 0 0 1.5px var(--field), 0 0 0 4px var(--glow-field);
+}
+.choice-sky[aria-pressed='true']:focus-visible {
+  box-shadow: inset 0 0 0 1.5px var(--sky), 0 0 0 4px var(--glow-field);
+}
+.choice-grain[aria-pressed='true']:focus-visible {
+  box-shadow: inset 0 0 0 1.5px var(--grain), 0 0 0 4px var(--glow-field);
+}

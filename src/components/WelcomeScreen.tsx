@@ -5,6 +5,7 @@ import { useLanguage } from '@/i18n/LanguageContext';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
 import { JourneyNav } from '@/components/JourneyNav';
 import { MagneticButton } from '@/components/ui/motion';
+import { ReadingRow } from '@/components/ui/ReadingRow';
 import { usePrefersReducedMotion, useMounted } from '@/lib/hooks';
 import type { DistrictLocationItem } from '@/types/farm';
 import {
@@ -32,6 +33,9 @@ const POPULAR_AGRO_STATES = [
   'Rajasthan',
   'Karnataka',
 ];
+
+/** Registration marks, the way a printed survey sheet is squared up. */
+const CORNER_TICKS = ['left-0 top-0', 'right-0 top-0', 'left-0 bottom-0', 'right-0 bottom-0'];
 
 /**
  * Haversine Great-Circle Distance on Earth (in km)
@@ -65,10 +69,17 @@ function findNearestDistrictPrecise(lat: number, lon: number): { district: Distr
 }
 
 /**
- * ENTER — the second beat of the flow: place the farm on the map of India.
- * The interactive survey chart is the hero; all selection controls live in one
- * calm floating panel. Every piece of location logic (geolocation, Nominatim
- * reverse-geocode, Haversine fallback, search, district picker) is preserved.
+ * PLACE THE FARM — the second beat of the journey.
+ *
+ * The survey chart is the hero and it now sits in the open air of the same ivory
+ * world as every other screen: no laminated blue plate, no card around the
+ * controls, and the chosen state is living field green rather than a foreign
+ * accent colour. The place is read back through the same eyebrow-hairline-value
+ * row the planning flow and the analysis cinematic use.
+ *
+ * Every piece of location logic is preserved verbatim: geolocation, the
+ * Nominatim reverse-geocode with its 3.5s abort, the Haversine fallback, search
+ * across states and districts in both languages, and the district picker.
  */
 export function WelcomeScreen({
   userName = 'Demo Farmer',
@@ -271,65 +282,36 @@ export function WelcomeScreen({
       {/* Floating chrome — the journey pill marks this as stage 01 */}
       <JourneyNav stage={1} userName={userName} onLogout={onLogout} />
 
-      {/* ================================================================= */}
-      {/* MAIN                                                              */}
-      {/* ================================================================= */}
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-5 pb-6 pt-24 sm:px-8 sm:pt-28">
-        <div
-          className="relative mb-6 overflow-hidden rounded-[var(--radius-lg)] px-5 py-5 sm:px-7 sm:py-6"
-          style={{
-            background: 'linear-gradient(135deg, rgba(231,241,231,0.85) 0%, rgba(255,255,255,0.92) 55%, rgba(228,238,243,0.78) 100%)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 16px 48px rgb(52 58 44 / 0.07)',
-            ...rise(0),
-          }}
-        >
-
-          <div
-            className="pointer-events-none absolute -left-10 -top-10 h-48 w-48 rounded-full blur-3xl"
-            style={{ background: 'radial-gradient(circle, rgba(70,169,104,0.14) 0%, transparent 70%)' }}
-            aria-hidden
-          />
-          <div className="relative">
-            <div className="t-eyebrow" style={{ color: 'var(--field)' }}>
-              {isHi ? 'अपना खेत पिन करें' : 'Pin your field'}
-            </div>
-            <h1 className="t-h1 mt-2 text-[var(--ink)]">
-              {isHi ? 'आपका खेत कहाँ है?' : 'Where is your farm?'}
-            </h1>
-            <p className="t-lead mt-2 max-w-xl text-[0.98rem]">
-              {isHi
-                ? 'सटीक मौसम, मिट्टी और मंडी डेटा के लिए मानचित्र से अपना राज्य और जिला चुनें — या स्वतः पहचान का उपयोग करें।'
-                : 'Choose your state and district from the survey map — or let us detect it — so every forecast and recommendation is tuned to your exact field.'}
-            </p>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-10 pt-24 sm:px-8 sm:pt-28">
+        {/* ================================================================= */}
+        {/* THE ASK                                                            */}
+        {/* ================================================================= */}
+        <div style={rise(0)}>
+          <div className="t-eyebrow" style={{ color: 'var(--field)' }}>
+            {isHi ? 'अपना खेत पिन करें' : 'Pin your field'}
           </div>
+          <h1 className="t-h1 mt-3 text-[var(--ink)]">
+            {isHi ? 'आपका खेत कहाँ है?' : 'Where is your farm?'}
+          </h1>
+          <p className="t-lead mt-2.5 max-w-xl text-[0.95rem]">
+            {isHi
+              ? 'चार्ट पर अपना राज्य चुनें, फिर जिला — या GPS से स्वतः पहचान करें। हर पूर्वानुमान और सिफ़ारिश इसी जगह के अनुसार तय होती है।'
+              : 'Pick your state on the chart, then your district — or let GPS find it. Every forecast and recommendation is tuned to this exact place.'}
+          </p>
         </div>
 
-
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          {/* ---------------------------------------------------------- */}
-          {/* LEFT — one calm control panel                               */}
-          {/* ---------------------------------------------------------- */}
-          <div
-            ref={searchContainerRef}
-            className="panel-elevated space-y-5 p-5 sm:p-6 lg:col-span-5 xl:col-span-4"
-            style={rise(1)}
-          >
-            {/* GPS auto-detect */}
+        <div className="mt-10 grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-12">
+          {/* =============================================================== */}
+          {/* THE CONTROLS — open, hairline-separated                          */}
+          {/* =============================================================== */}
+          <div className="order-2 space-y-8 lg:order-1 lg:col-span-5" style={rise(1)}>
+            {/* --- GPS ---------------------------------------------------- */}
             <div>
-              <div className="flex items-start gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--grain-tint)] text-[var(--grain-deep)] leaf-radius">
-                  <Navigation size={17} />
+              <div className="flex items-baseline gap-3">
+                <span className="t-eyebrow shrink-0 text-[var(--ink-ghost)]">
+                  {isHi ? 'स्वतः' : 'Automatically'}
                 </span>
-                <div>
-                  <h2 className="t-h3 text-[1.05rem] text-[var(--ink)]">
-                    {isHi ? 'मेरा स्थान खोजें' : 'Find my location'}
-                  </h2>
-                  <p className="text-xs text-[var(--ink-soft)]">
-                    {isHi
-                      ? 'GPS द्वारा तुरंत अपने नजदीकी जिले का पता लगाएं।'
-                      : 'Detect your nearest district automatically via GPS.'}
-                  </p>
-                </div>
+                <span className="h-px flex-1 -translate-y-1" style={{ background: 'var(--line-soft)' }} aria-hidden />
               </div>
 
               <MagneticButton
@@ -337,9 +319,13 @@ export function WelcomeScreen({
                 onClick={handleUseMyLocation}
                 disabled={isLocating}
                 strength={0.2}
-                className="btn btn-primary mt-4 w-full text-xs disabled:opacity-60"
+                className="btn btn-ghost mt-3 w-full disabled:opacity-60"
               >
-                {isLocating ? <Crosshair size={14} className="animate-spin-slow" /> : <Navigation size={14} />}
+                {isLocating ? (
+                  <Crosshair size={15} className="animate-spin text-[var(--field)]" />
+                ) : (
+                  <Navigation size={15} className="text-[var(--field)]" />
+                )}
                 <span>
                   {isLocating
                     ? isHi
@@ -352,230 +338,209 @@ export function WelcomeScreen({
               </MagneticButton>
 
               {geoSuccess && (
-                <div className="mt-3 flex items-start gap-2 rounded-xl border border-[var(--field-tint)] bg-[var(--field-tint)] p-2.5 text-xs text-[var(--field-deep)]">
-                  <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[var(--field)]" />
-                  <span className="font-medium leading-tight">{geoSuccess}</span>
-                </div>
+                <p
+                  role="status"
+                  className="mt-3 flex items-start gap-2 border-l-2 border-[var(--field)] pl-2.5 text-xs font-medium leading-snug text-[var(--field-deep)]"
+                >
+                  <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[var(--field)]" />
+                  <span>{geoSuccess}</span>
+                </p>
               )}
               {geoNotice && (
-                <div className="mt-3 flex items-start gap-2 rounded-xl border border-[var(--line)] bg-[var(--surface-inset)] p-2.5 text-xs text-[var(--ink-soft)]">
-                  <AlertCircle size={15} className="mt-0.5 shrink-0 text-[var(--warn)]" />
-                  <span className="font-medium leading-tight">{geoNotice}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-[var(--line)]" />
-              <span className="t-eyebrow text-[0.6rem]">{isHi ? 'या मैन्युअल' : 'or by hand'}</span>
-              <div className="h-px flex-1 bg-[var(--line)]" />
-            </div>
-
-            {/* Search */}
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[var(--ink-ghost)]">
-                <Search size={15} />
-              </span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setIsSearchOpen(true);
-                }}
-                onFocus={() => setIsSearchOpen(true)}
-                placeholder={isHi ? 'राज्य या जिला खोजें...' : 'Search state or district…'}
-                className="field-input !py-2.5 !pl-10 !pr-8 text-xs"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setIsSearchOpen(false);
-                  }}
-                  aria-label={isHi ? 'खोज साफ़ करें' : 'Clear search'}
-                  className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-[var(--ink-ghost)] hover:text-[var(--ink-soft)]"
+                <p
+                  role="status"
+                  className="mt-3 flex items-start gap-2 border-l-2 border-[var(--warn)] pl-2.5 text-xs font-medium leading-snug text-[var(--ink-soft)]"
                 >
-                  <X size={13} />
-                </button>
-              )}
-
-              {isSearchOpen && searchResults.length > 0 && (
-                <div className="panel-elevated absolute left-0 right-0 top-full z-40 mt-1 max-h-52 overflow-y-auto p-1">
-                  {searchResults.map((item, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleSelectSearchResult(item)}
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-inset)]"
-                    >
-                      <span className="truncate pr-2 font-medium">{item.label}</span>
-                      <span className="shrink-0 rounded border border-[var(--line)] bg-[var(--surface-inset)] px-1.5 py-0.5 font-data text-[9px] uppercase text-[var(--ink-faint)]">
-                        {item.type === 'state' ? (isHi ? 'राज्य' : 'State') : (isHi ? 'जिला' : 'District')}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                  <AlertCircle size={14} className="mt-0.5 shrink-0 text-[var(--warn)]" />
+                  <span>{geoNotice}</span>
+                </p>
               )}
             </div>
 
-            {/* Popular states */}
+            {/* --- SEARCH ------------------------------------------------- */}
             <div>
-              <span className="t-eyebrow mb-2 block text-[0.6rem]">
-                {isHi ? 'प्रमुख कृषि राज्य' : 'Popular agro states'}
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {POPULAR_AGRO_STATES.map((st) => {
-                  const isSelected = chosenState?.toLowerCase() === st.toLowerCase();
-                  return (
+              <div className="flex items-baseline gap-3">
+                <span className="t-eyebrow shrink-0 text-[var(--ink-ghost)]">
+                  {isHi ? 'या नाम से' : 'Or by name'}
+                </span>
+                <span className="h-px flex-1 -translate-y-1" style={{ background: 'var(--line-soft)' }} aria-hidden />
+              </div>
+
+              <div className="relative mt-3" ref={searchContainerRef}>
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center text-[var(--ink-ghost)]">
+                  <Search size={15} />
+                </span>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setIsSearchOpen(true);
+                  }}
+                  onFocus={() => setIsSearchOpen(true)}
+                  placeholder={isHi ? 'राज्य या जिला खोजें...' : 'Search state or district…'}
+                  className="line-input pl-7 pr-7 text-sm"
+                  aria-label={isHi ? 'राज्य या जिला खोजें' : 'Search state or district'}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setIsSearchOpen(false);
+                    }}
+                    aria-label={isHi ? 'खोज साफ़ करें' : 'Clear search'}
+                    className="absolute inset-y-0 right-0 flex items-center text-[var(--ink-ghost)] transition-colors hover:text-[var(--ink-soft)]"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+
+                {isSearchOpen && searchResults.length > 0 && (
+                  <div className="panel-elevated absolute left-0 right-0 top-full z-40 mt-2 max-h-56 overflow-y-auto p-1.5">
+                    {searchResults.map((item, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectSearchResult(item)}
+                        className="flex w-full items-center justify-between gap-2 rounded-[12px] px-3 py-2 text-left text-[13px] text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-inset)] hover:text-[var(--ink)] focus-visible:bg-[var(--field-tint)] focus-visible:text-[var(--field-deep)] focus-visible:outline-none"
+                      >
+                        <span className="truncate font-medium">{item.label}</span>
+                        <span className="font-data shrink-0 text-[9px] uppercase tracking-[0.14em] text-[var(--ink-ghost)]">
+                          {item.type === 'state' ? (isHi ? 'राज्य' : 'State') : (isHi ? 'जिला' : 'District')}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* popular agro states */}
+              <div className="mt-5">
+                <span className="t-eyebrow mb-2 block text-[0.6rem] text-[var(--ink-ghost)]">
+                  {isHi ? 'प्रमुख कृषि राज्य' : 'Major farming states'}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {POPULAR_AGRO_STATES.map((st) => (
                     <button
                       key={st}
                       type="button"
+                      aria-pressed={chosenState?.toLowerCase() === st.toLowerCase()}
                       onClick={() => handleMapStateSelect('en', st)}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
-                        isSelected
-                          ? 'bg-[var(--field)] text-white shadow-sm'
-                          : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:border-[var(--line-strong)] hover:text-[var(--ink)]'
-                      }`}
+                      className="choice items-center px-3 py-1.5 text-xs font-medium"
                     >
                       {getStateDisplayName(st, language)}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Selected location */}
-            {chosenState && chosenDistrict && (
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-[var(--field-tint)] bg-[var(--field-tint)] p-3.5">
-                <div className="flex items-center gap-2.5">
-                  <CheckCircle2 size={18} className="shrink-0 text-[var(--field)]" />
-                  <div>
-                    <span className="t-eyebrow block text-[0.58rem] text-[var(--field-deep)]">
-                      {isHi ? 'चुना गया स्थान' : 'Selected location'}
-                    </span>
-                    <span className="text-sm font-semibold text-[var(--ink)]">
-                      {getDistrictDisplayName(chosenDistrict, language)}, {getStateDisplayName(chosenState, language)}
-                    </span>
-                  </div>
+            {/* --- DISTRICT ----------------------------------------------- */}
+            {chosenState && (
+              <div>
+                <div className="flex items-baseline gap-3">
+                  <span className="t-eyebrow shrink-0 text-[var(--ink-ghost)]">
+                    {isHi ? 'जिला' : 'District'}
+                  </span>
+                  <span className="h-px flex-1 -translate-y-1" style={{ background: 'var(--line-soft)' }} aria-hidden />
+                  <span className="font-data shrink-0 text-[11px] text-[var(--ink-ghost)]">
+                    {stateDistricts.length}
+                  </span>
                 </div>
-                <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-[var(--field)]" />
+
+                <div className="mt-3 max-h-[15rem] overflow-y-auto pr-1">
+                  {stateDistricts.map((d) => {
+                    const isSelected = chosenDistrict?.toLowerCase() === d.toLowerCase();
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => setChosenDistrict(d)}
+                        className={`flex w-full items-center justify-between gap-2 border-l-2 py-[7px] pl-2.5 pr-1 text-left text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--field)] ${
+                          isSelected
+                            ? 'border-[var(--field)] font-semibold text-[var(--field-deep)]'
+                            : 'border-transparent text-[var(--ink-soft)] hover:border-[var(--line-strong)] hover:text-[var(--ink)]'
+                        }`}
+                      >
+                        <span className="truncate">{getDistrictDisplayName(d, language)}</span>
+                        {isSelected && <Check size={13} className="shrink-0 text-[var(--field)]" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
-            <MagneticButton
-              type="button"
-              onClick={handleProceedToFarm}
-              disabled={!chosenState || !chosenDistrict}
-              className="btn btn-primary group w-full text-sm disabled:opacity-50"
-            >
-              <span>{isHi ? 'खेत की जानकारी दर्ज करें' : 'Continue to farm setup'}</span>
-              <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-            </MagneticButton>
+            {/* --- READING + HAND OFF ------------------------------------- */}
+            <div className="border-t border-[var(--line-soft)] pt-6">
+              {chosenState && chosenDistrict ? (
+                <div className="space-y-2.5">
+                  <ReadingRow
+                    label={isHi ? 'राज्य' : 'State'}
+                    value={getStateDisplayName(chosenState, language)}
+                  />
+                  <ReadingRow
+                    label={isHi ? 'जिला' : 'District'}
+                    value={getDistrictDisplayName(chosenDistrict, language)}
+                  />
+                </div>
+              ) : (
+                <p className="text-xs text-[var(--ink-ghost)]">
+                  {isHi ? 'शुरू करने के लिए चार्ट पर एक राज्य चुनें।' : 'Pick a state on the chart to begin.'}
+                </p>
+              )}
+
+              <MagneticButton
+                type="button"
+                onClick={handleProceedToFarm}
+                disabled={!chosenState || !chosenDistrict}
+                className="btn btn-primary btn-lg group mt-5 w-full disabled:opacity-50"
+              >
+                <span>{isHi ? 'खेत की जानकारी दर्ज करें' : 'Continue to farm setup'}</span>
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+              </MagneticButton>
+            </div>
           </div>
 
-          {/* ---------------------------------------------------------- */}
-          {/* RIGHT — the survey chart (hero) + district picker            */}
-          {/* ---------------------------------------------------------- */}
-          <div className="lg:col-span-7 xl:col-span-8" style={rise(2)}>
-            <div
-              className="relative flex flex-col items-center justify-between gap-5 overflow-hidden rounded-[var(--radius-lg)] p-4 sm:p-6 md:flex-row"
-              style={{
-                background: 'linear-gradient(135deg, rgba(240,248,252,0.95) 0%, rgba(255,255,255,0.97) 50%, rgba(236,247,236,0.92) 100%)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 20px 56px rgb(52 58 44 / 0.09)',
-              }}
-            >
-              {/* Atmospheric sky glow top-right */}
-              <div
-                className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full blur-3xl"
-                style={{ background: 'radial-gradient(circle, rgba(111,163,191,0.18) 0%, transparent 70%)' }}
-                aria-hidden
-              />
-              {/* Illuminated survey chart plate */}
-              <div className="relative w-full max-w-[430px]">
-                <div
-                  className="relative flex aspect-[612/696] items-center justify-center overflow-hidden rounded-3xl border-2 border-[#8BBCD1] p-3 sm:p-4"
-                  style={{
-                    background: 'linear-gradient(180deg, #D4ECF5 0%, #C4E0ED 40%, #B8D8E9 100%)',
-                    boxShadow: 'inset 0 2px 20px rgba(25,75,105,0.12), 0 8px 32px rgba(25,75,105,0.08)',
-                  }}
-                >
-                  {/* cartographic corner ticks */}
-                  {['left-2 top-2', 'right-2 top-2', 'left-2 bottom-2', 'right-2 bottom-2'].map((pos) => (
-                    <span
-                      key={pos}
-                      className={`pointer-events-none absolute ${pos} font-data text-[10px] text-[#3E6D82]/60`}
-                      aria-hidden
-                    >
-                      +
-                    </span>
-                  ))}
-                  {/* Selected state glow */}
-                  {chosenState && (
-                    <div
-                      className="pointer-events-none absolute inset-0 rounded-3xl"
-                      style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(70,169,104,0.06) 0%, transparent 80%)' }}
-                      aria-hidden
-                    />
-                  )}
+          {/* =============================================================== */}
+          {/* THE SURVEY CHART — hero, in the open air                        */}
+          {/* =============================================================== */}
+          <div className="order-1 lg:order-2 lg:col-span-7" style={rise(2)}>
+            <div className="lg:sticky lg:top-28">
+              <div className="relative mx-auto w-full max-w-[460px] px-3 py-3">
+                {/* survey paper, no frame: a masked grid that fades to nothing */}
+                <div className="grid-survey pointer-events-none absolute inset-0" aria-hidden />
+                {CORNER_TICKS.map((pos) => (
+                  <span
+                    key={pos}
+                    className={`font-data pointer-events-none absolute ${pos} text-[11px] leading-none text-[var(--ink-ghost)]`}
+                    aria-hidden
+                  >
+                    +
+                  </span>
+                ))}
+                <div className="relative aspect-[612/696] w-full">
                   <IndiaMap
                     selectedStateName={chosenState || undefined}
                     onSelect={handleMapStateSelect}
                     transitioning={false}
                   />
                 </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="t-eyebrow text-[0.58rem] text-[var(--ink-faint)]">
-                    {isHi ? 'भारत कृषि सर्वेक्षण मानचित्र · राज्य चुनें' : 'India agri-survey chart · tap a state'}
-                  </span>
-                  {chosenState && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--field-tint)] px-2 py-0.5 text-[10px] font-semibold text-[var(--field-deep)]">
-                      <span className="h-1 w-1 animate-breathe rounded-full bg-[var(--field)]" />
-                      {getStateDisplayName(chosenState, language)}
-                    </span>
-                  )}
-                </div>
               </div>
 
-
-              {/* District picker */}
-              {chosenState && (
-                <div className="w-full shrink-0 md:max-w-[250px]">
-                  <div className="border-b border-[var(--line)] pb-2">
-                    <span className="t-eyebrow block text-[0.58rem]">
-                      {isHi ? 'चुना गया राज्य' : 'Selected state'}
-                    </span>
-                    <h3 className="t-h3 text-[1.05rem] text-[var(--ink)]">
-                      {getStateDisplayName(chosenState, language)}
-                    </h3>
-                  </div>
-
-                  <label className="mb-1.5 mt-3 block text-xs font-semibold text-[var(--ink-soft)]">
-                    {isHi ? 'जिला चुनें' : 'Select district'}
-                  </label>
-                  <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
-                    {stateDistricts.map((d) => {
-                      const isSelected = chosenDistrict?.toLowerCase() === d.toLowerCase();
-                      return (
-                        <button
-                          key={d}
-                          type="button"
-                          onClick={() => setChosenDistrict(d)}
-                          className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors ${
-                            isSelected
-                              ? 'bg-[var(--field)] font-semibold text-white'
-                              : 'border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink-soft)] hover:border-[var(--line-strong)] hover:text-[var(--ink)]'
-                          }`}
-                        >
-                          <span>{getDistrictDisplayName(d, language)}</span>
-                          {isSelected && <Check size={13} className="shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              <div className="mx-auto mt-1 flex w-full max-w-[460px] items-center justify-between gap-3 px-3">
+                <span className="t-eyebrow text-[0.6rem] text-[var(--ink-ghost)]">
+                  {isHi ? 'भारत कृषि सर्वेक्षण चार्ट · राज्य चुनें' : 'India agri-survey chart · tap a state'}
+                </span>
+                {chosenState && (
+                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--field-tint)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--field-deep)]">
+                    <span className="animate-breathe h-1 w-1 rounded-full bg-[var(--field)]" />
+                    {getStateDisplayName(chosenState, language)}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -585,7 +550,7 @@ export function WelcomeScreen({
       {/* FOOTER                                                            */}
       {/* ================================================================= */}
       <footer className="relative z-10 px-5 pb-24 pt-4 text-xs text-[var(--ink-faint)] sm:px-8 md:pb-4">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 text-[11px]">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-[var(--line-soft)] pt-3 text-[11px]">
           <span>
             {isHi
               ? '786+ भारतीय जिलों के लिए भू-सटीक कृषि डेटा'

@@ -74,12 +74,12 @@ export function IndiaMap({
           </filter>
           
           <filter id="mapShadowWarm" x="-15%" y="-10%" width="130%" height="130%">
-            <feDropShadow dx="0" dy="5" stdDeviation="9" floodColor="#183848" floodOpacity="0.16" />
+            <feDropShadow dx="0" dy="5" stdDeviation="9" floodColor="#343A2C" floodOpacity="0.12" />
           </filter>
 
           <linearGradient id="mapSurfaceWarm" x1="0" y1="0" x2="0.6" y2="1">
             <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="100%" stopColor="#F9F7F2" />
+            <stop offset="100%" stopColor="#F3F1E8" />
           </linearGradient>
         </defs>
 
@@ -88,7 +88,7 @@ export function IndiaMap({
         {/* =================================================================== */}
         <g className="pointer-events-none" opacity="0.95">
           {/* Subtle Grid Crosses (+) */}
-          <g stroke="#6491A6" strokeWidth="1.1" opacity="0.55">
+          <g stroke="var(--sage-deep)" strokeWidth="1" opacity="0.4">
             {/* Top-Left Cross */}
             <path d="M 60 140 L 70 140 M 65 135 L 65 145" />
             {/* Arabian Sea Crosses */}
@@ -102,19 +102,19 @@ export function IndiaMap({
           </g>
 
           {/* Coordinate Micro Labels */}
-          <text x="68" y="132" fill="#4B778D" fontSize="7.5" fontFamily="monospace" opacity="0.75">28°N 72°E</text>
-          <text x="98" y="372" fill="#4B778D" fontSize="7.5" fontFamily="monospace" opacity="0.75">18°N 68°E</text>
-          <text x="488" y="382" fill="#4B778D" fontSize="7.5" fontFamily="monospace" opacity="0.75">17°N 88°E</text>
+          <text x="68" y="132" fill="var(--ink-ghost)" fontSize="7.5" className="font-data" opacity="0.9">28°N 72°E</text>
+          <text x="98" y="372" fill="var(--ink-ghost)" fontSize="7.5" className="font-data" opacity="0.9">18°N 68°E</text>
+          <text x="488" y="382" fill="var(--ink-ghost)" fontSize="7.5" className="font-data" opacity="0.9">17°N 88°E</text>
 
           {/* Subtle Ocean Wave Lines in Arabian Sea */}
-          <g fill="none" stroke="#729EAF" strokeWidth="1.1" opacity="0.5" strokeDasharray="3 4">
+          <g fill="none" stroke="var(--sky)" strokeWidth="1" opacity="0.38" strokeDasharray="3 4">
             <path d="M 45 420 Q 75 415, 105 422 T 140 418" />
             <path d="M 40 450 Q 70 445, 110 453" />
             <path d="M 50 480 Q 80 475, 120 482" />
           </g>
 
           {/* Subtle Ocean Wave Lines in Bay of Bengal */}
-          <g fill="none" stroke="#729EAF" strokeWidth="1.1" opacity="0.5" strokeDasharray="3 4">
+          <g fill="none" stroke="var(--sky)" strokeWidth="1" opacity="0.38" strokeDasharray="3 4">
             <path d="M 460 420 Q 495 415, 540 422" />
             <path d="M 470 455 Q 510 448, 555 456" />
             <path d="M 460 490 Q 500 482, 545 492" />
@@ -124,11 +124,10 @@ export function IndiaMap({
           <text
             x="65"
             y="460"
-            fill="#3B6B80"
+            fill="var(--sky)"
             fontSize="8.5"
             fontWeight="600"
             letterSpacing="0.28em"
-            fontFamily="sans-serif"
             opacity="0.7"
           >
             ARABIAN SEA
@@ -137,11 +136,10 @@ export function IndiaMap({
           <text
             x="465"
             y="460"
-            fill="#3B6B80"
+            fill="var(--sky)"
             fontSize="8.5"
             fontWeight="600"
             letterSpacing="0.28em"
-            fontFamily="sans-serif"
             opacity="0.7"
           >
             BAY OF BENGAL
@@ -150,11 +148,10 @@ export function IndiaMap({
           <text
             x="240"
             y="655"
-            fill="#3B6B80"
+            fill="var(--sky)"
             fontSize="8"
             fontWeight="600"
             letterSpacing="0.28em"
-            fontFamily="sans-serif"
             opacity="0.65"
           >
             INDIAN OCEAN
@@ -162,11 +159,11 @@ export function IndiaMap({
 
           {/* Minimalist Compass Rose (North Arrow) in Top-Right */}
           <g transform="translate(530, 60)" opacity="0.75">
-            <circle cx="0" cy="0" r="14" fill="none" stroke="#6491A6" strokeWidth="0.9" strokeDasharray="2 2" />
+            <circle cx="0" cy="0" r="14" fill="none" stroke="var(--sage-deep)" strokeWidth="0.9" strokeDasharray="2 2" />
             {/* North pointer arrow */}
-            <polygon points="0,-12 3,2 0,0 -3,2" fill="#E2725B" />
-            <polygon points="0,12 3,0 0,0 -3,0" fill="#6491A6" />
-            <text x="0" y="-15" textAnchor="middle" fill="#B54832" fontSize="8" fontWeight="bold" fontFamily="sans-serif">N</text>
+            <polygon points="0,-12 3,2 0,0 -3,2" fill="var(--grain)" />
+            <polygon points="0,12 3,0 0,0 -3,0" fill="var(--sage)" />
+            <text x="0" y="-15" textAnchor="middle" fill="var(--grain-deep)" fontSize="8" fontWeight="600">N</text>
           </g>
         </g>
 
@@ -182,18 +179,19 @@ export function IndiaMap({
             const isStateSelected = effectiveSelectedStateId === id;
             const isGoa = id === 'ga';
 
-            // Clean Cartography: Selected (Terracotta), Hovered (Peach), Default (Crisp White/Cream)
+            // One growing world: the chosen state is living field green, a hovered
+            // state is the palest wash of the same green, everything else is paper.
             const fill = isStateSelected
-              ? '#E2725B'
+              ? 'var(--field)'
               : isStateHovered
-              ? '#FDEEE9'
+              ? 'var(--field-tint)'
               : 'url(#mapSurfaceWarm)';
 
             const stroke = isStateSelected
-              ? '#B54832'
+              ? 'var(--field-deep)'
               : isStateHovered
-              ? '#E2725B'
-              : '#D6CABE';
+              ? 'var(--field)'
+              : 'var(--line-strong)';
 
             const strokeWidth = isStateSelected
               ? (isGoa ? 2.6 : 1.8)
@@ -254,8 +252,8 @@ export function IndiaMap({
 
       {/* Floating tooltip showing ONLY the Localized State Name on hover */}
       {hoveredStateName && (
-        <div className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 rounded-full border border-[var(--line)] bg-[var(--surface-elevated)] px-4 py-1 text-center shadow-lg backdrop-blur-md">
-          <span className="font-serif text-xs font-semibold tracking-wide text-[var(--ink)]">
+        <div className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 rounded-full bg-[var(--surface-elevated)] px-3.5 py-1 text-center shadow-[var(--shadow-md)] backdrop-blur-md">
+          <span className="text-xs font-semibold tracking-wide text-[var(--ink)]">
             {hoveredStateName}
           </span>
         </div>
