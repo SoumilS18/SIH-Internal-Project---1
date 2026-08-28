@@ -47,6 +47,16 @@ interface FarmDigitalTwinProps {
   aiState?: TwinAiState;
   /** Turn off when the host screen already shows the selected plot's numbers. */
   showDetailCard?: boolean;
+  /**
+   * `'auto'` (default) — cursor parallax when interactive, a slow ambient drift
+   * when not. `'locked'` — the camera never moves.
+   *
+   * Lock it whenever something OUTSIDE the twin is pinned to a point on the
+   * land (the cinematic's survey marks). A drifting camera rotates the ground
+   * plane by a couple of degrees, which at this board size walks the field
+   * tens of pixels away from any annotation that is not rotating with it.
+   */
+  camera?: 'auto' | 'locked';
 }
 
 /* -------------------------------------------------------------------------- */
@@ -425,6 +435,7 @@ export function FarmDigitalTwin({
   compact = false,
   aiState,
   showDetailCard = true,
+  camera = 'auto',
 }: FarmDigitalTwinProps) {
   const { language } = useLanguage();
   const isHi = language === 'hi';
@@ -580,8 +591,9 @@ export function FarmDigitalTwin({
 
   /* --------------------------------------------------------------- camera */
   const eased = useRef({ x: 0, y: 0 });
-  const parallax = interactive && !reduced && !touch;
-  const ambient = !reduced && (touch || !interactive);
+  const locked = camera === 'locked';
+  const parallax = !locked && interactive && !reduced && !touch;
+  const ambient = !locked && !reduced && (touch || !interactive);
 
   /* -------------------------------------------------------------- pollen  */
   const motes = useRef<Array<{ x: number; y: number; r: number; sp: number; ph: number }>>([]);

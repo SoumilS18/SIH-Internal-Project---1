@@ -433,38 +433,16 @@ export function FarmPlanScreen({
               <div className="grid grid-cols-1 gap-8 lg:grid-cols-5 lg:gap-0">
                 {/* the field */}
                 <div className="relative flex flex-col justify-center lg:col-span-3 lg:pr-10">
-                  <div className="relative">
-                    <FarmDigitalTwin
-                      decision={decision}
-                      height={400}
-                      interactive
-                      showWeather
-                      scanning={loading}
-                      selectedCrop={shownCrop}
-                      onSelectCrop={setActiveCrop}
-                      className="w-full"
-                    />
-
-                    {/* the one number that matters, pinned into the sky over the
-                        farm it comes from — §21, data anchored in the world */}
-                    <div className="animate-metric-pop pointer-events-none absolute right-3 top-3 text-right">
-                      <span className="t-eyebrow block text-[0.55rem] text-[var(--ink-ghost)]">
-                        {isHi ? 'अनुमानित लाभ' : 'Est. profit'}
-                      </span>
-                      <span
-                        className="block text-[1.6rem] font-light leading-none tracking-tight"
-                        style={{ color: 'var(--field-deep)' }}
-                      >
-                        ₹{Math.round(netProfit / 1000)}K
-                      </span>
-                      <span
-                        className="font-data mt-0.5 block text-[10px] font-semibold"
-                        style={{ color: 'var(--grain-deep)' }}
-                      >
-                        +{roiPct.toFixed(0)}% ROI
-                      </span>
-                    </div>
-                  </div>
+                  <FarmDigitalTwin
+                    decision={decision}
+                    height={400}
+                    interactive
+                    showWeather
+                    scanning={loading}
+                    selectedCrop={shownCrop}
+                    onSelectCrop={setActiveCrop}
+                    className="w-full"
+                  />
 
                   <div className="mt-1 flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)]" aria-hidden />

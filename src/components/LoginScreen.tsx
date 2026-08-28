@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowRight,
   ShieldCheck,
   Lock,
   User,
   Sprout,
-  CloudRain,
-  Bot,
   Eye,
   EyeOff,
   Phone,
@@ -51,6 +49,14 @@ function GlobeMark() {
  * ruled column, not a card — the only vertical hairline on the page separates
  * "what this does" from "come in".
  *
+ * VIEWPORT CONTRACT: on a laptop the whole thing — thesis, gate, farm, footer —
+ * has to land inside the first screen, because a farm twin below the fold is a
+ * farm twin nobody sees. So from `lg` up this is a three-band column of exactly
+ * `100vh`: the login band takes the slack and centres in it, the horizon is a
+ * share of the viewport height rather than a fixed 340px, and the footer is a
+ * hairline. Below `lg` the bands stack and the page scrolls normally — squeezing
+ * a phone into one screen would only clip or overlap things.
+ *
  * The auth contract is untouched: same handlers, same demo shortcuts, same
  * legal modals. Only the presentation changed.
  */
@@ -64,6 +70,22 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const { language } = useLanguage();
   const isHi = language === 'hi';
   const mounted = useMounted(60);
+
+  /* The horizon is a proportion of the screen, not a constant: 340px is a third
+     of a 1080p window but nearly half of a 768px laptop, which is exactly what
+     used to push the farm under the fold. Clamped so it never gets too small to
+     read or so tall that the crop sprites (sized in px) look miniature. */
+  const [vh, setVh] = useState(() => (typeof window === 'undefined' ? 820 : window.innerHeight));
+  useEffect(() => {
+    const onResize = () => setVh(window.innerHeight);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  const horizonH = Math.round(Math.max(224, Math.min(344, vh * 0.31)));
+  /* The board is 84% x 56% of its box and lies back 54 degrees, so a full-bleed
+     box at this height reads as a plank with its far corners off both edges of
+     the window. Tying the width to the height keeps it a field at every size. */
+  const horizonW = Math.min(1500, Math.round(horizonH * 4.4));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,26 +112,27 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         transition: `opacity 0.7s var(--ease-out) ${i * 90}ms, transform 0.8s var(--ease-out) ${i * 90}ms`,
       };
 
-  const capabilities = [
-    { icon: Sprout, en: 'AI crop plan', hi: 'AI फसल योजना' },
-    { icon: CloudRain, en: 'Live weather & mandi', hi: 'लाइव मौसम व मंडी' },
-    { icon: Bot, en: '24/7 Sentinel', hi: '24/7 सेंटीनेल' },
-  ];
-
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-hidden text-[var(--ink)] selection:bg-[var(--field-tint)] selection:text-[var(--field-deep)]">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden text-[var(--ink)] selection:bg-[var(--field-tint)] selection:text-[var(--field-deep)] lg:h-screen">
       {/* Floating chrome — brand + language only; the journey has not begun yet */}
       <JourneyNav stage={0} />
 
       {/* ================================================================= */}
       {/* ABOVE THE HORIZON — the thesis, and the way in                     */}
+      {/* This band absorbs whatever height the farm and footer do not need,  */}
+      {/* and centres itself in it, so the slack reads as air rather than as  */}
+      {/* a gap above the land.                                              */}
+      {/* It is deliberately NOT `min-h-0`: allowing it to be squeezed below   */}
+      {/* its own content is what let the copy spill down over the land in the */}
+      {/* first place. Without it, a window too short for the composition      */}
+      {/* scrolls — which is honest — instead of overlapping.                 */}
       {/* ================================================================= */}
-      <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-5 pt-24 sm:px-8 sm:pt-28">
-        <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-14">
+      <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-5 pb-8 pt-24 sm:px-8 sm:pt-28 lg:pb-3 lg:pt-[4.5rem] xl:max-w-7xl">
+        <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:items-center lg:gap-12">
           {/* ---------------------------------------------------------- */}
           {/* THESIS                                                      */}
           {/* ---------------------------------------------------------- */}
-          <div className="lg:col-span-6" style={rise(0)}>
+          <div className="lg:col-span-7" style={rise(0)}>
             <div className="t-eyebrow flex items-center gap-2.5">
               <span className="relative flex h-2 w-2">
                 <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-[var(--field)]" />
@@ -118,56 +141,34 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               {isHi ? 'स्वायत्त कृषि बुद्धिमत्ता' : 'Autonomous farm intelligence'}
             </div>
 
-            <h1 className="t-display mt-4 max-w-xl text-[var(--ink)]">
+            <h1 className="t-display mt-4 max-w-[22ch] text-balance text-[clamp(2.3rem,3.5vw,3.6rem)] leading-[1.04] text-[var(--ink)] lg:mt-3">
               {isHi ? (
                 <>
                   बोने से पहले
                   <br />
-                  <span className="text-field">पूरा मौसम</span>
-                  <br />
-                  तय कीजिए।
+                  <span className="text-field">पूरा मौसम</span> तय कीजिए।
                 </>
               ) : (
                 <>
-                  Plan the whole
-                  <br />
-                  season
+                  Plan the whole season
                   <br />
                   <span className="text-field">before you sow.</span>
                 </>
               )}
             </h1>
 
-            <p className="t-lead mt-5 max-w-md text-pretty">
+            <p className="t-lead mt-4 max-w-lg text-pretty lg:mt-3">
               {isHi
-                ? 'AgriOptima आपकी मिट्टी, पानी, बजट और मौसम को पढ़ता है — फिर हर एकड़ की योजना बनाता है: क्या बोएँ, कब सिंचाई करें, और मौसम से कितनी कमाई होनी चाहिए।'
-                : 'AgriOptima reads your soil, water, budget and weather — then plans every acre: what to sow, when to irrigate, and what the season should earn.'}
+                ? 'AgriOptima आपकी मिट्टी, पानी, बजट और मौसम को पढ़ता है — और हर एकड़ की योजना बनाता है।'
+                : 'AgriOptima reads your soil, water, budget and weather — then plans every acre.'}
             </p>
-
-            {/* inline capability row — hairlines, not cards */}
-            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2" style={rise(1)}>
-              {capabilities.map((c, i) => {
-                const Icon = c.icon;
-                return (
-                  <React.Fragment key={c.en}>
-                    {i > 0 && (
-                      <span className="hidden h-4 w-px bg-[var(--line-strong)] sm:block" aria-hidden />
-                    )}
-                    <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--ink-soft)]">
-                      <Icon size={15} className="text-[var(--field)]" />
-                      {isHi ? c.hi : c.en}
-                    </span>
-                  </React.Fragment>
-                );
-              })}
-            </div>
           </div>
 
           {/* ---------------------------------------------------------- */}
           {/* THE GATE — a ruled column, not a card                       */}
           {/* ---------------------------------------------------------- */}
           <div
-            className="lg:col-span-6 lg:border-l lg:border-[var(--line)] lg:pl-14"
+            className="lg:col-span-5 lg:border-l lg:border-[var(--line)] lg:pl-10"
             style={rise(1)}
           >
             <div className="w-full max-w-sm">
@@ -178,7 +179,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   : 'Your farm is where you left it.'}
               </p>
 
-              <form onSubmit={handleSubmit} className="mt-7 space-y-6">
+              <form onSubmit={handleSubmit} className="mt-7 space-y-6 lg:mt-4 lg:space-y-3">
                 {/* Mobile or Email */}
                 <div>
                   <label
@@ -250,7 +251,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 </div>
 
                 {/* Primary — sign in */}
-                <div className="space-y-2.5 pt-1">
+                <div className="space-y-2.5 pt-1 lg:pt-0">
                   <MagneticButton
                     type="submit"
                     disabled={loading}
@@ -295,7 +296,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </form>
 
               {/* Sign-up */}
-              <p className="mt-6 text-xs text-[var(--ink-soft)]">
+              <p className="mt-6 text-xs text-[var(--ink-soft)] lg:mt-3">
                 <span>{isHi ? 'नया खाता बनाना चाहते हैं? ' : 'New here? '}</span>
                 <button
                   type="button"
@@ -311,29 +312,23 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       </main>
 
       {/* ================================================================= */}
-      {/* THE HORIZON — one living farm, running the full width              */}
+      {/* THE HORIZON — one living farm, anchoring the foot of the screen    */}
+      {/* Its own sky is the separation between the copy above and the land,  */}
+      {/* so no rule or extra spacing is needed between the two bands. The    */}
+      {/* width is capped: full-bleed at this height turned the field into a   */}
+      {/* plank and pushed its far corners off both edges of the window.      */}
       {/* ================================================================= */}
-      <div className="relative z-0 mt-10" style={rise(2)}>
-        <FarmDigitalTwin
-          height={340}
-          interactive
-          showWeather
-          aiState="idle"
-          className="w-full"
-        />
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-5 sm:px-8">
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)]" aria-hidden />
-          <span className="t-eyebrow text-[var(--ink-ghost)]">
-            {isHi ? 'जीवंत डिजिटल फार्म ट्विन · नमूना खेत' : 'Living digital farm twin · sample field'}
-          </span>
+      <div className="relative z-0 mt-8 shrink-0 lg:mt-0" style={rise(2)}>
+        <div className="mx-auto w-full" style={{ maxWidth: horizonW }}>
+          <FarmDigitalTwin height={horizonH} interactive showWeather aiState="idle" className="w-full" />
         </div>
       </div>
 
       {/* ================================================================= */}
       {/* FOOTER                                                            */}
       {/* ================================================================= */}
-      <footer className="relative z-10 px-5 py-4 text-xs text-[var(--ink-faint)] sm:px-8">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-[var(--line-soft)] pt-3">
+      <footer className="relative z-10 shrink-0 px-5 py-4 text-xs text-[var(--ink-faint)] sm:px-8 lg:py-2">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-[var(--line-soft)] pt-3 lg:pt-2 xl:max-w-7xl">
           <div className="flex items-center gap-2 text-[11px]">
             <ShieldCheck size={14} className="text-[var(--field)]" />
             <span>
