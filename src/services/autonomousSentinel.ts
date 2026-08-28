@@ -10,7 +10,7 @@
  * - Honest handling of missing / unobserved telemetry (Zero fabrication).
  */
 
-import type { FarmDecisionResponse, AllocatedCropItem } from '../types/farm';
+import type { FarmDecisionResponse } from '../types/farm';
 import type {
   AutonomousCycleLog,
   AutonomousAction,

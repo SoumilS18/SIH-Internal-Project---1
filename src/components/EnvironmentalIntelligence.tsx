@@ -43,15 +43,15 @@ function getRiskColorClass(label: string) {
       };
     case 'HIGH':
       return {
-        badge: 'border-[#FED7AA] bg-[#FFF7ED] text-[#C2410C]',
-        bar: 'bg-[#EA580C]',
-        text: 'text-[#C2410C]',
+        badge: 'border-[var(--warn-tint)] bg-[var(--warn-tint)] text-[var(--warn-deep)]',
+        bar: 'bg-[var(--warn)]',
+        text: 'text-[var(--warn-deep)]',
       };
     case 'CRITICAL':
       return {
-        badge: 'border-[#FECDD3] bg-[#FFF1F2] text-[#BE123C]',
-        bar: 'bg-[#E11D48]',
-        text: 'text-[#BE123C]',
+        badge: 'border-[var(--risk-tint)] bg-[var(--risk-tint)] text-[var(--risk-deep)]',
+        bar: 'bg-[var(--risk)]',
+        text: 'text-[var(--risk-deep)]',
       };
     default:
       return {
@@ -266,13 +266,13 @@ export function EnvironmentalIntelligence({
 
           {/* Precipitation */}
           <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
-            <div className="flex items-center gap-1.5 text-[#2563EB]">
+            <div className="flex items-center gap-1.5 text-[var(--sky-deep)]">
               <CloudRain size={14} />
               <span className="text-[10px] uppercase font-semibold text-[var(--ink-soft)]">
                 {t('telemetry.rainfall')}
               </span>
             </div>
-            <div className="mt-1.5 font-serif text-lg font-semibold text-[#2563EB]">
+            <div className="mt-1.5 font-serif text-lg font-semibold text-[var(--sky-deep)]">
               {formatRainfall(weather.current_precipitation_mm, language)}
             </div>
           </div>
@@ -338,10 +338,10 @@ export function EnvironmentalIntelligence({
           <div className="relative">
             {/* Multi-tier Gradient Bar */}
             <div className="flex h-3 w-full overflow-hidden rounded-full border border-[var(--line)] bg-[var(--paper-2)]">
-              <div className="w-1/4 bg-[#D97706]/70" title="Dry" />
-              <div className="w-1/4 bg-[#F59E0B]/80" title="Deficit" />
-              <div className="w-1/4 bg-[#10B981]/90" title="Optimal" />
-              <div className="w-1/4 bg-[#3B82F6]/90" title="Saturated" />
+              <div className="w-1/4 bg-[var(--warn)]/70" title="Dry" />
+              <div className="w-1/4 bg-[var(--grain)]/80" title="Deficit" />
+              <div className="w-1/4 bg-[var(--field)]/90" title="Optimal" />
+              <div className="w-1/4 bg-[var(--sky)]/90" title="Saturated" />
             </div>
 
             {/* Dynamic Marker Pointer */}
@@ -391,7 +391,7 @@ export function EnvironmentalIntelligence({
               <span className="block text-[9px] uppercase font-semibold text-[var(--ink-soft)]">
                 {t('telemetry.forecastRainfall7d')}
               </span>
-              <span className="font-semibold text-[#2563EB]">
+              <span className="font-semibold text-[var(--sky-deep)]">
                 {formatRainfall(weather.forecast_rain_7d_total_mm, language)}
               </span>
             </div>
@@ -421,7 +421,7 @@ export function EnvironmentalIntelligence({
                 <span className="mt-1 block font-serif text-xs font-semibold text-[var(--ink)]">
                   {day.t_max.toFixed(0)}° / {day.t_min.toFixed(0)}°
                 </span>
-                <div className="mt-1 flex items-center justify-center gap-1 text-[11px] text-[#2563EB] font-semibold">
+                <div className="mt-1 flex items-center justify-center gap-1 text-[11px] text-[var(--sky-deep)] font-semibold">
                   <Droplets size={10} />
                   <span>{formatRainfall(day.rain_mm, language)}</span>
                 </div>
@@ -569,18 +569,18 @@ export function EnvironmentalIntelligence({
       {/* 7. IMPORTANT ALERT */}
       {/* --------------------------------------------------------------------- */}
       {hasWaterlogAlert || hasHeatAlert || hasCriticalRisk ? (
-        <div className="rounded-2xl border border-[#FECDD3] bg-[#FFF1F2] p-4">
+        <div className="rounded-2xl border border-[var(--risk-tint)] bg-[var(--risk-tint)] p-4">
           <div className="flex items-start gap-3">
-            <ShieldAlert size={18} className="mt-0.5 shrink-0 text-[#E11D48]" />
+            <ShieldAlert size={18} className="mt-0.5 shrink-0 text-[var(--risk)]" />
             <div>
-              <h4 className="font-serif text-sm font-semibold text-[#9F1239]">
+              <h4 className="font-serif text-sm font-semibold text-[var(--risk-deep)]">
                 {hasWaterlogAlert
                   ? t('telemetry.waterloggingAlert')
                   : hasHeatAlert
                   ? t('telemetry.heatAlert')
                   : t('telemetry.criticalRiskAlert')}
               </h4>
-              <p className="mt-0.5 text-xs leading-relaxed text-[#9F1239]">
+              <p className="mt-0.5 text-xs leading-relaxed text-[var(--risk-deep)]">
                 {risk.waterlogging_alert ||
                   risk.heat_alert ||
                   (isHindi

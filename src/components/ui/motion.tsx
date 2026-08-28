@@ -51,6 +51,89 @@ export function Reveal({
 }
 
 /* ------------------------------------------------------------------ */
+/* StageSwap — the journey's page-to-page morph                        */
+/* ------------------------------------------------------------------ */
+interface StageSwapProps {
+  /** identity of the page currently requested — changing it plays the morph */
+  stageKey: string | number;
+  /**
+   * Where this page sits in the five-page journey (1…5). Travelling to a lower
+   * number reads as going back, so the world settles the other way. Without it
+   * every move would look like progress, which is a lie on a Back button.
+   */
+  order?: number;
+  children: React.ReactNode;
+  className?: string;
+}
+
+/**
+ * ONE WORLD, FIVE PAGES.
+ *
+ * The farmer is walking through a single place, so pages must not cut. The page
+ * being left settles away in the direction of travel while the next one rises
+ * to meet them; the atmosphere behind (`WorldBackground`) and the floating
+ * `JourneyNav` never unmount, so only the content changes hands.
+ *
+ * The outgoing tree is held for the length of the exit — one render's worth of
+ * frozen children, not a copy — so a screen is never torn down mid-fade. The
+ * wrapper's key stays pinned to the *visible* page for exactly that reason:
+ * flipping it early would remount the page on its way out and re-fire its
+ * mount effects.
+ *
+ * Under `prefers-reduced-motion` the swap is instant: the exit delay is skipped
+ * entirely rather than left to the global animation-duration override, which
+ * would otherwise hold a blank frame.
+ */
+export function StageSwap({ stageKey, order = 0, children, className = '' }: StageSwapProps) {
+  const reduced = usePrefersReducedMotion();
+  const [visible, setVisible] = React.useState<{ key: string | number; order: number }>({
+    key: stageKey,
+    order,
+  });
+  const [leaving, setLeaving] = React.useState(false);
+  const [back, setBack] = React.useState(false);
+
+  // The tree on screen right now. Frozen only while it is leaving, so ordinary
+  // prop updates (a plan finishing loading, say) still flow straight through.
+  const held = React.useRef<React.ReactNode>(children);
+  if (!leaving) held.current = children;
+
+  React.useEffect(() => {
+    if (stageKey === visible.key) return;
+    setBack(order < visible.order);
+    if (reduced) {
+      setVisible({ key: stageKey, order });
+      return;
+    }
+    setLeaving(true);
+    const t = setTimeout(() => {
+      setVisible({ key: stageKey, order });
+      setLeaving(false);
+    }, 240);
+    return () => clearTimeout(t);
+  }, [stageKey, order, visible, reduced]);
+
+  // A new page always starts at its own beginning.
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+  }, [visible.key, reduced]);
+
+  const phase = leaving
+    ? back
+      ? 'stage-out-back'
+      : 'stage-out'
+    : back
+      ? 'stage-in-back'
+      : 'stage-in';
+
+  return (
+    <div key={`stage-${visible.key}`} className={`${className} ${phase}`.trim()}>
+      {leaving ? held.current : children}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* MagneticButton — magnetic pull + spring press                       */
 /* ------------------------------------------------------------------ */
 interface MagneticButtonProps

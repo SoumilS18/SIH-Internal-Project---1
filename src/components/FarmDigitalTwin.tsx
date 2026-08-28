@@ -159,6 +159,13 @@ function lakh(n: number, isHi: boolean): string {
   return `₹${Math.round(n).toLocaleString('en-IN')}`;
 }
 
+/**
+ * Has this visit already seen the field? Set by the first twin to mount and
+ * never reset, so the crop grows out of the soil once and then simply stands
+ * there as the farmer moves between pages. See the note at its read site.
+ */
+let fieldSeenThisVisit = false;
+
 /* -------------------------------------------------------------------------- */
 /* One plant, standing up out of the soil.                                    */
 /* `rotateX(-90deg)` lifts the sprite off the ground plane so it is genuinely  */
@@ -173,6 +180,7 @@ function Plant({
   h,
   seed,
   delay,
+  grown = false,
 }: {
   plot: Plot;
   x: number;
@@ -180,6 +188,8 @@ function Plant({
   h: number;
   seed: number;
   delay: number;
+  /** Already standing — this is the same field the farmer was just looking at. */
+  grown?: boolean;
 }) {
   const { top, side, head, form } = plot;
   const stem = `linear-gradient(to top, ${side}, ${top})`;
@@ -375,7 +385,7 @@ function Plant({
 
   return (
     <span
-      className="twin-stand"
+      className={grown ? undefined : 'twin-stand'}
       aria-hidden
       style={{
         position: 'absolute',
@@ -386,7 +396,7 @@ function Plant({
         marginLeft: -w / 2,
         transformOrigin: '50% 100%',
         transform: 'rotateX(-90deg)',
-        animationDelay: `${delay}s`,
+        animationDelay: grown ? undefined : `${delay}s`,
         pointerEvents: 'none',
       }}
     >
@@ -431,6 +441,20 @@ export function FarmDigitalTwin({
   const [ownSelected, setOwnSelected] = useState<string | null>(null);
   const [waterHot, setWaterHot] = useState(false);
   const [card, setCard] = useState<'none' | 'water' | 'ai'>('none');
+
+  /**
+   * CONTINUITY: the crop only grows out of the soil the first time the farmer
+   * sees this field. The same twin is the centrepiece of the login hero, the
+   * details page, the analysis cinematic, the plan and the Sentinel — replanting
+   * it on every page would read as five different farms instead of one place
+   * the farmer keeps walking back into. Module-scoped on purpose: it is a fact
+   * about the visit, not about any one mounted instance.
+   */
+  const [growFromSoil] = useState(() => !fieldSeenThisVisit);
+  useEffect(() => {
+    fieldSeenThisVisit = true;
+  }, []);
+  const fieldAlreadyGrown = !growFromSoil;
 
   const selected = onSelectCrop ? selectedCrop : ownSelected;
   const setSelected = useCallback(
@@ -958,6 +982,7 @@ export function FarmDigitalTwin({
                               h={h}
                               seed={seed}
                               delay={reduced ? 0 : 0.2 + i * 0.035 + idx * 0.06}
+                              grown={fieldAlreadyGrown}
                             />
                           );
                         })}

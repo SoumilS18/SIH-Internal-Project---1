@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { STATE_PATHS, STATE_NAMES, STATE_TO_LANG_MAP } from '@/lib/indiaMap';
-import { usePrefersReducedMotion } from '@/lib/hooks';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { getStateDisplayName } from '@/i18n/geoNames';
 

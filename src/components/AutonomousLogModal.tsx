@@ -45,7 +45,7 @@ export function AutonomousLogModal({
   const currentLog = logs[selectedLogIndex] || logs[0] || null;
 
   return (
-    <div className="scrim fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div className="scrim fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade">
       <div className="panel-modal relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden p-5 text-[var(--ink)] sm:p-6">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-[var(--line)] pb-4">
@@ -96,7 +96,7 @@ export function AutonomousLogModal({
 
         {/* Security Whitelist Details Drawer */}
         {showSecurityDetails && (
-          <div className="mt-2.5 rounded-2xl border border-[var(--line)] bg-[var(--surface-elevated)] p-4 space-y-2.5 text-xs animate-in slide-in-from-top-2 duration-150">
+          <div className="animate-rise mt-2.5 space-y-2.5 border-l-2 border-[var(--line)] py-1 pl-4 text-xs">
             <div className="text-[var(--field-deep)] font-semibold flex items-center gap-1.5">
               <ShieldCheck size={14} /> {t('sentinel.allowedActionsTitle')}
             </div>
@@ -154,8 +154,8 @@ export function AutonomousLogModal({
                     currentLog.verification_status === 'VERIFIED'
                       ? 'bg-[var(--field-tint)] text-[var(--field-deep)] border-[var(--field-tint)]'
                       : currentLog.verification_status === 'FAILED'
-                      ? 'bg-[#FFF1F2] text-[#BE123C] border-[#FECDD3]'
-                      : 'bg-[#FFFBEB] text-[#B45309] border-[#FEF3C7]'
+                      ? 'bg-[var(--risk-tint)] text-[var(--risk-deep)] border-[var(--risk-tint)]'
+                      : 'bg-[var(--warn-tint)] text-[var(--warn-deep)] border-[var(--warn-tint)]'
                   }`}
                 >
                   <CheckCircle2 size={11} />
@@ -180,13 +180,13 @@ export function AutonomousLogModal({
                       ? `${currentLog.telemetry.soil_moisture_m3m3.toFixed(2)} m³/m³`
                       : 'Soil Moisture: N/A'}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--paper)] border border-[var(--line)] px-2.5 py-1 font-semibold text-[#2563EB]">
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--paper)] border border-[var(--line)] px-2.5 py-1 font-semibold text-[var(--sky-deep)]">
                     <CloudRain size={12} />
                     {currentLog.telemetry.forecast_rain_7d_mm !== null
                       ? `${formatRainfall(currentLog.telemetry.forecast_rain_7d_mm, language)} (7d)`
                       : 'Rain 7d: N/A'}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--paper)] border border-[var(--line)] px-2.5 py-1 font-semibold text-[#D97706]">
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--paper)] border border-[var(--line)] px-2.5 py-1 font-semibold text-[var(--warn)]">
                     <Sun size={12} />
                     {currentLog.telemetry.max_temp_c !== null
                       ? `${formatTemperature(currentLog.telemetry.max_temp_c, language)} max`
@@ -219,8 +219,9 @@ export function AutonomousLogModal({
                     <ShieldCheck size={14} className="text-[var(--field)]" />
                     {t('sentinel.stepValidate')}
                   </div>
-                  <p className="text-[var(--field-deep)] text-xs font-semibold">
-                    ✓ {currentLog.action_validated ? 'APPROVED: Whitelisted Safe' : 'REJECTED: Security Boundary'}
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-[var(--field-deep)]">
+                    <CheckCircle2 size={12} className="shrink-0" />
+                    {currentLog.action_validated ? 'APPROVED: Whitelisted Safe' : 'REJECTED: Security Boundary'}
                   </p>
                 </div>
               </div>
@@ -240,12 +241,12 @@ export function AutonomousLogModal({
                 className={`rounded-2xl border p-4 space-y-1.5 shadow-xs ${
                   currentLog.verification_status === 'VERIFIED'
                     ? 'border-[var(--field-tint)] bg-[var(--field-tint)]'
-                    : 'border-[#FECDD3] bg-[#FFF1F2]'
+                    : 'border-[var(--risk-tint)] bg-[var(--risk-tint)]'
                 }`}
               >
                 <div
                   className={`font-semibold text-xs uppercase tracking-wider flex items-center gap-1.5 ${
-                    currentLog.verification_status === 'VERIFIED' ? 'text-[var(--field-deep)]' : 'text-[#BE123C]'
+                    currentLog.verification_status === 'VERIFIED' ? 'text-[var(--field-deep)]' : 'text-[var(--risk-deep)]'
                   }`}
                 >
                   <CheckCircle2 size={14} />
@@ -253,7 +254,7 @@ export function AutonomousLogModal({
                 </div>
                 <p
                   className={`leading-relaxed font-semibold ${
-                    currentLog.verification_status === 'VERIFIED' ? 'text-[var(--ink)]' : 'text-[#9F1239]'
+                    currentLog.verification_status === 'VERIFIED' ? 'text-[var(--ink)]' : 'text-[var(--risk-deep)]'
                   }`}
                 >
                   {currentLog.result}

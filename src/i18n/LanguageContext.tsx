@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  ALL_SUPPORTED_LANGUAGES,
-  ENGLISH_LANGUAGE,
   LanguageOption,
   getLanguageByCode,
   isLanguageAvailable,

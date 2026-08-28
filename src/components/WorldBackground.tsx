@@ -22,8 +22,8 @@ interface Mote {
 /**
  * The persistent atmosphere behind every screen: layered gradients, drifting
  * aurora glow, faint topographic contour lines, a cartographic survey grid,
- * and a subtle canvas field of floating "pollen / data motes". Adapts to the
- * active world (Daylight / Nightfall) and fully respects reduced motion.
+ * and a subtle canvas field of floating "pollen / data motes". There is one
+ * world and it is daylight; the component fully respects reduced motion.
  */
 export function WorldBackground({
   variant = 'ambient',

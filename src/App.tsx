@@ -5,6 +5,7 @@ import { MainScreen } from '@/components/MainScreen';
 import { LanguageProvider } from '@/i18n/LanguageContext';
 import { LanguageComingSoonModal } from '@/components/LanguageComingSoonModal';
 import { WorldBackground } from '@/components/WorldBackground';
+import { StageSwap } from '@/components/ui/motion';
 
 type AppStage = 'login' | 'map' | 'initializing' | 'dashboard';
 
@@ -118,36 +119,41 @@ function AppContent() {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden font-sans text-[var(--ink)]">
-      {/* Persistent living-world atmosphere (adapts to Daylight / Nightfall) */}
+      {/* Persistent living-world atmosphere — one daylight world, never unmounted */}
       <WorldBackground variant="ambient" />
 
       {/* Multilingual Coming Soon Modal (accessible anywhere) */}
       <LanguageComingSoonModal />
 
-      {/* 1. LOGIN SCREEN */}
-      {stage === 'login' && <LoginScreen onLogin={handleLogin} />}
+      {/* One continuous world: the pages morph into one another rather than
+          cutting, and the atmosphere behind them never unmounts. Order is the
+          farmer's position in the journey, so Back travels back. */}
+      <StageSwap stageKey={stage} order={stage === 'login' ? 1 : stage === 'map' ? 2 : 3}>
+        {/* 1. LOGIN SCREEN */}
+        {stage === 'login' && <LoginScreen onLogin={handleLogin} />}
 
-      {/* 2. INDIA MAP / STATE & DISTRICT SELECTION */}
-      {stage === 'map' && (
-        <WelcomeScreen
-          key={welcomeKey}
-          userName={userName}
-          onLogout={handleLogout}
-          onConfirmLocation={handleConfirmLocation}
-        />
-      )}
+        {/* 2. INDIA MAP / STATE & DISTRICT SELECTION */}
+        {stage === 'map' && (
+          <WelcomeScreen
+            key={welcomeKey}
+            userName={userName}
+            onLogout={handleLogout}
+            onConfirmLocation={handleConfirmLocation}
+          />
+        )}
 
-      {/* 3. MAIN FARM INTELLIGENCE DASHBOARD (guided Pages 3–5 live inside) */}
-      {stage === 'dashboard' && (
-        <MainScreen
-          key={`${selectedState}-${selectedDistrict}`}
-          userName={userName}
-          onBack={handleChangeFarm}
-          onLogout={handleLogout}
-          initialState={selectedState}
-          initialDistrict={selectedDistrict}
-        />
-      )}
+        {/* 3. MAIN FARM INTELLIGENCE DASHBOARD (guided Pages 3–5 live inside) */}
+        {stage === 'dashboard' && (
+          <MainScreen
+            key={`${selectedState}-${selectedDistrict}`}
+            userName={userName}
+            onBack={handleChangeFarm}
+            onLogout={handleLogout}
+            initialState={selectedState}
+            initialDistrict={selectedDistrict}
+          />
+        )}
+      </StageSwap>
     </div>
   );
 }

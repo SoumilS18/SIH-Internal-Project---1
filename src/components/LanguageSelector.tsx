@@ -80,7 +80,7 @@ export function LanguageSelector({
         <div
           className={`absolute ${
             computedAlign === 'left' ? 'left-0' : 'right-0'
-          } top-full z-50 mt-2 max-h-[min(420px,75vh)] w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-[26px] bg-[var(--surface-elevated)] p-2.5 shadow-[0_30px_70px_rgb(var(--sh-color)/0.16)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-[var(--ink)] overscroll-contain`}
+          } top-full z-50 mt-2 max-h-[min(420px,75vh)] w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-[26px] bg-[var(--surface-elevated)] p-2.5 shadow-[0_30px_70px_rgb(var(--sh-color)/0.16)] backdrop-blur-xl animate-scale-in text-[var(--ink)] overscroll-contain`}
           role="listbox"
           aria-label="Select Language"
         >
@@ -108,16 +108,16 @@ export function LanguageSelector({
                     : 'text-[var(--ink)] hover:bg-[var(--paper)]'
                 }`}
               >
-                <div className="flex items-center gap-2">
+                <span className="flex items-center gap-2">
                   <span className="font-medium">English</span>
                   <span className="text-[10px] text-[var(--ink-soft)]">(English)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
+                </span>
+                <span className="flex items-center gap-1.5">
                   <span className="rounded-md bg-[var(--field-tint)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--field-deep)] border border-[var(--field-tint)]">
                     AVAILABLE
                   </span>
                   {language === 'en' && <Check size={13} className="text-[var(--grain-deep)]" />}
-                </div>
+                </span>
               </button>
 
               {/* Hindi */}
@@ -132,16 +132,16 @@ export function LanguageSelector({
                       : 'text-[var(--ink)] hover:bg-[var(--paper)]'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-2">
                     <span className="font-semibold">{l.label}</span>
                     <span className="text-[10px] text-[var(--ink-soft)]">({l.english})</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
+                  </span>
+                  <span className="flex items-center gap-1.5">
                     <span className="rounded-md bg-[var(--field-tint)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--field-deep)] border border-[var(--field-tint)]">
                       AVAILABLE
                     </span>
                     {language === 'hi' && <Check size={13} className="text-[var(--grain-deep)]" />}
-                  </div>
+                  </span>
                 </button>
               ))}
             </div>
@@ -172,10 +172,10 @@ export function LanguageSelector({
                         : 'text-[var(--ink-soft)] hover:bg-[var(--paper)]'
                     }`}
                   >
-                    <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-2">
                       <span>{l.label}</span>
                       <span className="text-[10px] text-[var(--ink-soft)]">({l.english})</span>
-                    </div>
+                    </span>
 
                     <span
                       className={`rounded px-1.5 py-0.5 text-[8px] font-medium tracking-wide ${

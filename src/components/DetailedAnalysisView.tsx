@@ -6,7 +6,6 @@ import {
   Activity,
   Cpu,
   ShieldCheck,
-  CheckCircle2,
   Sparkles,
   ArrowLeft,
   Sun,
@@ -46,6 +45,20 @@ interface DetailedAnalysisViewProps {
   decision: FarmDecisionResponse;
   initialTab?: DetailedTabType;
   onReturnToFarmerView: () => void;
+}
+
+/**
+ * The weather a stress test puts the farm under, drawn as a line mark rather
+ * than an emoji: emoji can't take the palette and reads as a game. Each mark
+ * only restates the scenario the backend already named — never a prediction.
+ */
+function ScenarioMark({ scenarioKey }: { scenarioKey: string }) {
+  const common = { size: 13, strokeWidth: 1.75 } as const;
+  if (scenarioKey === 'live') return <Sun {...common} className="text-[var(--grain-deep)]" />;
+  if (scenarioKey === 'drought') return <Flame {...common} className="text-[var(--soil)]" />;
+  if (scenarioKey === 'waterlogging')
+    return <CloudRain {...common} className="text-[var(--sky)]" />;
+  return <Wind {...common} className="text-[var(--ink-faint)]" />;
 }
 
 export function DetailedAnalysisView({
@@ -313,8 +326,8 @@ export function DetailedAnalysisView({
                 className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4 space-y-2.5 shadow-xs hover:border-[var(--line-strong)] transition-all"
               >
                 <div className="flex items-center justify-between border-b border-[var(--line)] pb-2">
-                  <h4 className="font-serif text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
-                    <span>{key === 'live' ? '☀️' : key === 'drought' ? '🏜️' : key === 'waterlogging' ? '🌧️' : '🔥'}</span>
+                  <h4 className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
+                    <ScenarioMark scenarioKey={key} />
                     <span>{translateScenarioName(key, sc.scenario_name, language)}</span>
                   </h4>
                   <span className="text-xs font-semibold text-[var(--field-deep)]">

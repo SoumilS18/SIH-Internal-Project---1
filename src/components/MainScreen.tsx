@@ -1,29 +1,13 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  ArrowLeft,
-  Compass,
-  User,
-  LogOut,
-  RotateCcw,
-  XCircle,
-  AlertTriangle,
-  Info,
-  Sparkles,
-} from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { getFarmDecision, getAvailableLocations } from '@/services/api';
 import { ALL_INDIAN_DISTRICTS } from '@/lib/districtsCatalog';
-import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
-import {
-  getLocalizedBudgetAlert,
-  getLocalizedNasaFallbackAlert,
-} from '@/i18n/semanticAdapter';
 import { FarmDetailsScreen } from '@/components/FarmDetailsScreen';
 import { FarmPlanScreen } from '@/components/FarmPlanScreen';
 import { InitializingScreen } from '@/components/InitializingScreen';
 import { AutonomousSentinelScreen } from '@/components/AutonomousSentinelScreen';
-import { DetailedAnalysisView, DetailedTabType } from '@/components/DetailedAnalysisView';
+import type { DetailedTabType } from '@/components/DetailedAnalysisView';
+import { StageSwap } from '@/components/ui/motion';
 import { runAutonomousCycle } from '@/services/autonomousSentinel';
 import type {
   FarmDecisionRequest,
@@ -416,77 +400,82 @@ export function MainScreen({
     }
   }, [isDemo, page]);
 
-  // Page 5: Autonomous Sentinel — returns the farmer to the plan (Page 4).
-  if (viewMode === 'autonomous') {
-    return (
-      <AutonomousSentinelScreen
-        userName={userName}
-        decision={decision || ({} as FarmDecisionResponse)}
-        logs={sentinelLogs}
-        advisory={proactiveAdvisory}
-        isChecking={isCheckingSentinel}
-        onRunCheck={handleRunSentinelCheck}
-        onBackToPlan={() => {
-          setViewMode('farmer');
-          setPage('plan');
-        }}
-        onLogout={onLogout || onBack}
-        onEditDetails={() => {
-          setViewMode('farmer');
-          setPage('details');
-        }}
-        onChangeLocation={() => {
-          setViewMode('farmer');
-          onBack();
-        }}
-      />
-    );
-  }
+  // Guided experience: Page 3 (details entry) → cinematic → Page 4 (full-screen
+  // plan) → Page 5 (Sentinel). The three live inside one StageSwap so moving
+  // between them morphs in the direction of travel instead of cutting.
+  const innerStage: 'details' | 'plan' | 'sentinel' =
+    viewMode === 'autonomous' ? 'sentinel' : page;
 
-  // Guided experience: Page 3 (details entry) → cinematic → Page 4 (full-screen plan).
   return (
     <>
-      {page === 'details' ? (
-        <FarmDetailsScreen
-          userName={userName}
-          selectedState={selectedState}
-          selectedDistrict={selectedDistrict}
-          landAcres={landAcres}
-          budgetInr={budgetInr}
-          irrigationType={irrigationType}
-          irrigationReliability={irrigationReliability}
-          season={season}
-          riskTolerance={riskTolerance}
-          loading={loading}
-          hasPlan={Boolean(decision)}
-          onLandAcresChange={setLandAcres}
-          onBudgetInrChange={setBudgetInr}
-          onIrrigationTypeChange={setIrrigationType}
-          onIrrigationReliabilityChange={setIrrigationReliability}
-          onSeasonChange={setSeason}
-          onRiskToleranceChange={setRiskTolerance}
-          onGenerate={handleGeneratePlan}
-          onChangeLocation={onBack}
-          onViewPlan={() => setPage('plan')}
-          onProceedToSentinel={() => setViewMode('autonomous')}
-          onLogout={onLogout || onBack}
-        />
-      ) : (
-        <FarmPlanScreen
-          userName={userName}
-          selectedState={selectedState}
-          selectedDistrict={selectedDistrict}
-          landAcres={landAcres}
-          budgetInr={budgetInr}
-          season={season}
-          decision={decision}
-          loading={loading}
-          onEditDetails={handleEditDetails}
-          onChangeLocation={onBack}
-          onProceedToSentinel={() => setViewMode('autonomous')}
-          onLogout={onLogout || onBack}
-        />
-      )}
+      <StageSwap
+        stageKey={innerStage}
+        order={innerStage === 'details' ? 3 : innerStage === 'plan' ? 4 : 5}
+      >
+        {innerStage === 'sentinel' ? (
+          <AutonomousSentinelScreen
+            userName={userName}
+            decision={decision || ({} as FarmDecisionResponse)}
+            logs={sentinelLogs}
+            advisory={proactiveAdvisory}
+            isChecking={isCheckingSentinel}
+            onRunCheck={handleRunSentinelCheck}
+            onBackToPlan={() => {
+              setViewMode('farmer');
+              setPage('plan');
+            }}
+            onLogout={onLogout || onBack}
+            onEditDetails={() => {
+              setViewMode('farmer');
+              setPage('details');
+            }}
+            onChangeLocation={() => {
+              setViewMode('farmer');
+              onBack();
+            }}
+          />
+        ) : innerStage === 'details' ? (
+          <FarmDetailsScreen
+            userName={userName}
+            selectedState={selectedState}
+            selectedDistrict={selectedDistrict}
+            landAcres={landAcres}
+            budgetInr={budgetInr}
+            irrigationType={irrigationType}
+            irrigationReliability={irrigationReliability}
+            season={season}
+            riskTolerance={riskTolerance}
+            loading={loading}
+            hasPlan={Boolean(decision)}
+            onLandAcresChange={setLandAcres}
+            onBudgetInrChange={setBudgetInr}
+            onIrrigationTypeChange={setIrrigationType}
+            onIrrigationReliabilityChange={setIrrigationReliability}
+            onSeasonChange={setSeason}
+            onRiskToleranceChange={setRiskTolerance}
+            onGenerate={handleGeneratePlan}
+            onChangeLocation={onBack}
+            onViewPlan={() => setPage('plan')}
+            onProceedToSentinel={() => setViewMode('autonomous')}
+            onLogout={onLogout || onBack}
+          />
+        ) : (
+          <FarmPlanScreen
+            userName={userName}
+            selectedState={selectedState}
+            selectedDistrict={selectedDistrict}
+            landAcres={landAcres}
+            budgetInr={budgetInr}
+            season={season}
+            decision={decision}
+            loading={loading}
+            onEditDetails={handleEditDetails}
+            onChangeLocation={onBack}
+            onProceedToSentinel={() => setViewMode('autonomous')}
+            onLogout={onLogout || onBack}
+          />
+        )}
+      </StageSwap>
 
       {/* Cinematic analysis overlay — the AI reads the farm factor by factor
           using these very inputs, swaps the page underneath while it is still

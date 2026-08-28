@@ -175,7 +175,7 @@ export const hi = {
     whyThisPlanBtn: 'हम यह सिफारिश क्यों कर रहे हैं?',
     whyThisPlanTitle: 'आपके खेत के लिए यही योजना क्यों?',
     seeDetailedAnalysisBtn: '🔬 विस्तृत तकनीकी विश्लेषण व गणनाएं देखें (जज / विशेषज्ञ दृश्य)',
-    hideDetailedAnalysisBtn: '🌾 सरल किसान दृश्य पर वापस जाएं',
+    hideDetailedAnalysisBtn: 'सरल किसान दृश्य पर वापस जाएं',
     viewMode: 'दृश्य मोड',
     farmerMode: 'किसान दृश्य (सरल)',
     expertMode: 'विशेषज्ञ व जज दृश्य (गहन विश्लेषण)',

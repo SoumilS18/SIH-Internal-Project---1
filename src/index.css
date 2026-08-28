@@ -74,8 +74,12 @@
   /* --- Semantic status (always paired with text or an icon) --- */
   --ok: #3E9A63;
   --warn: #DC9A3A;
+  --warn-deep: #8A5B14;      /* readable warning ink on a warm tint */
+  --warn-tint: #FBEFD9;
   --risk: #C25F4C;           /* muted red, never alarm-red */
   --risk-tint: #F7E5E0;      /* soft wash for destructive hover states */
+  --risk-deep: #8C3624;      /* risk as body text: 4.5:1 on --risk-tint */
+  --sky-deep: #2F5F79;       /* water readings as text, not decoration */
 
   /* --- Light / glow / shadow --- */
   --glow-field: rgba(70, 169, 104, 0.16);
@@ -813,3 +817,30 @@
 .choice-grain[aria-pressed='true']:focus-visible {
   box-shadow: inset 0 0 0 1.5px var(--grain), 0 0 0 4px var(--glow-field);
 }
+
+/* =========================================================================
+   JOURNEY TRANSITIONS — one continuous world, five pages
+   The farmer never cuts to a new screen: the page they leave settles away in
+   the direction they are travelling and the next one rises to meet them. Only
+   opacity and transform are touched, so nothing here fights the CSS-3D twin's
+   own perspective, and the reduced-motion net above collapses each to its end
+   state. No `position` is declared, so callers keep the positioning slot.
+   ========================================================================= */
+@keyframes stageIn      { from { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.988); } to { opacity: 1; transform: none; } }
+@keyframes stageOut     { from { opacity: 1; transform: none; } to { opacity: 0; transform: translate3d(0, -12px, 0) scale(1.008); } }
+@keyframes stageInBack  { from { opacity: 0; transform: translate3d(0, -12px, 0) scale(1.012); } to { opacity: 1; transform: none; } }
+@keyframes stageOutBack { from { opacity: 1; transform: none; } to { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.992); } }
+
+.stage-in       { animation: stageIn      0.62s var(--ease-out) both; }
+.stage-out      { animation: stageOut     0.24s var(--ease-in, ease-in) both; }
+.stage-in-back  { animation: stageInBack  0.62s var(--ease-out) both; }
+.stage-out-back { animation: stageOutBack 0.24s var(--ease-in, ease-in) both; }
+
+/* The leaving page must not take clicks or focus on its way out. */
+.stage-out, .stage-out-back { pointer-events: none; }
+
+/* A plain fade, for scrims. The modals used to ask for `animate-in fade-in`,
+   which belongs to a Tailwind plugin this project does not install — so they
+   appeared with no entrance at all. Real keyframes only. */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.animate-fade { animation: fadeIn 0.22s var(--ease-out) both; }

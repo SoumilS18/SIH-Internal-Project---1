@@ -5,6 +5,7 @@ import {
   Send,
   ArrowRight,
   CheckCircle2,
+  Check,
   CloudRain,
   TrendingUp,
   FileText,
@@ -12,7 +13,6 @@ import {
   AlertOctagon,
   Loader2,
   RefreshCw,
-  Volume2,
   VolumeX,
   Radio,
 } from 'lucide-react';
@@ -27,10 +27,31 @@ import {
   type VoiceAgentResponse,
 } from '@/services/voiceAgentService';
 import { AutonomousLogModal } from '@/components/AutonomousLogModal';
-import { AIAgentOrb } from '@/components/AIAgentOrb';
+import { FarmDigitalTwin } from '@/components/FarmDigitalTwin';
 import { Reveal } from '@/components/ui/motion';
+import { ReadingRow } from '@/components/ui/ReadingRow';
 import type { FarmDecisionResponse } from '@/types/farm';
 import type { AutonomousCycleLog, ProactiveAdvisory } from '@/types/autonomous';
+
+/**
+ * A section label on the watch sheet: caps, then a rule running to the edge.
+ * The same device the plan sheet uses, so pages 4 and 5 speak in one hand.
+ */
+function WatchHead({ title, children }: { title: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-3">
+      <div className="flex min-w-0 flex-1 items-baseline gap-3">
+        <h2 className="t-eyebrow shrink-0 text-[0.66rem] text-[var(--ink-soft)]">{title}</h2>
+        <span
+          className="h-px min-w-4 flex-1 -translate-y-[3px]"
+          style={{ background: 'var(--line)' }}
+          aria-hidden
+        />
+      </div>
+      {children}
+    </div>
+  );
+}
 
 interface AutonomousSentinelScreenProps {
   userName?: string;
@@ -398,128 +419,50 @@ export function AutonomousSentinelScreen({
         {/* ------------------------------------------------------------- */}
         {/* WATCH BAND — cinematic sentinel hero, de-boxed & spatial       */}
         {/* ------------------------------------------------------------- */}
-        <Reveal
-          className="relative overflow-hidden rounded-[var(--radius-lg)] p-6 sm:p-8"
-          style={{
-            background: 'linear-gradient(135deg, rgba(231,241,231,0.9) 0%, rgba(255,255,255,0.95) 60%, rgba(228,238,243,0.85) 100%)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 20px 60px rgb(52 58 44 / 0.09), 0 4px 16px rgb(52 58 44 / 0.04)',
-          }}
-        >
-          {/* Atmospheric green glow — top-left corner */}
-          <div
-            className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full blur-3xl"
-            style={{ background: 'radial-gradient(circle, rgba(70,169,104,0.14) 0%, transparent 70%)' }}
-            aria-hidden
-          />
-          {/* Sky glow — right */}
-          <div
-            className="pointer-events-none absolute -right-16 top-8 h-56 w-56 rounded-full blur-3xl"
-            style={{ background: 'radial-gradient(circle, rgba(111,163,191,0.10) 0%, transparent 70%)' }}
-            aria-hidden
-          />
-
-          <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-0">
-            {/* THE SENTINEL AI CORE — orbital rings + live data badges */}
-            <div className="flex items-center gap-6 lg:col-span-2 lg:pr-8">
-              {/* Orbital ring composition */}
-              <div className="relative flex shrink-0 items-center justify-center" style={{ width: 148, height: 148 }}>
-                {/* Outer orbit ring */}
-                <span
-                  className="pointer-events-none absolute rounded-full border"
-                  style={{
-                    inset: 0,
-                    borderColor: 'rgba(70,169,104,0.20)',
-                    borderStyle: 'dashed',
-                    animation: 'spinSlow 30s linear infinite',
-                  }}
-                  aria-hidden
-                />
-                {/* Inner orbit ring */}
-                <span
-                  className="pointer-events-none absolute rounded-full border"
-                  style={{
-                    inset: 14,
-                    borderColor: 'rgba(111,163,191,0.22)',
-                    animation: 'spinRev 22s linear infinite',
-                  }}
-                  aria-hidden
-                />
-                {/* Orbiting data comet on outer ring */}
-                <span
-                  className="pointer-events-none absolute"
-                  style={{
-                    top: '50%', left: '50%',
-                    width: 8, height: 8,
-                    marginTop: -4, marginLeft: -4,
-                    transformOrigin: '0 0',
-                    animation: 'orbitRing 8s linear infinite',
-                    '--orbit-r': '74px',
-                  } as React.CSSProperties}
-                  aria-hidden
-                >
-                  <span
-                    className="block h-2 w-2 rounded-full"
-                    style={{ background: 'var(--field-bright)', boxShadow: '0 0 8px var(--glow-field)' }}
-                  />
+        <Reveal className="border-b border-[var(--line)] pb-9">
+          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-10">
+            {/* THE FARM, UNDER WATCH — the AI lives inside the land, not beside
+                it: aiState is driven by what is actually happening right now. */}
+            <div className="lg:col-span-7">
+              <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-[var(--field)]" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
                 </span>
-                {/* Orbiting grain comet on inner ring */}
-                <span
-                  className="pointer-events-none absolute"
-                  style={{
-                    top: '50%', left: '50%',
-                    width: 6, height: 6,
-                    marginTop: -3, marginLeft: -3,
-                    transformOrigin: '0 0',
-                    animation: 'orbitRing 12s linear infinite reverse',
-                    '--orbit-r': '60px',
-                  } as React.CSSProperties}
-                  aria-hidden
-                >
-                  <span
-                    className="block h-1.5 w-1.5 rounded-full"
-                    style={{ background: 'var(--grain)', boxShadow: '0 0 6px var(--glow-grain)' }}
-                  />
-                </span>
-                {/* Core AI orb */}
-                <AIAgentOrb state={isChecking ? 'analyzing' : 'idle'} size={116} />
+                {isHi ? 'निगरानी सक्रिय' : 'Watching · live'}
               </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-[var(--field)]" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
-                  </span>
-                  {isHi ? 'निगरानी सक्रिय' : 'Watching · live'}
-                </div>
-                <h1 className="t-h2 mt-2 text-[1.28rem] leading-tight text-[var(--ink)]">
-                  {isHi ? 'सेंटीनेल आपके खेत पर नज़र रखे हुए है' : 'Sentinel is watching your farm'}
-                </h1>
-                <p className="mt-2 text-[13px] leading-relaxed text-[var(--ink-soft)]">
+              <h1 className="t-h1 mt-3 text-[1.9rem] leading-[1.1] sm:text-[2.3rem]">
+                {isHi ? 'सेंटीनेल आपके खेत पर नज़र रखे हुए है' : 'Sentinel is watching your farm'}
+              </h1>
+
+              <FarmDigitalTwin
+                decision={decision}
+                height={320}
+                interactive
+                showWeather
+                scanning={isChecking}
+                aiState={isChecking ? 'analyzing' : isListening ? 'listening' : 'complete'}
+                showDetailCard={false}
+                className="mt-6 w-full"
+              />
+
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)]" aria-hidden />
+                <span className="t-eyebrow text-[0.6rem] text-[var(--ink-ghost)]">
                   {districtLabel}, {stateLabel} · {watchedCrops}
-                </p>
-                <p className="font-data mt-2 text-[11px] text-[var(--ink-faint)]">
+                </span>
+                <span className="font-data text-[10px] text-[var(--ink-faint)]">
                   {isHi ? 'अंतिम जांच' : 'Last check'} ·{' '}
                   {latestLog ? latestLog.timestamp : isHi ? 'अभी-अभी' : 'just now'}
-                </p>
-                {/* Live data badge strip */}
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--field-tint)] px-2.5 py-0.5 text-[10px] font-semibold text-[var(--field-deep)]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)] animate-breathe" />
-                    {`${(soilMoisture * 100).toFixed(0)}% ${isHi ? 'मिट्टी नमी' : 'soil moisture'}`}
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--sky-tint)] px-2.5 py-0.5 text-[10px] font-semibold" style={{ color: '#35657E' }}>
-                    🌧 {rain7d.toFixed(0)}mm 7d
-                  </span>
-                </div>
+                </span>
               </div>
             </div>
 
-            {/* the verdict */}
-            <div className="flex flex-col justify-center border-t border-[var(--line)] pt-5 lg:col-span-3 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="t-eyebrow">{isHi ? 'एजेंट का निर्णय' : 'Agent decision'}</span>
-                <span className={`chip text-[10px] ${isCalm ? 'chip-field' : 'chip-grain'}`}>
+            {/* THE VERDICT — what the watch concluded, stated as a reading */}
+            <div className="lg:col-span-5 lg:border-l lg:border-[var(--line)] lg:pl-10">
+              <WatchHead title={isHi ? 'एजेंट का निर्णय' : 'Agent decision'}>
+                <span className={`chip shrink-0 text-[10px] ${isCalm ? 'chip-field' : 'chip-grain'}`}>
                   {isCalm ? <CheckCircle2 size={12} /> : <Radio size={12} />}
                   {isCalm
                     ? isHi
@@ -529,17 +472,32 @@ export function AutonomousSentinelScreen({
                       ? 'कार्यवाही की सिफारिश'
                       : 'Action recommended'}
                 </span>
-              </div>
+              </WatchHead>
 
-              <h2 className="font-display mt-3 text-[1.15rem] font-semibold leading-snug text-[var(--ink)] sm:text-[1.3rem]">
+              <h2 className="t-h3 mt-5 text-[1.15rem] leading-snug text-[var(--ink)] sm:text-[1.3rem]">
                 {advisory?.headline ||
                   (isHi
                     ? 'आपकी वर्तमान खेत योजना पूरी तरह अनुकूल है।'
                     : 'Your current farm plan matches field conditions.')}
               </h2>
 
-              <dl className="mt-4 grid grid-cols-1 gap-4 border-t border-[var(--line)] pt-4 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-[var(--line)]">
-                <div className="sm:pr-5">
+              <div className="mt-6 space-y-3">
+                <ReadingRow
+                  label={isHi ? 'मिट्टी नमी' : 'Soil moisture'}
+                  value={`${(soilMoisture * 100).toFixed(0)}%`}
+                />
+                <ReadingRow
+                  label={isHi ? '7-दिन वर्षा' : 'Rain (7-day)'}
+                  value={formatRainfall(rain7d, language)}
+                />
+                <ReadingRow
+                  label={isHi ? 'निगरानी में फसलें' : 'Crops watched'}
+                  value={watchedCrops}
+                />
+              </div>
+
+              <dl className="mt-7 space-y-5 border-t border-[var(--line)] pt-5">
+                <div>
                   <dt className="t-eyebrow mb-1.5">{isHi ? 'क्या स्थिति है?' : 'What changed'}</dt>
                   <dd className="text-[13px] leading-relaxed text-[var(--ink-soft)]">
                     {isHi
@@ -547,7 +505,7 @@ export function AutonomousSentinelScreen({
                       : `Rainfall forecast is ${rain7d.toFixed(1)} mm and soil moisture is at ${(soilMoisture * 100).toFixed(0)}%.`}
                   </dd>
                 </div>
-                <div className="border-t border-[var(--line)] pt-4 sm:border-t-0 sm:pl-5 sm:pt-0">
+                <div className="border-l-2 border-[var(--field)] pl-4">
                   <dt className="t-eyebrow mb-1.5">{isHi ? 'सिफारिश' : 'What you should do'}</dt>
                   <dd className="text-[13px] leading-relaxed text-[var(--ink-soft)]">
                     {advisory?.recommended_action ||
@@ -564,101 +522,100 @@ export function AutonomousSentinelScreen({
         {/* ------------------------------------------------------------- */}
         {/* TELEMETRY — five streams as premium cards, not a flat grid     */}
         {/* ------------------------------------------------------------- */}
-        <Reveal className="panel p-5 sm:p-6" delay={60}>
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="t-h3 text-[1.05rem] text-[var(--ink)]">
-              {isHi ? 'सेंटीनेल क्या देख रहा है' : 'What the sentinel watches'}
-            </h2>
+        <Reveal delay={60}>
+          <WatchHead title={isHi ? 'सेंटीनेल क्या देख रहा है' : 'What the sentinel watches'}>
             <button
               type="button"
               onClick={() => setIsLogModalOpen(true)}
-              className="text-xs font-semibold text-[var(--grain-deep)] transition-colors hover:text-[var(--field)]"
+              className="inline-flex shrink-0 items-center gap-1.5 border-b border-[var(--line-strong)] pb-0.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:border-[var(--field)] hover:text-[var(--field-deep)]"
             >
-              {isHi ? 'सभी निगरानी लॉग्स देखें →' : 'View all sentinel logs →'}
+              {isHi ? 'सभी निगरानी लॉग्स देखें' : 'View all sentinel logs'}
+              <ArrowRight size={12} />
             </button>
-          </div>
+          </WatchHead>
 
-          <div className="mt-4 grid grid-cols-1 gap-3 border-t border-[var(--line)] pt-4 sm:grid-cols-2 lg:grid-cols-5">
+          {/* one ruled row per source: what it is, what it reads, how often.
+              A ledger, not five cards — the sources are a list of facts. */}
+          <div className="mt-5">
             {streams.map((s, i) => (
               <div
                 key={s.id}
-                className="animate-stream-slide relative flex flex-col gap-2 overflow-hidden rounded-2xl border border-[var(--line-soft)] bg-[var(--surface-inset)] p-3.5"
+                className="animate-stream-slide flex items-center gap-4 border-b border-[var(--line-soft)] py-3.5 sm:gap-6"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
-                {/* Colored left accent bar */}
                 <span
-                  className="absolute inset-y-0 left-0 w-0.5 rounded-r-full"
-                  style={{ background: s.tone }}
-                  aria-hidden
-                />
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: s.tone }}>
-                  <s.Icon size={13} />
-                  {s.name}
+                  className="flex w-[9.5rem] shrink-0 items-center gap-2 text-[13px] font-medium sm:w-[12rem]"
+                  style={{ color: s.tone }}
+                >
+                  <s.Icon size={14} className="shrink-0" strokeWidth={1.75} />
+                  <span className="truncate">{s.name}</span>
                 </span>
-                <span className="font-data text-[13px] font-semibold leading-tight text-[var(--ink)]">
+
+                <span className="font-data min-w-0 flex-1 truncate text-[13px] text-[var(--ink)]">
                   {s.reading}
                 </span>
-                <div className="mt-auto flex items-center justify-between">
-                  <span className="t-eyebrow flex items-center gap-1.5 text-[var(--ink-faint)]">
-                    {s.live && (
-                      <span
-                        className="h-1.5 w-1.5 rounded-full animate-breathe"
-                        style={{ background: s.tone }}
-                      />
-                    )}
-                    {s.cadence}
-                  </span>
+
+                <span className="t-eyebrow flex shrink-0 items-center gap-1.5 text-[0.55rem] text-[var(--ink-faint)]">
                   {s.live && (
                     <span
-                      className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                      style={{ background: s.tone + '18', color: s.tone }}
-                    >
-                      {isHi ? 'लाइव' : 'Live'}
-                    </span>
+                      className="animate-breathe h-1.5 w-1.5 rounded-full"
+                      style={{ background: s.tone }}
+                      aria-hidden
+                    />
                   )}
-                </div>
+                  {s.cadence}
+                </span>
               </div>
             ))}
           </div>
         </Reveal>
-
 
         {/* ------------------------------------------------------------- */}
         {/* GROUND TRUTH (left) + CONVERSATION (right)                     */}
         {/* ------------------------------------------------------------- */}
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
           {/* ---------- FARMER OBSERVATIONS ---------- */}
-          <Reveal className="panel p-5 sm:p-6 lg:col-span-5" delay={90}>
-            <h2 className="t-h3 text-[1.05rem] text-[var(--ink)]">
-              {isHi ? 'खेत में क्या देखा?' : 'What did you see in the field?'}
-            </h2>
-            <p className="mt-1 text-[13px] text-[var(--ink-soft)]">
+          <Reveal className="lg:col-span-5" delay={90}>
+            <WatchHead title={isHi ? 'खेत में क्या देखा?' : 'What did you see in the field?'} />
+            <p className="mt-4 text-[13px] leading-relaxed text-[var(--ink-soft)]">
               {isHi
                 ? 'खेत में कोई बदलाव दिखा हो तो एजेंट को बताएं'
-                : 'Report field observations to adjust the plan if needed'}
+                : 'Report field observations and the agent will re-evaluate the plan.'}
             </p>
 
-            <div className="mt-4 divide-y divide-[var(--line)] border-t border-[var(--line)]">
+            {/* each observation is a real toggle on a ruled line — no boxes,
+                and the tick mark is the only fill, so the list stays quiet */}
+            <div className="mt-5">
               {observations.map((item) => {
                 const checked = selectedObservations.includes(item.id);
                 return (
-                  <label
+                  <button
                     key={item.id}
-                    className="flex cursor-pointer items-center gap-3 py-3 transition-colors hover:bg-[var(--surface-inset)]"
+                    type="button"
+                    aria-pressed={checked}
+                    onClick={() => toggleObservation(item.id)}
+                    className={`flex w-full items-center gap-3 border-b py-3 text-left transition-colors focus-visible:bg-[var(--surface-inset)] focus-visible:outline-none ${
+                      checked ? 'border-[var(--field)]' : 'border-[var(--line-soft)]'
+                    }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleObservation(item.id)}
-                      className="h-4 w-4 shrink-0 rounded"
-                      style={{ accentColor: 'var(--field)' }}
-                    />
                     <span
-                      className={`text-[13px] font-medium ${checked ? 'text-[var(--ink)]' : 'text-[var(--ink-soft)]'}`}
+                      className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[6px] transition-colors"
+                      style={{
+                        background: checked ? 'var(--field)' : 'transparent',
+                        boxShadow: checked ? 'none' : 'inset 0 0 0 1.5px var(--line-strong)',
+                      }}
+                      aria-hidden
+                    >
+                      {checked && <Check size={12} className="text-[var(--paper)]" strokeWidth={3} />}
+                    </span>
+                    <span
+                      className={`text-[13px] ${
+                        checked ? 'font-medium text-[var(--ink)]' : 'text-[var(--ink-soft)]'
+                      }`}
                     >
                       {item.label}
                     </span>
-                  </label>
+                  </button>
                 );
               })}
             </div>
@@ -672,144 +629,135 @@ export function AutonomousSentinelScreen({
                   ? 'अन्य कोई बात जो आपने देखी... (जैसे: टमाटर में कीड़े दिख रहे हैं)'
                   : 'Tell the agent what happened... (e.g. Tomato leaves turning yellow)'
               }
-              className="field-input mt-4 w-full resize-none text-[13px]"
+              className="line-input mt-5 w-full resize-none text-[13px]"
             />
 
             <button
               type="button"
               onClick={handleSubmitObservation}
               disabled={!hasReport}
-              className="btn btn-primary mt-3 w-full py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn btn-primary mt-4 w-full disabled:cursor-not-allowed disabled:opacity-40"
             >
               {reportSubmitted ? <CheckCircle2 size={14} /> : <ArrowRight size={14} />}
-              <span>{isHi ? 'रिपोर्ट भेजें एवं योजना की पुनः जांच करें' : 'Submit report & re-evaluate'}</span>
+              <span>{isHi ? 'रिपोर्ट भेजें एवं पुनः जांच करें' : 'Submit report & re-evaluate'}</span>
             </button>
 
             {reportFeedback && (
-              <div
-                className="mt-3 flex items-start gap-2 rounded-2xl border border-[var(--line)] p-3 text-[12px] text-[var(--field-deep)]"
-                style={{ background: 'var(--field-tint)' }}
+              <p
+                className="mt-4 border-l-2 border-[var(--field)] pl-3 text-[12px] leading-relaxed text-[var(--field-deep)]"
                 role="status"
               >
-                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[var(--field)]" />
-                <span>{reportFeedback}</span>
-              </div>
+                {reportFeedback}
+              </p>
             )}
           </Reveal>
 
           {/* ---------- TALK TO AGRIOPTIMA ---------- */}
-          <Reveal className="panel flex flex-col p-5 sm:p-6 lg:col-span-7" delay={120}>
-            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[var(--line)] pb-4">
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[var(--sky)]"
-                  style={{ background: 'var(--sky-tint)' }}
-                >
-                  <Volume2 size={16} />
-                </span>
-                <div>
-                  <h2 className="t-h3 text-[1.05rem] text-[var(--ink)]">
-                    {isHi ? 'एग्रीऑप्टिमा से बात करें' : 'Talk to AgriOptima'}
-                  </h2>
-                  <p className="text-[11px] text-[var(--ink-soft)]">
-                    {isHi ? 'सरवम व जेमिनी AI द्वारा संचालित' : 'Powered by Sarvam Voice & Gemini AI'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
+          <Reveal className="flex flex-col lg:col-span-7" delay={120}>
+            <WatchHead title={isHi ? 'एग्रीऑप्टिमा से बात करें' : 'Talk to AgriOptima'}>
+              <div className="flex shrink-0 items-center gap-3">
                 {isSpeaking && (
                   <button
                     type="button"
                     onClick={handleStopAudio}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] px-2.5 py-1 text-[10px] font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
                   >
                     <VolumeX size={12} />
                     {isHi ? 'आवाज़ बंद करें' : 'Stop audio'}
                   </button>
                 )}
-                <span
-                  className="font-data rounded-full px-2 py-0.5 text-[10px] text-[var(--sky)]"
-                  style={{ background: 'var(--sky-tint)' }}
-                >
-                  {isHi ? 'हिंदी / English' : 'English / हिंदी'}
+                <span className="t-eyebrow text-[0.55rem] text-[var(--ink-ghost)]">
+                  {isHi ? 'सरवम · जेमिनी' : 'Sarvam voice · Gemini'}
                 </span>
               </div>
-            </div>
+            </WatchHead>
 
-            {/* Chat Message Stream */}
+            {/* The exchange. Farmer and agent are told apart by the weight and
+                colour of the rule they hang off, not by filled bubbles — the
+                white world has no chat app in it. */}
             <div
               ref={streamRef}
-              className="mt-4 h-[300px] flex-1 space-y-3 overflow-y-auto pr-1 text-[13px] sm:h-[340px]"
+              className="mt-5 h-[300px] flex-1 space-y-4 overflow-y-auto pr-1 text-[13px] sm:h-[340px]"
               aria-live="polite"
             >
-              {conversation.map((msg, idx) => (
-                <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+              {conversation.map((msg, idx) => {
+                const isUser = msg.role === 'user';
+                return (
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3 leading-relaxed ${
-                      msg.role === 'user'
-                        ? 'rounded-br-sm bg-[var(--field)] text-white'
-                        : 'rounded-bl-sm border border-[var(--line)] bg-[var(--surface-inset)] text-[var(--ink)]'
+                    key={idx}
+                    className={`border-l pl-4 ${
+                      isUser
+                        ? 'border-[var(--line-strong)] sm:ml-8'
+                        : 'border-l-2 border-[var(--field)]'
                     }`}
                   >
-                    <p>{msg.text}</p>
+                    <p className="t-eyebrow mb-1 text-[0.55rem] text-[var(--ink-ghost)]">
+                      {isUser ? (isHi ? 'आप' : 'You') : 'AgriOptima'}
+                    </p>
+                    <p
+                      className={`leading-relaxed ${
+                        isUser ? 'text-[var(--ink-soft)]' : 'text-[var(--ink)]'
+                      }`}
+                    >
+                      {msg.text}
+                    </p>
                     {msg.action && (
-                      <div className="mt-2 border-t border-[var(--line)] pt-2 text-[11px] font-semibold text-[var(--field-deep)]">
-                        ✓ {isHi ? 'सुझाव:' : 'Action:'} {msg.action}
-                      </div>
+                      <p className="mt-2 flex items-start gap-1.5 text-[11px] font-semibold text-[var(--field-deep)]">
+                        <Check size={12} className="mt-[2px] shrink-0" />
+                        <span>
+                          {isHi ? 'सुझाव:' : 'Action:'} {msg.action}
+                        </span>
+                      </p>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {isProcessingAI && (
-                <div className="flex items-center gap-2 p-2 text-xs text-[var(--ink-soft)]">
+                <div className="flex items-center gap-2 text-xs text-[var(--ink-soft)]">
                   <Loader2 size={13} className="animate-spin text-[var(--sky)]" />
                   <span>{isHi ? 'एग्रीऑप्टिमा विचार कर रहा है...' : 'AgriOptima is thinking...'}</span>
                 </div>
               )}
             </div>
 
-            {/* Quick Prompts */}
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            {/* Things worth asking, in the same pill language as the planning flow. */}
+            <div className="mt-4 flex flex-wrap gap-2">
               {quickPrompts.map((prompt, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => handleAskQuestion(prompt)}
                   disabled={isProcessingAI}
-                  className="max-w-full truncate rounded-full border border-[var(--line)] px-2.5 py-1 text-[11px] font-medium text-[var(--ink-soft)] transition-colors hover:border-[var(--field)] hover:text-[var(--field)] disabled:opacity-50"
+                  className="choice max-w-full truncate px-3 py-1.5 text-[11px] disabled:opacity-50"
                 >
                   {prompt}
                 </button>
               ))}
             </div>
 
-            {/* Live Spoken Word Bubble (Shows current words in real time as you speak) */}
+            {/* What the mic is hearing right now, on a rule rather than in a box. */}
             {isListening && chatInput && (
-              <div
-                className="mt-3 flex items-center gap-2 rounded-2xl border border-[var(--line)] px-3 py-1.5 text-xs text-[var(--grain-deep)]"
-                style={{ background: 'var(--grain-tint)' }}
-              >
-                <span className="flex h-2 w-2 shrink-0 animate-ping rounded-full bg-[var(--risk)]" />
-                <span className="t-eyebrow shrink-0 text-[var(--grain-deep)]">
-                  {isHi ? 'वर्तमान शब्द:' : 'Hearing:'}
+              <p className="mt-4 flex items-center gap-2 border-l-2 border-[var(--risk)] pl-3 text-xs">
+                <span className="flex h-1.5 w-1.5 shrink-0 animate-ping rounded-full bg-[var(--risk)]" />
+                <span className="t-eyebrow shrink-0 text-[0.55rem] text-[var(--grain-deep)]">
+                  {isHi ? 'वर्तमान शब्द' : 'Hearing'}
                 </span>
-                <span className="truncate font-semibold text-[var(--ink)]">"{chatInput}"</span>
-              </div>
+                <span className="truncate font-semibold text-[var(--ink)]">{chatInput}</span>
+              </p>
             )}
 
             {/* Input Bar & Mic Button */}
-            <div className="mt-3 flex items-center gap-2 border-t border-[var(--line)] pt-3">
+            <div className="mt-4 flex items-center gap-3 border-t border-[var(--line)] pt-4">
               <button
                 type="button"
                 onClick={handleToggleVoice}
                 aria-pressed={isListening}
-                className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition-all ${isListening ? 'animate-breathe' : ''}`}
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-all ${isListening ? 'animate-breathe' : ''}`}
                 style={
                   isListening
-                    ? { background: 'var(--risk)', borderColor: 'var(--risk)', color: '#fff' }
-                    : { background: 'var(--grain-tint)', borderColor: 'transparent', color: 'var(--grain-deep)' }
+                    ? { background: 'var(--risk)', color: '#fff' }
+                    : { background: 'var(--grain-tint)', color: 'var(--grain-deep)' }
                 }
                 title={
                   isListening
@@ -848,14 +796,14 @@ export function AutonomousSentinelScreen({
                       ? 'सवाल पूछें या बोलें...'
                       : 'Ask a question or tap mic...'
                 }
-                className="field-input flex-1 py-2 text-[13px]"
+                className="line-input flex-1 text-[13px]"
               />
 
               <button
                 type="button"
                 onClick={() => handleAskQuestion(chatInput)}
                 disabled={!chatInput.trim() || isProcessingAI}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--field-deep)] text-white transition-colors hover:bg-[var(--field)] disabled:opacity-50"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--field-deep)] text-white transition-colors hover:bg-[var(--field)] disabled:opacity-40"
                 aria-label={isHi ? 'भेजें' : 'Send'}
               >
                 <Send size={15} />

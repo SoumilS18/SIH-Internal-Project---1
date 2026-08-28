@@ -175,7 +175,7 @@ export const en = {
     whyThisPlanBtn: 'Why are we recommending this?',
     whyThisPlanTitle: 'Why this plan for your farm?',
     seeDetailedAnalysisBtn: '🔬 See Detailed Analysis & Math (Expert / Judge View)',
-    hideDetailedAnalysisBtn: '🌾 Return to Farmer View',
+    hideDetailedAnalysisBtn: 'Return to Farmer View',
     viewMode: 'View Mode',
     farmerMode: 'Farmer View (Simple)',
     expertMode: 'Expert & Judge View (Advanced Analysis)',

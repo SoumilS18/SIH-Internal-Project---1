@@ -36,7 +36,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="scrim fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div className="scrim fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade">
       <div className="panel-modal relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden p-6 text-[var(--ink)] sm:p-8">
         
         {/* Header */}
