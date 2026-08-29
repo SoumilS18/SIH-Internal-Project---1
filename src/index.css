@@ -316,12 +316,11 @@
       0 8px 24px rgb(var(--sh-color) / 0.10);
     border-radius: var(--radius-lg);
   }
-  /* Ivory dialog scrim — the world stays light even behind a modal, and it is
-     never black. Paint-only: positioning belongs to the call site. */
+  /* Warm ivory morning-mist translucent dialog backdrop */
   .scrim {
-    background: rgb(246 244 236 / 0.74);
-    backdrop-filter: blur(10px) saturate(1.08);
-    -webkit-backdrop-filter: blur(10px) saturate(1.08);
+    background: rgb(246 244 236 / 0.52);
+    backdrop-filter: blur(8px) saturate(1.08);
+    -webkit-backdrop-filter: blur(8px) saturate(1.08);
   }
   .hairline { border-color: var(--line); }
 

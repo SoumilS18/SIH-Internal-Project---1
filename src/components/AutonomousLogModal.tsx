@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   ShieldCheck,
@@ -44,8 +45,8 @@ export function AutonomousLogModal({
 
   const currentLog = logs[selectedLogIndex] || logs[0] || null;
 
-  return (
-    <div className="scrim fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade">
+  return typeof document !== 'undefined' ? createPortal(
+    <div className="scrim fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade overflow-y-auto">
       <div className="panel-modal relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden p-5 text-[var(--ink)] sm:p-6">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-[var(--line)] pb-4">
@@ -279,6 +280,7 @@ export function AutonomousLogModal({
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div>,
+    document.body
+  ) : null;
 }

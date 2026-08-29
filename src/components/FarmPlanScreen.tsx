@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ArrowRight,
   Layers,
@@ -774,9 +775,14 @@ export function FarmPlanScreen({
       {/* ===================================================================== */}
       {/* 3. FULL 7-DAY ACTION PLAN MODAL                                        */}
       {/* ===================================================================== */}
-      {showFull7DayModal && (
-        <div className="scrim fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="panel-modal max-h-[88vh] w-full max-w-2xl space-y-5 overflow-y-auto p-6">
+      {showFull7DayModal && typeof document !== 'undefined' && createPortal(
+        <div
+          className="scrim fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade overflow-y-auto cursor-pointer"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowFull7DayModal(false);
+          }}
+        >
+          <div className="panel-modal my-auto max-h-[88vh] w-full max-w-2xl space-y-5 overflow-y-auto p-6 shadow-2xl cursor-auto">
             <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
               <div>
                 <h3 className="t-h3 text-[1.15rem] text-[var(--ink)]">
@@ -796,7 +802,7 @@ export function FarmPlanScreen({
               <button
                 type="button"
                 onClick={() => setShowFull7DayModal(false)}
-                className="rounded-full p-1 text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-inset)] hover:text-[var(--ink)]"
+                className="rounded-full p-1 text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-inset)] hover:text-[var(--ink)] cursor-pointer"
                 aria-label={isHi ? 'बंद करें' : 'Close'}
               >
                 <X size={18} />
@@ -866,15 +872,21 @@ export function FarmPlanScreen({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ===================================================================== */}
       {/* 4. DETAILED EXPERT ANALYSIS MODAL                                      */}
       {/* ===================================================================== */}
-      {showDetailedModal && decision && (
-        <div className="scrim fixed inset-0 z-50 flex items-center justify-center px-2 sm:px-4">
-          <div className="panel-modal max-h-[92vh] w-full max-w-5xl space-y-4 overflow-y-auto p-4 text-[var(--ink)] sm:p-6">
+      {showDetailedModal && decision && typeof document !== 'undefined' && createPortal(
+        <div
+          className="scrim fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 animate-fade overflow-y-auto cursor-pointer"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowDetailedModal(false);
+          }}
+        >
+          <div className="panel-modal my-auto max-h-[90vh] w-full max-w-5xl space-y-4 overflow-y-auto p-4 text-[var(--ink)] sm:p-6 shadow-2xl cursor-auto">
             <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
               <div>
                 <h3 className="t-h3 text-[1.15rem] text-[var(--ink)]">
@@ -888,7 +900,7 @@ export function FarmPlanScreen({
               <button
                 type="button"
                 onClick={() => setShowDetailedModal(false)}
-                className="rounded-full p-1 text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-inset)] hover:text-[var(--ink)]"
+                className="rounded-full p-1 text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-inset)] hover:text-[var(--ink)] cursor-pointer"
                 aria-label={isHi ? 'बंद करें' : 'Close'}
               >
                 <X size={18} />
@@ -903,7 +915,8 @@ export function FarmPlanScreen({
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ===================================================================== */}

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Globe, ArrowRight, ArrowLeft, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 
@@ -25,9 +26,9 @@ export function LanguageComingSoonModal() {
 
   if (!comingSoonModalTarget) return null;
 
-  return (
+  return typeof document !== 'undefined' ? createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="coming-soon-title"
@@ -123,6 +124,7 @@ export function LanguageComingSoonModal() {
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div>,
+    document.body
+  ) : null;
 }

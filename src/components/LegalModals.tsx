@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   ShieldCheck,
@@ -35,8 +36,8 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="scrim fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade">
+  return typeof document !== 'undefined' ? createPortal(
+    <div className="scrim fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade overflow-y-auto">
       <div className="panel-modal relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden p-6 text-[var(--ink)] sm:p-8">
         
         {/* Header */}
@@ -289,6 +290,7 @@ export function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div>,
+    document.body
+  ) : null;
 }
