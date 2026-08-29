@@ -56,7 +56,7 @@ interface FarmDetailsScreenProps {
 const LAND_MIN = 0.5;
 const LAND_MAX = 25;
 const BUDGET_MIN = 5000;
-const BUDGET_MAX = 500000;
+const BUDGET_MAX = 2500000;
 
 const fillStyle = (pct: number): React.CSSProperties =>
   ({ ['--fill']: `${Math.max(0, Math.min(100, pct))}%` } as React.CSSProperties);
@@ -370,7 +370,7 @@ export function FarmDetailsScreen({
               <SectionHead n="02" title={isHi ? 'इस मौसम की पूँजी' : 'What you can invest'} />
               <div className="flex items-end gap-3">
                 <span className="pb-2 text-[clamp(1.3rem,3.5vw,1.8rem)] font-light text-[var(--ink-faint)]">₹</span>
-                <div className="w-[11rem]">
+                <div className="w-[13.5rem]">
                   <input
                     type="number"
                     inputMode="numeric"
@@ -400,9 +400,13 @@ export function FarmDetailsScreen({
                 aria-label={isHi ? 'बजट खींचकर चुनें' : 'Drag to set your budget'}
               />
               <p className="mt-1 text-xs text-[var(--ink-ghost)]">
-                {isHi
-                  ? `आपके बताए आकार पर ${formatInrCompact(perAcre, true)} प्रति एकड़।`
-                  : `${formatInrCompact(perAcre)} per acre across the land you entered.`}
+                {budgetInr > BUDGET_MAX
+                  ? isHi
+                    ? `स्लाइडर की सीमा से अधिक (₹25 लाख) — ${formatInrCompact(perAcre, true)} प्रति एकड़। संख्या टाइप करके बदलें।`
+                    : `Past the ₹25L slider range — ${formatInrCompact(perAcre)} per acre. Type to change exact amount.`
+                  : isHi
+                    ? `आपके बताए आकार पर ${formatInrCompact(perAcre, true)} प्रति एकड़।`
+                    : `${formatInrCompact(perAcre)} per acre across the land you entered.`}
               </p>
             </Reveal>
 

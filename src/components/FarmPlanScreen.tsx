@@ -70,7 +70,7 @@ function WeekDropdown({
   const activeItem = allWeeks.find((w) => w.week === selectedWeek) || allWeeks[0];
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative ${className} ${isOpen ? 'z-[100]' : 'z-10'}`} ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -96,8 +96,8 @@ function WeekDropdown({
       </button>
 
       {isOpen && (
-        <div className="panel-elevated animate-scale-in absolute left-0 top-full z-50 mt-2 max-h-80 w-full min-w-[290px] overflow-y-auto p-1.5 sm:min-w-[380px]">
-          <div className="mb-1 flex items-center justify-between border-b border-[var(--line-soft)] px-2.5 py-1.5">
+        <div className="panel-elevated animate-scale-in absolute left-0 top-full z-50 mt-2 max-h-80 w-full min-w-[290px] overflow-y-auto p-1.5 sm:min-w-[380px] bg-[var(--surface-elevated)] border border-[var(--line)] shadow-[0_20px_50px_rgba(0,0,0,0.14)]">
+          <div className="mb-1 sticky top-0 z-10 flex items-center justify-between border-b border-[var(--line-soft)] bg-[var(--surface-elevated)] px-2.5 py-1.5">
             <span className="t-eyebrow text-[9px] text-[var(--ink-ghost)]">
               {isHi ? `कुल ${totalWeeks} सप्ताह` : `${totalWeeks} seasonal weeks`}
             </span>
@@ -190,7 +190,7 @@ const ALLOC_COLORS = [
  */
 function SheetHead({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-3">
+    <div className="relative z-20 flex flex-wrap items-end justify-between gap-x-5 gap-y-3">
       <div className="flex min-w-0 flex-1 items-baseline gap-3">
         <h3 className="t-eyebrow shrink-0 text-[0.66rem] text-[var(--ink-soft)]">{title}</h3>
         <span className="h-px min-w-4 flex-1 -translate-y-[3px]" style={{ background: 'var(--line)' }} aria-hidden />
@@ -625,7 +625,7 @@ export function FarmPlanScreen({
             {/* =============================================================== */}
             {/* THE SCHEDULE — what to do, week by week                         */}
             {/* =============================================================== */}
-            <Reveal delay={120}>
+            <Reveal delay={120} className="relative z-20">
               <SheetHead title={isHi ? 'कार्य अनुसूची' : 'Work schedule'}>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
@@ -695,18 +695,18 @@ export function FarmPlanScreen({
               </div>
 
               {/* seven days on one continuous rule — a schedule, not seven cards */}
-              <div className="no-scrollbar mt-7 overflow-x-auto pb-1">
-                <div className="relative flex min-w-[720px] gap-4">
+              <div className="no-scrollbar mt-7 overflow-x-auto pb-1 relative z-0">
+                <div className="relative z-0 flex min-w-[720px] gap-4">
                   {/* the rule the whole week hangs from */}
                   <span
-                    className="absolute left-2 right-2 top-[5px] h-px"
+                    className="absolute left-2 right-2 top-[5px] h-px z-0"
                     style={{ background: 'var(--line)' }}
                     aria-hidden
                   />
                   {currentWeekPlan.days.map((step, i) => (
-                    <div key={step.day} className="relative flex flex-1 flex-col">
+                    <div key={step.day} className="relative z-0 flex flex-1 flex-col">
                       <span
-                        className="relative z-10 h-[11px] w-[11px] rounded-full"
+                        className="relative z-0 h-[11px] w-[11px] rounded-full"
                         style={{
                           background: i === 0 ? 'var(--field)' : 'var(--surface-solid)',
                           boxShadow: `inset 0 0 0 ${i === 0 ? 0 : 1.5}px var(--field)`,
