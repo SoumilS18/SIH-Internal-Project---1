@@ -197,15 +197,22 @@ export function calculateClientFarmDecision(request: FarmDecisionRequest): FarmD
     if (crop.risk_adjusted_profit_per_acre <= 0 && allocatedMap.size > 0) continue;
 
     const maxByShare = request.land_size_acres * (i === sortedCrops.length - 1 ? 1.0 : maxSharePerCrop);
-    const maxByBudget = remainingBudget > 0 ? remainingBudget / crop.cost_c2_per_acre : 0;
-    const canAllocate = Math.min(remainingLand, maxByShare, maxByBudget > 0 ? maxByBudget : remainingLand);
+    const maxByBudget = request.budget_inr > 0 ? (remainingBudget > 0 ? remainingBudget / crop.cost_c2_per_acre : 0) : remainingLand;
+    const canAllocate = Math.min(remainingLand, maxByShare, maxByBudget);
 
-    if (canAllocate >= 0.2) {
+    if (canAllocate >= 0.1) {
       const roundedAcres = Number(canAllocate.toFixed(2));
       allocatedMap.set(crop.crop_name, roundedAcres);
-      remainingLand -= roundedAcres;
-      remainingBudget -= roundedAcres * crop.cost_c2_per_acre;
+      remainingLand = Math.max(0, remainingLand - roundedAcres);
+      remainingBudget = Math.max(0, remainingBudget - roundedAcres * crop.cost_c2_per_acre);
     }
+  }
+
+  // If budget or bounds prevented any allocation, allocate the highest margin crop for minimal acreage
+  if (allocatedMap.size === 0 && sortedCrops.length > 0 && request.land_size_acres > 0) {
+    const topCrop = sortedCrops[0];
+    const topAcres = Math.min(request.land_size_acres, request.budget_inr > 0 ? Math.max(0.5, Number((request.budget_inr / topCrop.cost_c2_per_acre).toFixed(2))) : request.land_size_acres);
+    allocatedMap.set(topCrop.crop_name, Math.min(request.land_size_acres, topAcres));
   }
 
   // Finalize Allocated Crop Items

@@ -243,7 +243,7 @@ export function FarmPlanScreen({
 
   // Derived decision values
   const allocatedCrops = decision?.allocated_crops || [];
-  const cropNames = allocatedCrops.map((c) => c.crop_name);
+  const cropNames = allocatedCrops.map((c) => c.crop_name).filter(Boolean);
 
   // Weeks & Seasonal Action Plan Calculation
   const totalWeeks = getSeasonWeeksCount(season);
@@ -255,9 +255,9 @@ export function FarmPlanScreen({
   const allWeeksSummary = getAllWeeksSummary(season, planLang, cropNames);
   const farmTotals = decision?.farm_totals;
   const netProfit = farmTotals?.total_expected_net_profit_inr ?? 0;
-  const totalInvestment = farmTotals?.total_investment_inr ?? budgetInr;
+  const totalInvestment = typeof farmTotals?.total_investment_inr === 'number' ? farmTotals.total_investment_inr : (budgetInr || 0);
   const roiPct = farmTotals?.expected_farm_roi_pct ?? 0;
-  const riskLabel = farmTotals?.weighted_risk_label?.toUpperCase() || 'LOW';
+  const riskLabel = (farmTotals?.weighted_risk_label || 'LOW').toUpperCase();
   // Parse fill strength from the RAW English risk so the meter stays correct even when the label is shown in Hindi.
   const riskLevelNum: 1 | 2 | 3 | 4 = riskLabel.includes('CRIT')
     ? 4
@@ -269,7 +269,7 @@ export function FarmPlanScreen({
 
   const allocSegments = allocatedCrops.map((c, i) => ({
     name: getCropDisplayName(c.crop_name, language),
-    share: c.acre_share_pct,
+    share: typeof c.acre_share_pct === 'number' ? c.acre_share_pct : 0,
     color: ALLOC_COLORS[i % ALLOC_COLORS.length],
   }));
 
@@ -302,9 +302,11 @@ export function FarmPlanScreen({
         : 'Optimized crop plan';
 
   // Title-block registry — the facts this drawing was made for. All real payload.
-  const plantedAcres = farmTotals?.total_allocated_acres ?? landAcres;
-  const fallowAcres = farmTotals?.fallow_acres ?? 0;
-  const budgetUsedPct = farmTotals?.budget_utilization_pct;
+  const plantedAcres = typeof farmTotals?.total_allocated_acres === 'number' ? farmTotals.total_allocated_acres : (landAcres || 0);
+  const fallowAcres = typeof farmTotals?.fallow_acres === 'number' ? farmTotals.fallow_acres : Math.max(0, (landAcres || 0) - plantedAcres);
+  const budgetUsedPct = typeof farmTotals?.budget_utilization_pct === 'number'
+    ? farmTotals.budget_utilization_pct
+    : budgetInr > 0 ? (totalInvestment / budgetInr) * 100 : 100;
 
   return (
     <div className="relative flex min-h-screen w-full flex-col justify-between text-[var(--ink)] selection:bg-[var(--grain-tint)] selection:text-[var(--grain-deep)]">
@@ -550,7 +552,9 @@ export function FarmPlanScreen({
 
               <div className="mt-2">
                 {allocatedCrops.map((crop, idx) => {
-                  const share = crop.acre_share_pct;
+                  const share = typeof crop.acre_share_pct === 'number' ? crop.acre_share_pct : 0;
+                  const acres = typeof crop.allocated_acres === 'number' ? crop.allocated_acres : 0;
+                  const profit = typeof crop.net_profit_inr === 'number' ? crop.net_profit_inr : 0;
                   const isPinned = activeCrop === crop.crop_name;
                   const isShown = shownCrop === crop.crop_name;
                   const color = ALLOC_COLORS[idx % ALLOC_COLORS.length];
@@ -592,7 +596,7 @@ export function FarmPlanScreen({
                             {isPinned && <Check size={12} className="shrink-0 text-[var(--field)]" />}
                           </span>
                           <span className="font-data shrink-0 text-[11px] text-[var(--ink-faint)]">
-                            {crop.allocated_acres.toFixed(1)} {isHi ? 'एकड़' : 'ac'} · {share.toFixed(0)}%
+                            {acres.toFixed(1)} {isHi ? 'एकड़' : 'ac'} · {share.toFixed(0)}%
                           </span>
                         </span>
 
@@ -614,7 +618,7 @@ export function FarmPlanScreen({
                           {isHi ? 'लाभ' : 'Profit'}
                         </span>
                         <span className="block text-[15px] font-medium text-[var(--field-deep)]">
-                          {formatCurrency(crop.net_profit_inr, language)}
+                          {formatCurrency(profit, language)}
                         </span>
                       </span>
                     </button>

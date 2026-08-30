@@ -70,8 +70,12 @@ export function EnvironmentalIntelligence({
   const { t, language } = useLanguage();
   const isHindi = language === 'hi';
 
+  const w = weather || ({} as any);
+  const r = risk || ({} as any);
+  const loc = location || ({} as any);
+
   // 1. Calculate Root-Zone Position for the Soil Moisture Gauge (0.10 to 0.60 m3/m3 scale)
-  const rootZoneValue = weather.root_zone_soil_moisture_m3m3 ?? 0.35;
+  const rootZoneValue = w.root_zone_soil_moisture_m3m3 ?? 0.35;
   const minGauge = 0.1;
   const maxGauge = 0.6;
   const gaugePercent = Math.min(
@@ -80,17 +84,17 @@ export function EnvironmentalIntelligence({
   );
 
   // 2. Derive 7-Day Trajectory Trend (Rain & Temp shifts)
-  const series = weather.daily_series || [];
+  const series = w.daily_series || [];
   let weatherTrend = isHindi
     ? '7-दिवसीय दृष्टिकोण में स्थिर मौसम संबंधी स्थितियां अपेक्षित हैं'
     : 'Stable meteorological conditions expected across the 7-day outlook';
 
   if (series.length >= 4) {
-    const earlyRain = series.slice(0, 3).reduce((acc, d) => acc + d.rain_mm, 0);
-    const lateRain = series.slice(-3).reduce((acc, d) => acc + d.rain_mm, 0);
+    const earlyRain = series.slice(0, 3).reduce((acc, d) => acc + (d.rain_mm || 0), 0);
+    const lateRain = series.slice(-3).reduce((acc, d) => acc + (d.rain_mm || 0), 0);
     const earlyTemp =
-      series.slice(0, 3).reduce((acc, d) => acc + d.t_max, 0) / 3;
-    const lateTemp = series.slice(-3).reduce((acc, d) => acc + d.t_max, 0) / 3;
+      series.slice(0, 3).reduce((acc, d) => acc + (d.t_max || 0), 0) / 3;
+    const lateTemp = series.slice(-3).reduce((acc, d) => acc + (d.t_max || 0), 0) / 3;
 
     if (lateRain - earlyRain > 15) {
       weatherTrend = isHindi
@@ -112,17 +116,17 @@ export function EnvironmentalIntelligence({
   }
 
   // 3. Dynamic "What this means" Sentences (Bilingual)
-  const tempVal = weather.current_temperature_c ?? 28;
-  const rhVal = weather.current_humidity_pct ?? 70;
-  const rain7dVal = weather.forecast_rain_7d_total_mm ?? 50;
+  const tempVal = w.current_temperature_c ?? 28;
+  const rhVal = w.current_humidity_pct ?? 70;
+  const rain7dVal = w.forecast_rain_7d_total_mm ?? 50;
 
   const currentStatement = isHindi
     ? `वर्तमान तापमान ${tempVal.toFixed(1)}°C और आर्द्रता ${rhVal}% अनुकूल है। मिट्टी की नमी (${(
-        weather.root_zone_soil_moisture_m3m3 ?? 0.35
-      ).toFixed(3)} m³/m³) ${translateMoistureStatus(risk.soil_moisture_status, language)} दर्शाती है।`
+        w.root_zone_soil_moisture_m3m3 ?? 0.35
+      ).toFixed(3)} m³/m³) ${translateMoistureStatus(r.soil_moisture_status, language)} दर्शाती है।`
     : `Current temperatures are ${tempVal.toFixed(1)}°C with ${rhVal}% humidity. Soil moisture levels are ${
-        risk.soil_moisture_status || 'optimal'
-      } at ${(weather.root_zone_soil_moisture_m3m3 ?? 0.35).toFixed(3)} m³/m³.`;
+        r.soil_moisture_status || 'optimal'
+      } at ${(w.root_zone_soil_moisture_m3m3 ?? 0.35).toFixed(3)} m³/m³.`;
 
   const forecastStatement = isHindi
     ? `अगले 7 दिनों में कुल ${rain7dVal.toFixed(1)} मिमी वर्षा का अनुमान है। ${weatherTrend}।`
@@ -132,26 +136,26 @@ export function EnvironmentalIntelligence({
     ? 'वर्तमान पर्यावरणीय परिस्थितियां सामान्य फसल वृद्धि और पोषक तत्व अवशोषण के लिए अनुकूल हैं। अतिरिक्त सिंचाई की आवश्यकता नहीं है।'
     : 'Conditions are favourable for standard crop growth and nutrient uptake. No emergency irrigation adjustments needed.';
 
-  if (risk.waterlogging_risk_score > 0.6) {
+  if ((r.waterlogging_risk_score ?? 0) > 0.6) {
     implicationStatement = isHindi
       ? 'अत्यधिक वर्षा और जलभराव का खतरा: संवेदनशील फसलों के लिए खेतों में जल निकासी सुनिश्चित करें और अतिरिक्त सिंचाई स्थगित करें।'
       : 'Elevated waterlogging risk: Ensure adequate furrow drainage and defer supplemental irrigation to avoid root hypoxia.';
-  } else if (risk.drought_risk_score > 0.6) {
+  } else if ((r.drought_risk_score ?? 0) > 0.6) {
     implicationStatement = isHindi
       ? 'नमी की गंभीर कमी का खतरा: मिट्टी में नमी बनाए रखने के लिए ड्रिप सिंचाई और मल्चिंग को प्राथमिकता दें।'
       : 'Elevated moisture deficit: Prioritize drought-resilient crops and optimize irrigation schedule to protect yield margins.';
-  } else if (risk.heat_risk_score > 0.6) {
+  } else if ((r.heat_risk_score ?? 0) > 0.6) {
     implicationStatement = isHindi
       ? 'उच्च तापमान और वाष्पीकरण तनाव: फूलों और दाने भरने के चरण में दोपहर के ताप तनाव से फसलों की सुरक्षा करें।'
       : 'High thermal stress: Atmospheric water demand elevated. Schedule irrigation during cooler evening or morning windows.';
   }
 
   // 4. Alert evaluation
-  const hasWaterlogAlert = Boolean(risk.waterlogging_alert);
-  const hasHeatAlert = Boolean(risk.heat_alert);
+  const hasWaterlogAlert = Boolean(r.waterlogging_alert);
+  const hasHeatAlert = Boolean(r.heat_alert);
   const hasCriticalRisk =
-    risk.overall_risk_label?.toUpperCase() === 'CRITICAL' ||
-    risk.overall_risk_score > 0.75;
+    r.overall_risk_label?.toUpperCase() === 'CRITICAL' ||
+    (r.overall_risk_score ?? 0) > 0.75;
 
   return (
     <div className="space-y-4 text-[var(--ink)]">
@@ -165,8 +169,8 @@ export function EnvironmentalIntelligence({
         <p className="mt-0.5 text-xs text-[var(--ink-soft)]">
           {t('telemetry.subtitle')}{' '}
           <span className="font-semibold text-[var(--grain-deep)]">
-            {getDistrictDisplayName(location.district_name, language)},{' '}
-            {getStateDisplayName(location.state_name, language)}
+            {getDistrictDisplayName(loc.district_name || 'Bhopal', language)},{' '}
+            {getStateDisplayName(loc.state_name || 'Madhya Pradesh', language)}
           </span>
         </p>
       </div>

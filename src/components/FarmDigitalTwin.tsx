@@ -492,13 +492,13 @@ export function FarmDigitalTwin({
 
     const base = live
       ? allocated.map((c) => ({
-          name: c.crop_name,
-          share: Math.max(0, c.acre_share_pct || 0),
-          acres: c.allocated_acres,
-          yieldQ: c.expected_yield_qtl_acre,
-          roi: c.roi_pct,
-          profit: c.net_profit_inr,
-          risk: c.risk_score,
+          name: c.crop_name || 'Crop',
+          share: Math.max(0, typeof c.acre_share_pct === 'number' ? c.acre_share_pct : 0),
+          acres: typeof c.allocated_acres === 'number' ? c.allocated_acres : 0,
+          yieldQ: typeof c.expected_yield_qtl_acre === 'number' ? c.expected_yield_qtl_acre : 0,
+          roi: typeof c.roi_pct === 'number' ? c.roi_pct : 0,
+          profit: typeof c.net_profit_inr === 'number' ? c.net_profit_inr : 0,
+          risk: typeof c.risk_score === 'number' ? c.risk_score : 20,
           reason: c.reasons?.[0] ?? '',
         }))
       : DEMO_PLOTS.map((d) => ({

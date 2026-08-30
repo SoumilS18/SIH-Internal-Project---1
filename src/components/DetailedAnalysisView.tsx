@@ -71,7 +71,26 @@ export function DetailedAnalysisView({
 
   const [activeTab, setActiveTab] = useState<DetailedTabType>(initialTab);
 
-  const { farm_totals, allocated_crops, crop_evaluations, scenarios } = decision;
+  const farm_totals = decision?.farm_totals || {
+    status: 'success',
+    total_land_acres: 5,
+    total_allocated_acres: 5,
+    fallow_acres: 0,
+    budget_capital_inr: 100000,
+    total_investment_inr: 100000,
+    budget_utilization_pct: 100,
+    total_expected_revenue_inr: 0,
+    total_expected_net_profit_inr: 0,
+    expected_farm_roi_pct: 0,
+    weighted_risk_score: 0.2,
+    weighted_risk_label: 'LOW',
+    budget_constrained: false,
+    all_negative_profits: false,
+    solver_method: 'Simplex LP',
+  };
+  const allocated_crops = decision?.allocated_crops || [];
+  const crop_evaluations = decision?.crop_evaluations || [];
+  const scenarios = decision?.scenarios || {};
 
   const tabs: { id: DetailedTabType; label: string; icon: any }[] = [
     { id: 'overview', label: isHi ? 'इष्टतम आवंटन (LP)' : 'Optimal Plan (LP)', icon: BarChart3 },
@@ -152,7 +171,7 @@ export function DetailedAnalysisView({
               </span>
             </div>
             <div className="font-mono text-xs text-[var(--ink-soft)] leading-relaxed bg-[var(--paper)] p-3.5 rounded-xl border border-[var(--line)]">
-              Maximize Z = ∑ (Yield_i × Price_i - Cost_i) × Area_i subject to: ∑ Area_i ≤ {farm_totals.total_land_acres} Ac, ∑ Cost_i × Area_i ≤ ₹{farm_totals.budget_capital_inr.toLocaleString('en-IN')}, and agronomic risk bounds.
+              Maximize Z = ∑ (Yield_i × Price_i - Cost_i) × Area_i subject to: ∑ Area_i ≤ {farm_totals.total_land_acres} Ac, ∑ Cost_i × Area_i ≤ ₹{(farm_totals.budget_capital_inr || 100000).toLocaleString('en-IN')}, and agronomic risk bounds.
             </div>
           </div>
 
@@ -186,7 +205,7 @@ export function DetailedAnalysisView({
                         {formatArea(crop.allocated_acres, language)}
                       </td>
                       <td className="py-3 text-[var(--grain-deep)] font-semibold">
-                        {crop.acre_share_pct.toFixed(1)}%
+                        {(crop.acre_share_pct || 0).toFixed(1)}%
                       </td>
                       <td className="py-3 text-[var(--ink-soft)]">
                         {formatYield(crop.expected_yield_qtl_acre, language)}
@@ -201,7 +220,7 @@ export function DetailedAnalysisView({
                         {formatCurrency(crop.net_profit_inr, language)}
                       </td>
                       <td className="py-3 text-[var(--field-deep)] font-semibold">
-                        +{crop.roi_pct.toFixed(1)}%
+                        +{(crop.roi_pct || 0).toFixed(1)}%
                       </td>
                     </tr>
                   ))}
@@ -267,7 +286,7 @@ export function DetailedAnalysisView({
                       {formatYield(evalItem.hist_yield_qtl_acre, language)}
                     </td>
                     <td className="py-3 text-[var(--ink)] font-semibold">
-                      {evalItem.weather_multiplier.toFixed(2)}x
+                      {(evalItem.weather_multiplier ?? 1).toFixed(2)}x
                     </td>
                     <td className="py-3 text-[var(--ink)] font-semibold">
                       {formatYield(evalItem.expected_yield_qtl_acre, language)}
@@ -283,7 +302,7 @@ export function DetailedAnalysisView({
                     </td>
                     <td className="py-3">
                       <span className="rounded-full bg-[var(--paper)] border border-[var(--line)] px-2 py-0.5 text-[10px] text-[var(--ink-soft)] font-semibold">
-                        {evalItem.risk_score.toFixed(2)}
+                        {(evalItem.risk_score ?? 0.2).toFixed(2)}
                       </span>
                     </td>
                     <td className="py-3">
@@ -320,40 +339,44 @@ export function DetailedAnalysisView({
           </div>
 
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            {Object.entries(scenarios).map(([key, sc]) => (
-              <div
-                key={key}
-                className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4 space-y-2.5 shadow-xs hover:border-[var(--line-strong)] transition-all"
-              >
-                <div className="flex items-center justify-between border-b border-[var(--line)] pb-2">
-                  <h4 className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
-                    <ScenarioMark scenarioKey={key} />
-                    <span>{translateScenarioName(key, sc.scenario_name, language)}</span>
-                  </h4>
-                  <span className="text-xs font-semibold text-[var(--field-deep)]">
-                    {formatCurrency(sc.total_profit_inr, language)}
-                  </span>
-                </div>
-
-                <p className="text-xs text-[var(--ink-soft)] leading-relaxed">
-                  {getScenarioDescription(key, sc, language)}
-                </p>
-
-                <div className="rounded-lg bg-[var(--surface-elevated)] p-2.5 text-[11px] text-[var(--ink-soft)] space-y-1 border border-[var(--line)]">
-                  <div>
-                    <span className="text-[var(--ink)] font-semibold">{isHi ? 'प्रणाली अनुकूलन:' : 'Adaptation:'} </span>
-                    {getScenarioAdaptationShift(key, sc, language)}
-                  </div>
-                  <div>
-                    <span className="text-[var(--ink)] font-semibold">{isHi ? 'लाभ विचलन:' : 'Profit Delta:'} </span>
-                    <span className={sc.profit_delta_from_live_inr >= 0 ? 'text-[var(--field-deep)] font-semibold' : 'text-[var(--grain-deep)] font-semibold'}>
-                      {sc.profit_delta_from_live_inr >= 0 ? '+' : ''}
-                      {formatCurrency(sc.profit_delta_from_live_inr, language)}
+            {Object.entries(scenarios).map(([key, sc]) => {
+              if (!sc) return null;
+              const delta = sc.profit_delta_from_live_inr ?? 0;
+              return (
+                <div
+                  key={key}
+                  className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4 space-y-2.5 shadow-xs hover:border-[var(--line-strong)] transition-all"
+                >
+                  <div className="flex items-center justify-between border-b border-[var(--line)] pb-2">
+                    <h4 className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
+                      <ScenarioMark scenarioKey={key} />
+                      <span>{translateScenarioName(key, sc.scenario_name, language)}</span>
+                    </h4>
+                    <span className="text-xs font-semibold text-[var(--field-deep)]">
+                      {formatCurrency(sc.total_profit_inr, language)}
                     </span>
                   </div>
+
+                  <p className="text-xs text-[var(--ink-soft)] leading-relaxed">
+                    {getScenarioDescription(key, sc, language)}
+                  </p>
+
+                  <div className="rounded-lg bg-[var(--surface-elevated)] p-2.5 text-[11px] text-[var(--ink-soft)] space-y-1 border border-[var(--line)]">
+                    <div>
+                      <span className="text-[var(--ink)] font-semibold">{isHi ? 'प्रणाली अनुकूलन:' : 'Adaptation:'} </span>
+                      {getScenarioAdaptationShift(key, sc, language)}
+                    </div>
+                    <div>
+                      <span className="text-[var(--ink)] font-semibold">{isHi ? 'लाभ विचलन:' : 'Profit Delta:'} </span>
+                      <span className={delta >= 0 ? 'text-[var(--field-deep)] font-semibold' : 'text-[var(--grain-deep)] font-semibold'}>
+                        {delta >= 0 ? '+' : ''}
+                        {formatCurrency(delta, language)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

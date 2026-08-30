@@ -8,6 +8,7 @@ import { InitializingScreen } from '@/components/InitializingScreen';
 import { AutonomousSentinelScreen } from '@/components/AutonomousSentinelScreen';
 import type { DetailedTabType } from '@/components/DetailedAnalysisView';
 import { StageSwap } from '@/components/ui/motion';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { runAutonomousCycle } from '@/services/autonomousSentinel';
 import type {
   FarmDecisionRequest,
@@ -72,18 +73,6 @@ export function MainScreen({
   const isDemo = userName === 'Demo Farmer' || userName === 'किसान मित्र';
   const hasConfigured = Boolean(savedParams?.hasConfiguredFarm) || isDemo;
 
-  // Primary View Mode: farmer (Simple on Surface) vs expert (Intelligent & Deep Underneath) vs autonomous (Sentinel)
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    savedParams?.viewMode || 'farmer'
-  );
-  const [selectedExpertTab, setSelectedExpertTab] = useState<DetailedTabType>(
-    savedParams?.selectedExpertTab || 'overview'
-  );
-
-  // Guided flow navigation: Page 3 (details entry) → cinematic → Page 4 (plan).
-  const [page, setPage] = useState<'details' | 'plan'>('details');
-  const [generating, setGenerating] = useState<boolean>(false);
-
   // Location Catalog State
   const [locations, setLocations] = useState<DistrictLocationItem[]>(ALL_INDIAN_DISTRICTS);
 
@@ -113,6 +102,14 @@ export function MainScreen({
     savedParams?.riskTolerance || 'Balanced'
   );
 
+  // Primary View Mode: farmer (Simple on Surface) vs expert (Intelligent & Deep Underneath) vs autonomous (Sentinel)
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    savedParams?.viewMode || 'farmer'
+  );
+  const [selectedExpertTab, setSelectedExpertTab] = useState<DetailedTabType>(
+    savedParams?.selectedExpertTab || 'overview'
+  );
+
   // Decision & Execution State: pre-populated if cached in localStorage
   const [decision, setDecision] = useState<FarmDecisionResponse | null>(() => {
     return loadStoredDecision(
@@ -122,6 +119,12 @@ export function MainScreen({
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Guided flow navigation: Page 3 (details entry) → cinematic → Page 4 (plan).
+  const [page, setPage] = useState<'details' | 'plan'>(
+    savedParams?.page === 'plan' && decision ? 'plan' : 'details'
+  );
+  const [generating, setGenerating] = useState<boolean>(false);
 
   // Sync state to storage whenever it changes so refresh never loses data
   useEffect(() => {
@@ -139,6 +142,7 @@ export function MainScreen({
           riskTolerance,
           viewMode,
           page,
+          selectedExpertTab,
           hasConfiguredFarm: true,
         })
       );
@@ -156,6 +160,7 @@ export function MainScreen({
     riskTolerance,
     viewMode,
     page,
+    selectedExpertTab,
   ]);
 
   // Autonomous Sentinel State
@@ -168,38 +173,6 @@ export function MainScreen({
     activeAdvisory: ProactiveAdvisory | null;
     lastActionType: ActionType;
   } | null>(null);
-
-  // Save farm parameters whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        FARM_PARAMS_STORAGE_KEY,
-        JSON.stringify({
-          selectedState,
-          selectedDistrict,
-          landAcres,
-          budgetInr,
-          irrigationType,
-          irrigationReliability,
-          season,
-          riskTolerance,
-          viewMode,
-          selectedExpertTab,
-        })
-      );
-    } catch {}
-  }, [
-    selectedState,
-    selectedDistrict,
-    landAcres,
-    budgetInr,
-    irrigationType,
-    irrigationReliability,
-    season,
-    riskTolerance,
-    viewMode,
-    selectedExpertTab,
-  ]);
 
   // Load locations on mount
   useEffect(() => {
@@ -380,9 +353,9 @@ export function MainScreen({
     if (initialDistrict) setSelectedDistrict(initialDistrict);
   }, [initialState, initialDistrict]);
 
-  // Execute initial optimization calculation on mount only in Demo Mode on the plan page or if cached decision exists
+  // Execute optimization calculation if on the plan page and decision is not yet loaded
   useEffect(() => {
-    if (isDemo && !decision && page === 'plan') {
+    if (!decision && page === 'plan' && !loading) {
       runOptimization();
     } else if (decision) {
       try {
@@ -398,7 +371,7 @@ export function MainScreen({
         console.warn('Initial cached Sentinel cycle fallback:', err);
       }
     }
-  }, [isDemo, page]);
+  }, [decision, page, loading]);
 
   // Guided experience: Page 3 (details entry) → cinematic → Page 4 (full-screen
   // plan) → Page 5 (Sentinel). The three live inside one StageSwap so moving
@@ -413,67 +386,73 @@ export function MainScreen({
         order={innerStage === 'details' ? 3 : innerStage === 'plan' ? 4 : 5}
       >
         {innerStage === 'sentinel' ? (
-          <AutonomousSentinelScreen
-            userName={userName}
-            decision={decision || ({} as FarmDecisionResponse)}
-            logs={sentinelLogs}
-            advisory={proactiveAdvisory}
-            isChecking={isCheckingSentinel}
-            onRunCheck={handleRunSentinelCheck}
-            onBackToPlan={() => {
-              setViewMode('farmer');
-              setPage('plan');
-            }}
-            onLogout={onLogout || onBack}
-            onEditDetails={() => {
-              setViewMode('farmer');
-              setPage('details');
-            }}
-            onChangeLocation={() => {
-              setViewMode('farmer');
-              onBack();
-            }}
-          />
+          <ErrorBoundary fallbackTitle={isHi ? 'सेंटीनेल स्क्रीन लोड करने में समस्या आई' : 'Unable to load Sentinel screen'}>
+            <AutonomousSentinelScreen
+              userName={userName}
+              decision={decision || ({} as FarmDecisionResponse)}
+              logs={sentinelLogs}
+              advisory={proactiveAdvisory}
+              isChecking={isCheckingSentinel}
+              onRunCheck={handleRunSentinelCheck}
+              onBackToPlan={() => {
+                setViewMode('farmer');
+                setPage('plan');
+              }}
+              onLogout={onLogout || onBack}
+              onEditDetails={() => {
+                setViewMode('farmer');
+                setPage('details');
+              }}
+              onChangeLocation={() => {
+                setViewMode('farmer');
+                onBack();
+              }}
+            />
+          </ErrorBoundary>
         ) : innerStage === 'details' ? (
-          <FarmDetailsScreen
-            userName={userName}
-            selectedState={selectedState}
-            selectedDistrict={selectedDistrict}
-            landAcres={landAcres}
-            budgetInr={budgetInr}
-            irrigationType={irrigationType}
-            irrigationReliability={irrigationReliability}
-            season={season}
-            riskTolerance={riskTolerance}
-            loading={loading}
-            hasPlan={Boolean(decision)}
-            onLandAcresChange={setLandAcres}
-            onBudgetInrChange={setBudgetInr}
-            onIrrigationTypeChange={setIrrigationType}
-            onIrrigationReliabilityChange={setIrrigationReliability}
-            onSeasonChange={setSeason}
-            onRiskToleranceChange={setRiskTolerance}
-            onGenerate={handleGeneratePlan}
-            onChangeLocation={onBack}
-            onViewPlan={() => setPage('plan')}
-            onProceedToSentinel={() => setViewMode('autonomous')}
-            onLogout={onLogout || onBack}
-          />
+          <ErrorBoundary fallbackTitle={isHi ? 'खेत विवरण स्क्रीन लोड करने में समस्या आई' : 'Unable to load Farm Details screen'}>
+            <FarmDetailsScreen
+              userName={userName}
+              selectedState={selectedState}
+              selectedDistrict={selectedDistrict}
+              landAcres={landAcres}
+              budgetInr={budgetInr}
+              irrigationType={irrigationType}
+              irrigationReliability={irrigationReliability}
+              season={season}
+              riskTolerance={riskTolerance}
+              loading={loading}
+              hasPlan={Boolean(decision)}
+              onLandAcresChange={setLandAcres}
+              onBudgetInrChange={setBudgetInr}
+              onIrrigationTypeChange={setIrrigationType}
+              onIrrigationReliabilityChange={setIrrigationReliability}
+              onSeasonChange={setSeason}
+              onRiskToleranceChange={setRiskTolerance}
+              onGenerate={handleGeneratePlan}
+              onChangeLocation={onBack}
+              onViewPlan={() => setPage('plan')}
+              onProceedToSentinel={() => setViewMode('autonomous')}
+              onLogout={onLogout || onBack}
+            />
+          </ErrorBoundary>
         ) : (
-          <FarmPlanScreen
-            userName={userName}
-            selectedState={selectedState}
-            selectedDistrict={selectedDistrict}
-            landAcres={landAcres}
-            budgetInr={budgetInr}
-            season={season}
-            decision={decision}
-            loading={loading}
-            onEditDetails={handleEditDetails}
-            onChangeLocation={onBack}
-            onProceedToSentinel={() => setViewMode('autonomous')}
-            onLogout={onLogout || onBack}
-          />
+          <ErrorBoundary fallbackTitle={isHi ? 'योजना स्क्रीन लोड करने में समस्या आई' : 'Unable to load Farm Plan screen'}>
+            <FarmPlanScreen
+              userName={userName}
+              selectedState={selectedState}
+              selectedDistrict={selectedDistrict}
+              landAcres={landAcres}
+              budgetInr={budgetInr}
+              season={season}
+              decision={decision}
+              loading={loading}
+              onEditDetails={handleEditDetails}
+              onChangeLocation={onBack}
+              onProceedToSentinel={() => setViewMode('autonomous')}
+              onLogout={onLogout || onBack}
+            />
+          </ErrorBoundary>
         )}
       </StageSwap>
 
