@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Mic,
   MicOff,
@@ -15,6 +15,9 @@ import {
   RefreshCw,
   VolumeX,
   Radio,
+  Sparkles,
+  Clock,
+  AlertCircle,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { JourneyNav } from '@/components/JourneyNav';
@@ -39,18 +42,20 @@ import {
 } from '@/lib/planProgress';
 import {
   getContextualTaskChecklist,
+  getContextualSuggestedPrompts,
   UNIVERSAL_OBSERVATIONS,
 } from '@/lib/contextualChecklists';
 
 /**
- * A section label on the watch sheet: caps, then a rule running to the edge.
- * The same device the plan sheet uses, so pages 4 and 5 speak in one hand.
+ * A section label on the workspace: caps, then a continuous hairline running to the edge.
  */
-function WatchHead({ title, children }: { title: string; children?: React.ReactNode }) {
+function SectionHeader({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-3">
+    <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-2">
       <div className="flex min-w-0 flex-1 items-baseline gap-3">
-        <h2 className="t-eyebrow shrink-0 text-[0.66rem] text-[var(--ink-soft)]">{title}</h2>
+        <h2 className="t-eyebrow shrink-0 text-[0.68rem] text-[var(--ink-soft)] uppercase tracking-wider font-bold">
+          {title}
+        </h2>
         <span
           className="h-px min-w-4 flex-1 -translate-y-[3px]"
           style={{ background: 'var(--line)' }}
@@ -60,6 +65,46 @@ function WatchHead({ title, children }: { title: string; children?: React.ReactN
       {children}
     </div>
   );
+}
+
+interface RecentObservationItem {
+  id: string;
+  title: string;
+  timestamp: string;
+  day: number;
+  week: number;
+  status: 'acknowledged' | 'under_review' | 'action_recommended' | 'plan_updated';
+}
+
+const RECENT_OBS_STORAGE_KEY = 'agrioptima_recent_observations_v1';
+
+function loadRecentObservations(isHi: boolean): RecentObservationItem[] {
+  try {
+    const raw = localStorage.getItem(RECENT_OBS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+
+  return [
+    {
+      id: 'obs-seed-1',
+      title: isHi ? 'खेत की प्रारंभिक तैयारी व जुताई जांची गई' : 'Field preparation & deep ploughing verified',
+      timestamp: isHi ? 'आज · दिन 1' : 'Today · Day 1',
+      day: 1,
+      week: 1,
+      status: 'acknowledged',
+    },
+    {
+      id: 'obs-seed-2',
+      title: isHi ? 'मिट्टी नमी स्तर और जल निकासी की समीक्षा पूरी' : 'Soil moisture and field drainage inspected',
+      timestamp: isHi ? '2 घंटे पहले' : '2 hours ago',
+      day: 1,
+      week: 1,
+      status: 'under_review',
+    },
+  ];
 }
 
 interface AutonomousSentinelScreenProps {
@@ -101,6 +146,9 @@ export function AutonomousSentinelScreen({
   const [customReportText, setCustomReportText] = useState<string>('');
   const [reportSubmitted, setReportSubmitted] = useState<boolean>(false);
   const [reportFeedback, setReportFeedback] = useState<string | null>(null);
+  const [recentObservations, setRecentObservations] = useState<RecentObservationItem[]>(() =>
+    loadRecentObservations(isHi)
+  );
 
   // Voice & Text Assistant State
   const [isListening, setIsListening] = useState<boolean>(false);
@@ -122,6 +170,7 @@ export function AutonomousSentinelScreen({
   const audioSpeakerRef = useRef<{ stop: () => void } | null>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<HTMLDivElement>(null);
+  const observationSectionRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll input to the latest words as the user speaks
   useEffect(() => {
@@ -130,8 +179,7 @@ export function AutonomousSentinelScreen({
     }
   }, [chatInput]);
 
-  // Keep the newest message in view. Scrolls the stream container only — never
-  // the page — so landing on this screen still starts at the top.
+  // Keep the newest message in view
   useEffect(() => {
     const el = streamRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -187,11 +235,30 @@ export function AutonomousSentinelScreen({
   // A calm plan needs no intervention; anything else is an action recommendation.
   const isCalm = !advisory || advisory.severity === 'info' || advisory.severity === 'success';
 
+  // Dynamic suggested prompts for the AI assistant
+  const suggestedPrompts = useMemo(() => {
+    return getContextualSuggestedPrompts(
+      progress.todayTask?.category,
+      primaryCropName,
+      progress.currentDay,
+      progress.currentWeek,
+      isHi
+    );
+  }, [progress.todayTask?.category, primaryCropName, progress.currentDay, progress.currentWeek, isHi]);
+
   // Toggle observation checkbox
   const toggleObservation = (id: string) => {
     setSelectedObservations((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  };
+
+  // Smooth scroll to observation section and select task delayed
+  const handleReportDelay = () => {
+    if (!selectedObservations.includes('task_delayed')) {
+      setSelectedObservations((prev) => [...prev, 'task_delayed']);
+    }
+    observationSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   // Submit farmer observation to trigger re-evaluation
@@ -200,6 +267,34 @@ export function AutonomousSentinelScreen({
 
     setReportSubmitted(true);
     onRunCheck(planContext);
+
+    // Build concise label for recent observations list
+    let reportTitle = customReportText.trim();
+    if (!reportTitle && selectedObservations.length > 0) {
+      const firstId = selectedObservations[0];
+      const matchQ = taskChecklist.questions.find((q) => q.id === firstId);
+      const matchU = UNIVERSAL_OBSERVATIONS.find((u) => u.id === firstId);
+      reportTitle = isHi
+        ? (matchQ?.label.hi || matchU?.label.hi || 'खेत अवलोकन दर्ज किया गया')
+        : (matchQ?.label.en || matchU?.label.en || 'Field observation reported');
+    }
+
+    const newObs: RecentObservationItem = {
+      id: `obs-${Date.now()}`,
+      title: reportTitle,
+      timestamp: isHi ? 'अभी-अभी' : 'Just now',
+      day: progress.currentDay,
+      week: progress.currentWeek,
+      status: advisory?.action_required ? 'action_recommended' : 'acknowledged',
+    };
+
+    setRecentObservations((prev) => {
+      const updated = [newObs, ...prev.slice(0, 9)];
+      try {
+        localStorage.setItem(RECENT_OBS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
 
     const note = isHi
       ? `आपकी रिपोर्ट दर्ज कर ली गई है। AI सेंटीनेल ने दिन ${progress.currentDay} के कार्य '${progress.todayTask?.title || 'कार्य'}' और खेत की स्थिति का पुनः विश्लेषण किया है।`
@@ -255,8 +350,7 @@ export function AutonomousSentinelScreen({
     }
   };
 
-
-  // Stop the agent's spoken reply without cancelling the conversation
+  // Stop the agent's spoken reply
   const handleStopAudio = () => {
     try {
       audioSpeakerRef.current?.stop();
@@ -264,9 +358,8 @@ export function AutonomousSentinelScreen({
     setIsSpeaking(false);
   };
 
-  // Explicit Mic Toggle Handler (Starts strictly on click, closes strictly on click)
+  // Explicit Mic Toggle Handler
   const handleToggleVoice = () => {
-    // 1. If currently listening, clicking the mic explicitly CLOSES and SUBMITS
     if (isRecordingRef.current || isListening) {
       isRecordingRef.current = false;
       setIsListening(false);
@@ -286,7 +379,6 @@ export function AutonomousSentinelScreen({
       return;
     }
 
-    // 2. If not listening, clicking the mic explicitly STARTS continuous listening
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
@@ -325,7 +417,6 @@ export function AutonomousSentinelScreen({
       };
 
       recognition.onend = () => {
-        // Continuous session: If user has NOT explicitly toggled mic off, restart listening automatically
         if (isRecordingRef.current) {
           try {
             recognition.start();
@@ -337,7 +428,6 @@ export function AutonomousSentinelScreen({
 
       recognition.onerror = (event: any) => {
         if (event.error === 'no-speech' && isRecordingRef.current) {
-          // Keep active during pauses
           return;
         }
       };
@@ -350,17 +440,8 @@ export function AutonomousSentinelScreen({
     }
   };
 
-  const quickPrompts = [
-    isHi ? 'क्या आज सिंचाई करनी चाहिए?' : 'Should I irrigate today?',
-    isHi ? 'बीज खरीदने का सही समय क्या है?' : 'When to buy seeds?',
-    isHi ? 'कौन सी खाद कब डालें?' : 'When to apply fertilizer?',
-    isHi ? 'मौसम का पूर्वानुमान कैसा है?' : 'What is the 7-day weather?',
-  ];
-
   /* ------------------------------------------------------------------ */
-  /* The five streams the sentinel watches — one row per data source.    */
-  /* Merges the old capability pills + surveillance checklist so each    */
-  /* source is stated once, with its live reading and its cadence.       */
+  /* The five streams the sentinel watches                               */
   /* ------------------------------------------------------------------ */
   const streams = [
     {
@@ -368,7 +449,7 @@ export function AutonomousSentinelScreen({
       Icon: CloudRain,
       tone: 'var(--sky)',
       name: isHi ? '7-दिन मौसम' : 'Weather (7-day)',
-      reading: `${formatRainfall(rain7d, language)} · ${isHi ? 'मिट्टी नमी' : 'soil'} ${(soilMoisture * 100).toFixed(0)}%`,
+      reading: `${formatRainfall(rain7d, language)} · ${isHi ? 'नमी' : 'Soil'} ${(soilMoisture * 100).toFixed(0)}%`,
       live: true,
       cadence: isHi ? 'प्रत्येक 6 घंटे' : 'Every 6 hrs',
     },
@@ -377,7 +458,7 @@ export function AutonomousSentinelScreen({
       Icon: TrendingUp,
       tone: 'var(--grain-deep)',
       name: isHi ? 'मंडी भाव' : 'Mandi prices',
-      reading: isHi ? 'देशभर की मंडियां' : 'All-India feed',
+      reading: isHi ? 'अखिल भारतीय फीड' : 'All-India feed',
       live: false,
       cadence: isHi ? 'दैनिक' : 'Daily',
     },
@@ -404,18 +485,10 @@ export function AutonomousSentinelScreen({
       Icon: AlertOctagon,
       tone: 'var(--risk)',
       name: isHi ? 'चरम मौसम' : 'Extreme weather',
-      reading: isHi ? 'लगातार निगरानी' : 'Live monitored',
+      reading: isHi ? 'लाइव मॉनिटर' : 'Live monitored',
       live: true,
       cadence: isHi ? 'रियल-टाइम' : 'Real-time',
     },
-  ];
-
-  const observations = [
-    { id: 'rain', label: isHi ? 'अप्रत्याशित भारी बारिश हुई' : 'Unexpected heavy rainfall' },
-    { id: 'sowing', label: isHi ? 'बुवाई तय समय से पहले/देर से हुई' : 'Sown earlier or later than planned' },
-    { id: 'leaf_yellow', label: isHi ? 'फसल की पत्तियों का रंग पीला पड़ा' : 'Crop color changed / leaves yellowing' },
-    { id: 'pest', label: isHi ? 'खेत में कीट या बीमारी के लक्षण दिखे' : 'Pest or disease symptoms noticed' },
-    { id: 'water', label: isHi ? 'पानी या सिंचाई में समस्या आई' : 'Water / irrigation problem occurred' },
   ];
 
   const hasReport = selectedObservations.length > 0 || customReportText.trim().length > 0;
@@ -423,7 +496,7 @@ export function AutonomousSentinelScreen({
   return (
     <div className="relative flex min-h-screen w-full flex-col justify-between text-[var(--ink)] selection:bg-[var(--grain-tint)] selection:text-[var(--grain-deep)]">
       {/* ===================================================================== */}
-      {/* 1. FLOATING JOURNEY NAV — same chrome layer as every other stage      */}
+      {/* 1. TOP NAVIGATION                                                     */}
       {/* ===================================================================== */}
       <JourneyNav
         stage={4}
@@ -448,7 +521,7 @@ export function AutonomousSentinelScreen({
             </button>
             <button
               type="button"
-              onClick={onRunCheck}
+              onClick={() => onRunCheck(planContext)}
               disabled={isChecking}
               className="btn btn-primary btn-sm disabled:opacity-60"
             >
@@ -468,102 +541,191 @@ export function AutonomousSentinelScreen({
       />
 
       {/* ===================================================================== */}
-      {/* 2. MAIN WORKSPACE                                                     */}
+      {/* 2. CONTINUOUS AI OPERATING SYSTEM WORKSPACE                           */}
       {/* ===================================================================== */}
-      <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 pb-24 pt-24 sm:px-8 sm:pt-28 md:pb-8">
-        {/* ------------------------------------------------------------- */}
-        {/* WATCH BAND — cinematic sentinel hero, de-boxed & spatial       */}
-        {/* ------------------------------------------------------------- */}
-        <Reveal className="border-b border-[var(--line)] pb-9">
-          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-10">
-            {/* THE FARM, UNDER WATCH — the AI lives inside the land, not beside
-                it: aiState is driven by what is actually happening right now. */}
-            <div className="lg:col-span-7">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
-                  <span className="relative flex h-1.5 w-1.5">
+      <main className="mx-auto w-full max-w-7xl flex-1 space-y-12 px-5 pb-24 pt-24 sm:px-8 sm:pt-28 md:pb-12">
+
+        {/* =================================================================== */}
+        {/* SECTION 1: TOP STATUS + TODAY'S TASK (LEFT) & AGENT DECISION (RIGHT)*/}
+        {/* =================================================================== */}
+        <Reveal className="border-b border-[var(--line)] pb-10">
+          <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-12">
+
+            {/* LEFT COLUMN: TODAY'S TASK & CONNECTED TIMELINE */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
                     <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-[var(--field)]" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--field)]" />
                   </span>
-                  {isHi ? 'निगरानी सक्रिय · 24/7' : 'Sentinel Watching · 24/7'}
+                  <span className="t-eyebrow text-[11px] font-bold text-[var(--field-deep)] uppercase tracking-wider">
+                    {isHi ? 'सेंटीनेल निगरानी सक्रिय · 24/7' : 'SENTINEL WATCHING · 24/7'}
+                  </span>
                 </div>
 
-                {safePlanState.isStarted && (
-                  <span className="chip chip-field text-[10px]">
-                    {isHi
-                      ? `दिन ${progress.currentDay} / ${progress.totalDays} · सप्ताह ${progress.currentWeek}`
-                      : `Day ${progress.currentDay} of ${progress.totalDays} · Week ${progress.currentWeek}`}
-                  </span>
-                )}
-              </div>
-
-              <h1 className="t-h1 mt-3 text-[1.9rem] leading-[1.1] sm:text-[2.3rem]">
-                {isHi ? 'सेंटीनेल आपके खेत पर नज़र रखे हुए है' : 'Sentinel is watching your farm'}
-              </h1>
-
-              <FarmDigitalTwin
-                decision={decision}
-                height={320}
-                interactive
-                showWeather
-                scanning={isChecking}
-                aiState={isChecking ? 'analyzing' : isListening ? 'listening' : 'complete'}
-                showDetailCard={false}
-                className="mt-6 w-full"
-              />
-
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)]" aria-hidden />
-                <span className="t-eyebrow text-[0.6rem] text-[var(--ink-ghost)]">
-                  {districtLabel}, {stateLabel} · {watchedCrops}
-                </span>
-                <span className="font-data text-[10px] text-[var(--ink-faint)]">
-                  {isHi ? 'अंतिम जांच' : 'Last check'} ·{' '}
-                  {latestLog ? latestLog.timestamp : isHi ? 'अभी-अभी' : 'just now'}
+                <span className="chip chip-field text-[11px] font-medium font-data">
+                  {isHi
+                    ? `दिन ${progress.currentDay} / ${progress.totalDays} · सप्ताह ${progress.currentWeek}`
+                    : `Day ${progress.currentDay} of ${progress.totalDays} · Week ${progress.currentWeek}`}
                 </span>
               </div>
 
-              {safePlanState.isStarted && progress.todayTask && (
-                <div className="mt-4 rounded-[14px] border border-[var(--field)] bg-[var(--field-tint)] p-3 shadow-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="t-eyebrow text-[10px] font-bold text-[var(--field-deep)]">
-                        {isHi ? 'आज का निर्धारित कार्य' : 'TODAY\'S SCHEDULED TASK'}
+              <div>
+                <h1 className="t-h2 text-[1.75rem] font-bold tracking-tight text-[var(--ink)] sm:text-[2rem]">
+                  {isHi ? `आज का कार्य (दिन ${progress.currentDay})` : `Today's Task (Day ${progress.currentDay})`}
+                </h1>
+                <p className="mt-1 text-xs text-[var(--ink-soft)] font-medium">
+                  {districtLabel}, {stateLabel} · {watchedCrops} · {season} 2026
+                </p>
+              </div>
+
+              {/* REFINED TASK SPOTLIGHT (Prominent 3D Living Farm Digital Twin) */}
+              <div className="border-l-3 border-[var(--field)] bg-[var(--field-tint)]/80 rounded-r-[20px] p-5 sm:p-6 shadow-xs">
+                <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+                  {/* Prominent 3D Farm Digital Twin Animation */}
+                  <div className="w-full sm:w-[220px] md:w-[250px] lg:w-[270px] h-[160px] sm:h-[180px] shrink-0 rounded-[16px] overflow-hidden bg-[var(--surface-solid)] border border-[var(--line)] relative shadow-sm">
+                    <FarmDigitalTwin
+                      decision={decision}
+                      height={180}
+                      compact={true}
+                      interactive={true}
+                      showWeather={true}
+                      scanning={isChecking}
+                      aiState={isChecking ? 'analyzing' : isListening ? 'listening' : 'complete'}
+                      showDetailCard={false}
+                      className="w-full h-full"
+                    />
+                  </div>
+
+                  {/* Task Info & Actions */}
+                  <div className="flex-1 min-w-0 space-y-3 w-full">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="t-eyebrow text-[0.66rem] font-bold text-[var(--field-deep)] uppercase tracking-wider">
+                        {isHi
+                          ? `दिन ${progress.currentDay} · ${progress.todayTask?.category || 'कृषि कार्य'}`
+                          : `DAY ${progress.currentDay} · ${(progress.todayTask?.category || 'FARM WORK').toUpperCase()}`}
                       </span>
-                      <span className="h-1 w-1 rounded-full bg-[var(--field)]" />
-                      <span className="font-data text-xs font-semibold text-[var(--field-deep)]">
-                        {isHi ? `दिन ${progress.currentDay}` : `Day ${progress.currentDay}`}
-                      </span>
+
+                      {safePlanState.completedDays.includes(progress.currentDay) && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--field-deep)] bg-white/70 px-2.5 py-0.5 rounded-full shadow-2xs">
+                          <CheckCircle2 size={13} />
+                          <span>{isHi ? 'कार्य संपन्न' : 'Completed'}</span>
+                        </span>
+                      )}
                     </div>
-                    {onToggleDayCompletion && (
+
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-bold text-[var(--ink)]">
+                        {progress.todayTask?.title || (isHi ? 'दैनिक खेत निगरानी' : 'Daily Farm Monitoring')}
+                      </h3>
+                      <p className="mt-1 text-[13px] leading-relaxed text-[var(--ink-soft)]">
+                        {progress.todayTask?.desc || (isHi ? 'मौसम एवं नमी के अनुसार सामान्य कृषि कार्य जारी रखें।' : 'Continue standard farm surveillance aligned with weather.')}
+                      </p>
+                    </div>
+
+                    {/* Inline Task Actions */}
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1.5 border-t border-[var(--line-soft)]">
+                      {onToggleDayCompletion && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleDayCompletion(progress.currentDay)}
+                          className={`btn btn-sm ${
+                            safePlanState.completedDays.includes(progress.currentDay)
+                              ? 'btn-ghost border border-[var(--field)] font-semibold text-[var(--field-deep)] bg-white/80'
+                              : 'btn-primary shadow-xs'
+                          }`}
+                        >
+                          <Check size={13} />
+                          <span>
+                            {safePlanState.completedDays.includes(progress.currentDay)
+                              ? (isHi ? 'कार्य संपन्न दर्ज है ✓' : 'Task Completed ✓')
+                              : (isHi ? 'कार्य संपन्न दर्ज करें' : 'Mark as Completed')}
+                          </span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
-                        onClick={() => onToggleDayCompletion(progress.currentDay)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--field-deep)] hover:underline"
+                        onClick={handleReportDelay}
+                        className="btn btn-ghost btn-sm text-[var(--ink-soft)] hover:text-[var(--ink)] flex items-center gap-1.5"
                       >
-                        <Check size={12} />
-                        <span>
-                          {safePlanState.completedDays.includes(progress.currentDay)
-                            ? (isHi ? 'संपन्न ✓' : 'Done ✓')
-                            : (isHi ? 'पूरा हुआ चिन्हित करें' : 'Mark Done')}
-                        </span>
+                        <Clock size={13} />
+                        <span>{isHi ? 'समस्या / देरी दर्ज करें' : 'Report Issue / Delay'}</span>
                       </button>
-                    )}
+                    </div>
                   </div>
-                  <p className="mt-1 text-xs font-bold text-[var(--ink)]">
-                    {progress.todayTask.title}
-                  </p>
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--ink-soft)]">
-                    {progress.todayTask.desc}
-                  </p>
                 </div>
-              )}
+              </div>
+
+              {/* CONNECTED WEEK PROGRESS TIMELINE (A true progress journey: ●────○────○) */}
+              <div className="pt-2">
+                <div className="flex items-center justify-between text-xs mb-3">
+                  <span className="t-eyebrow text-[10px] font-bold text-[var(--ink-soft)] uppercase tracking-wider">
+                    {isHi ? `सप्ताह ${progress.currentWeek} प्रगति` : `WEEK ${progress.currentWeek} PROGRESS`}
+                  </span>
+                  <span className="font-data text-[11px] text-[var(--ink-soft)]">
+                    {isHi ? `दिन ${(progress.currentWeek - 1) * 7 + 1}–${progress.currentWeek * 7}` : `Days ${(progress.currentWeek - 1) * 7 + 1}–${progress.currentWeek * 7}`}
+                  </span>
+                </div>
+
+                <div className="relative flex items-center justify-between pt-1">
+                  {/* Continuous Connecting Baseline Rule */}
+                  <span
+                    className="absolute left-3 right-3 top-[14px] h-[2px] z-0"
+                    style={{ background: 'var(--line-strong)' }}
+                    aria-hidden
+                  />
+
+                  {Array.from({ length: 7 }, (_, i) => {
+                    const dayNum = (progress.currentWeek - 1) * 7 + i + 1;
+                    const isToday = dayNum === progress.currentDay && safePlanState.isStarted;
+                    const isDone = safePlanState.completedDays.includes(dayNum) || (dayNum < progress.currentDay && safePlanState.isStarted);
+
+                    return (
+                      <div
+                        key={dayNum}
+                        className="relative z-10 flex flex-col items-center group cursor-default"
+                      >
+                        {/* Node */}
+                        <div
+                          className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-transform ${
+                            isToday
+                              ? 'bg-[var(--field-deep)] text-white ring-4 ring-[var(--field-tint)] shadow-sm scale-110'
+                              : isDone
+                              ? 'bg-[var(--field)] text-white shadow-xs'
+                              : 'bg-[var(--surface-solid)] border-2 border-[var(--line-strong)] text-[var(--ink-ghost)]'
+                          }`}
+                        >
+                          {isDone ? '✓' : isToday ? '●' : '○'}
+                        </div>
+
+                        {/* Day Label */}
+                        <span
+                          className={`mt-1.5 text-[10px] font-medium transition-colors ${
+                            isToday
+                              ? 'font-bold text-[var(--field-deep)]'
+                              : isDone
+                              ? 'text-[var(--ink)]'
+                              : 'text-[var(--ink-ghost)]'
+                          }`}
+                        >
+                          {isHi ? `दिन ${i + 1}` : `Day ${i + 1}`}
+                        </span>
+
+                        <span className="font-data text-[9px] text-[var(--ink-faint)]">
+                          d{dayNum}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
-
-            {/* THE VERDICT — what the watch concluded, stated as a reading */}
-            <div className="lg:col-span-5 lg:border-l lg:border-[var(--line)] lg:pl-10">
-              <WatchHead title={isHi ? 'एजेंट का निर्णय' : 'Agent decision'}>
+            {/* RIGHT COLUMN: AGENT DECISION (Clean System Status Panel, No Cards Inside Cards) */}
+            <div className="lg:col-span-5 lg:border-l lg:border-[var(--line)] lg:pl-10 space-y-6">
+              <SectionHeader title={isHi ? 'एजेंट का निर्णय' : 'AGENT DECISION'}>
                 <span className={`chip shrink-0 text-[10px] ${isCalm ? 'chip-field' : 'chip-grain'}`}>
                   {isCalm ? <CheckCircle2 size={12} /> : <Radio size={12} />}
                   {isCalm
@@ -574,46 +736,58 @@ export function AutonomousSentinelScreen({
                       ? 'कार्यवाही की सिफारिश'
                       : 'Action recommended'}
                 </span>
-              </WatchHead>
+              </SectionHeader>
 
-              <h2 className="t-h3 mt-5 text-[1.15rem] leading-snug text-[var(--ink)] sm:text-[1.3rem]">
-                {advisory?.headline ||
-                  (isHi
-                    ? 'आपकी वर्तमान खेत योजना पूरी तरह अनुकूल है।'
-                    : 'Your current farm plan matches field conditions.')}
-              </h2>
+              <div>
+                <h2 className="t-h3 text-[1.25rem] font-bold leading-snug text-[var(--ink)] sm:text-[1.4rem]">
+                  {advisory?.headline ||
+                    (isHi
+                      ? 'आपकी वर्तमान खेत योजना पूरी तरह अनुकूल है।'
+                      : 'Your current farm plan matches field conditions.')}
+                </h2>
+                <p className="mt-1.5 text-xs text-[var(--ink-soft)] font-data">
+                  {isHi ? 'अंतिम स्वचालित जांच' : 'Last autonomous scan'} · {latestLog ? latestLog.timestamp : (isHi ? 'अभी-अभी' : 'just now')}
+                </p>
+              </div>
 
-              <div className="mt-6 space-y-3">
+              {/* Clean Monitored Metrics (Separated by subtle hairlines) */}
+              <div className="divide-y divide-[var(--line-soft)] border-y border-[var(--line-soft)] py-1">
                 <ReadingRow
-                  label={isHi ? 'मिट्टी नमी' : 'Soil moisture'}
-                  value={`${(soilMoisture * 100).toFixed(0)}%`}
+                  label={isHi ? 'मिट्टी नमी' : 'Soil Moisture'}
+                  value={`${(soilMoisture * 100).toFixed(0)}% · ${isHi ? 'अनुकूल' : 'Optimal'}`}
                 />
                 <ReadingRow
-                  label={isHi ? '7-दिन वर्षा' : 'Rain (7-day)'}
+                  label={isHi ? '7-दिन वर्षा' : 'Rain (7-Day Forecast)'}
                   value={formatRainfall(rain7d, language)}
                 />
                 <ReadingRow
-                  label={isHi ? 'निगरानी में फसलें' : 'Crops watched'}
+                  label={isHi ? 'निगरानी में फसलें' : 'Crop Watched'}
                   value={watchedCrops}
                 />
               </div>
 
-              <dl className="mt-7 space-y-5 border-t border-[var(--line)] pt-5">
+              {/* Analytical Summary */}
+              <dl className="space-y-4 pt-1 text-xs">
                 <div>
-                  <dt className="t-eyebrow mb-1.5">{isHi ? 'क्या स्थिति है?' : 'What changed'}</dt>
+                  <dt className="t-eyebrow mb-1 text-[0.62rem] font-bold text-[var(--ink-soft)] uppercase tracking-wider">
+                    {isHi ? 'क्या स्थिति है?' : 'WHAT CHANGED'}
+                  </dt>
                   <dd className="text-[13px] leading-relaxed text-[var(--ink-soft)]">
                     {isHi
-                      ? `7-दिवसीय वर्षा ${rain7d.toFixed(1)} mm और मिट्टी नमी ${(soilMoisture * 100).toFixed(0)}% है।`
-                      : `Rainfall forecast is ${rain7d.toFixed(1)} mm and soil moisture is at ${(soilMoisture * 100).toFixed(0)}%.`}
+                      ? `7-दिवसीय वर्षा पूर्वानुमान ${rain7d.toFixed(1)} mm और मिट्टी नमी ${(soilMoisture * 100).toFixed(0)}% है। खेत की सभी स्थितियां सुरक्षित सीमा में हैं।`
+                      : `Rainfall forecast is ${rain7d.toFixed(1)} mm and root zone soil moisture is at ${(soilMoisture * 100).toFixed(0)}%. Farm conditions remain balanced.`}
                   </dd>
                 </div>
-                <div className="border-l-2 border-[var(--field)] pl-4">
-                  <dt className="t-eyebrow mb-1.5">{isHi ? 'सिफारिश' : 'What you should do'}</dt>
-                  <dd className="text-[13px] leading-relaxed text-[var(--ink-soft)]">
+
+                <div className="border-l-2 border-[var(--field)] pl-3.5">
+                  <dt className="t-eyebrow mb-1 text-[0.62rem] font-bold text-[var(--field-deep)] uppercase tracking-wider">
+                    {isHi ? 'क्या करना चाहिए?' : 'WHAT YOU SHOULD DO'}
+                  </dt>
+                  <dd className="text-[13px] leading-relaxed font-medium text-[var(--ink)]">
                     {advisory?.recommended_action ||
                       (isHi
-                        ? 'निर्धारित 7-दिवसीय कार्ययोजना अनुसार जुताई व बीज तैयारी जारी रखें।'
-                        : 'Proceed with the scheduled 7-day action plan for seedbed preparation.')}
+                        ? 'दिन के निर्धारित कार्य के अनुसार खेत की तैयारी व सामान्य कृषि प्रबंधन जारी रखें।'
+                        : 'Proceed with the scheduled farm plan for today as planned.')}
                   </dd>
                 </div>
               </dl>
@@ -621,302 +795,55 @@ export function AutonomousSentinelScreen({
           </div>
         </Reveal>
 
-        {/* ------------------------------------------------------------- */}
-        {/* TELEMETRY — five streams as premium cards, not a flat grid     */}
-        {/* ------------------------------------------------------------- */}
-        <Reveal delay={60}>
-          <WatchHead title={isHi ? 'सेंटीनेल क्या देख रहा है' : 'What the sentinel watches'}>
-            <button
-              type="button"
-              onClick={() => setIsLogModalOpen(true)}
-              className="inline-flex shrink-0 items-center gap-1.5 border-b border-[var(--line-strong)] pb-0.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:border-[var(--field)] hover:text-[var(--field-deep)]"
-            >
-              {isHi ? 'सभी निगरानी लॉग्स देखें' : 'View all sentinel logs'}
-              <ArrowRight size={12} />
-            </button>
-          </WatchHead>
-
-          {/* one ruled row per source: what it is, what it reads, how often.
-              A ledger, not five cards — the sources are a list of facts. */}
-          <div className="mt-5">
-            {streams.map((s, i) => (
-              <div
-                key={s.id}
-                className="animate-stream-slide flex items-center gap-4 border-b border-[var(--line-soft)] py-3.5 sm:gap-6"
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
-                <span
-                  className="flex w-[9.5rem] shrink-0 items-center gap-2 text-[13px] font-medium sm:w-[12rem]"
-                  style={{ color: s.tone }}
-                >
-                  <s.Icon size={14} className="shrink-0" strokeWidth={1.75} />
-                  <span className="truncate">{s.name}</span>
-                </span>
-
-                <span className="font-data min-w-0 flex-1 truncate text-[13px] text-[var(--ink)]">
-                  {s.reading}
-                </span>
-
-                <span className="t-eyebrow flex shrink-0 items-center gap-1.5 text-[0.55rem] text-[var(--ink-faint)]">
-                  {s.live && (
-                    <span
-                      className="animate-breathe h-1.5 w-1.5 rounded-full"
-                      style={{ background: s.tone }}
-                      aria-hidden
-                    />
-                  )}
-                  {s.cadence}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-
-        {/* ------------------------------------------------------------- */}
-        {/* GROUND TRUTH (left) + CONVERSATION (right)                     */}
-        {/* ------------------------------------------------------------- */}
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          {/* ---------- FARMER OBSERVATIONS ---------- */}
-          <Reveal className="lg:col-span-5" delay={90}>
-            <WatchHead title={isHi ? 'खेत में क्या देखा?' : 'What did you see in the field?'} />
-            <p className="mt-4 text-[13px] leading-relaxed text-[var(--ink-soft)]">
-              {isHi
-                ? 'खेत में कोई बदलाव दिखा हो तो एजेंट को बताएं'
-                : 'Report field observations and the agent will re-evaluate the plan.'}
-            </p>
-
-            {/* 1. Day-Specific Contextual Questions */}
-            {safePlanState.isStarted && taskChecklist.questions.length > 0 && (
-              <div className="mt-4">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
-                  <span className="t-eyebrow text-[10px] font-bold text-[var(--field-deep)]">
-                    {isHi
-                      ? `दिन ${progress.currentDay} के कार्य से जुड़े सवाल (${progress.todayTask?.title || 'आज का कार्य'})`
-                      : `Today's Task Questions (${progress.todayTask?.title || 'Day ' + progress.currentDay})`}
-                  </span>
+        {/* =================================================================== */}
+        {/* SECTION 2: AGRIOPTIMA FARM ASSISTANT (CENTRAL HERO WORKSPACE)       */}
+        {/* =================================================================== */}
+        <Reveal delay={60} className="border-b border-[var(--line)] pb-8">
+          <div className="space-y-4">
+            {/* Assistant Header */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="grid h-8 w-8 place-items-center rounded-full bg-[var(--field)] text-white shadow-xs">
+                  <Sparkles size={16} />
                 </div>
-                <div className="space-y-0.5">
-                  {taskChecklist.questions.map((item) => {
-                    const checked = selectedObservations.includes(item.id);
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        aria-pressed={checked}
-                        onClick={() => toggleObservation(item.id)}
-                        className={`flex w-full items-center gap-3 border-b py-2.5 text-left transition-colors focus-visible:bg-[var(--surface-inset)] focus-visible:outline-none ${
-                          checked ? 'border-[var(--field)]' : 'border-[var(--line-soft)]'
-                        }`}
-                      >
-                        <span
-                          className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[6px] transition-colors"
-                          style={{
-                            background: checked ? 'var(--field)' : 'transparent',
-                            boxShadow: checked ? 'none' : 'inset 0 0 0 1.5px var(--line-strong)',
-                          }}
-                          aria-hidden
-                        >
-                          {checked && <Check size={12} className="text-[var(--paper)]" strokeWidth={3} />}
-                        </span>
-                        <span
-                          className={`text-[12.5px] leading-snug ${
-                            checked ? 'font-medium text-[var(--ink)]' : 'text-[var(--ink-soft)]'
-                          }`}
-                        >
-                          {isHi ? item.label.hi : item.label.en}
-                        </span>
-                      </button>
-                    );
-                  })}
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-[var(--ink)]">
+                    {isHi ? 'एग्रीऑप्टिमा कृषि सहायक' : 'AgriOptima Farm Assistant'}
+                  </h2>
+                  <p className="text-[11px] text-[var(--ink-soft)]">
+                    {isHi ? 'आपका AI-संचालित कृषि साथी' : 'Your AI-powered farming companion'}
+                  </p>
                 </div>
               </div>
-            )}
 
-            {/* 2. Universal Field Observations */}
-            <div className="mt-5">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--grain)]" />
-                <span className="t-eyebrow text-[10px] font-bold text-[var(--grain-deep)]">
-                  {isHi ? 'सामान्य खेत अवलोकन' : 'Universal Field Observations'}
-                </span>
-              </div>
-              <div className="space-y-0.5">
-                {UNIVERSAL_OBSERVATIONS.map((item) => {
-                  const checked = selectedObservations.includes(item.id);
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      aria-pressed={checked}
-                      onClick={() => toggleObservation(item.id)}
-                      className={`flex w-full items-center gap-3 border-b py-2.5 text-left transition-colors focus-visible:bg-[var(--surface-inset)] focus-visible:outline-none ${
-                        checked ? 'border-[var(--field)]' : 'border-[var(--line-soft)]'
-                      }`}
-                    >
-                      <span
-                        className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[6px] transition-colors"
-                        style={{
-                          background: checked ? 'var(--field)' : 'transparent',
-                          boxShadow: checked ? 'none' : 'inset 0 0 0 1.5px var(--line-strong)',
-                        }}
-                        aria-hidden
-                      >
-                        {checked && <Check size={12} className="text-[var(--paper)]" strokeWidth={3} />}
-                      </span>
-                      <span
-                        className={`text-[12.5px] leading-snug ${
-                          checked ? 'font-medium text-[var(--ink)]' : 'text-[var(--ink-soft)]'
-                        }`}
-                      >
-                        {isHi ? item.label.hi : item.label.en}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-
-            <textarea
-              rows={3}
-              value={customReportText}
-              onChange={(e) => setCustomReportText(e.target.value)}
-              placeholder={
-                isHi
-                  ? 'अन्य कोई बात जो आपने देखी... (जैसे: टमाटर में कीड़े दिख रहे हैं)'
-                  : 'Tell the agent what happened... (e.g. Tomato leaves turning yellow)'
-              }
-              className="line-input mt-5 w-full resize-none text-[13px]"
-            />
-
-            <button
-              type="button"
-              onClick={handleSubmitObservation}
-              disabled={!hasReport}
-              className="btn btn-primary mt-4 w-full disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {reportSubmitted ? <CheckCircle2 size={14} /> : <ArrowRight size={14} />}
-              <span>{isHi ? 'रिपोर्ट भेजें एवं पुनः जांच करें' : 'Submit report & re-evaluate'}</span>
-            </button>
-
-            {reportFeedback && (
-              <p
-                className="mt-4 border-l-2 border-[var(--field)] pl-3 text-[12px] leading-relaxed text-[var(--field-deep)]"
-                role="status"
-              >
-                {reportFeedback}
-              </p>
-            )}
-          </Reveal>
-
-          {/* ---------- TALK TO AGRIOPTIMA ---------- */}
-          <Reveal className="flex flex-col lg:col-span-7" delay={120}>
-            <WatchHead title={isHi ? 'एग्रीऑप्टिमा से बात करें' : 'Talk to AgriOptima'}>
-              <div className="flex shrink-0 items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 {isSpeaking && (
                   <button
                     type="button"
                     onClick={handleStopAudio}
-                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
+                    className="btn btn-ghost btn-xs text-[var(--risk)] flex items-center gap-1 font-medium"
                   >
                     <VolumeX size={12} />
-                    {isHi ? 'आवाज़ बंद करें' : 'Stop audio'}
+                    <span>{isHi ? 'आवाज़ बंद करें' : 'Stop Audio'}</span>
                   </button>
                 )}
-                <span className="t-eyebrow text-[0.55rem] text-[var(--ink-ghost)]">
-                  {isHi ? 'सरवम · जेमिनी' : 'Sarvam voice · Gemini'}
+                <span className="t-eyebrow text-[0.6rem] text-[var(--ink-ghost)] font-medium">
+                  {isHi ? 'सरवम वॉयस + जेमिनी AI' : 'POWERED BY GEMINI + SARVAM VOICE'}
                 </span>
               </div>
-            </WatchHead>
-
-            {/* The exchange. Farmer and agent are told apart by the weight and
-                colour of the rule they hang off, not by filled bubbles — the
-                white world has no chat app in it. */}
-            <div
-              ref={streamRef}
-              className="mt-5 h-[300px] flex-1 space-y-4 overflow-y-auto pr-1 text-[13px] sm:h-[340px]"
-              aria-live="polite"
-            >
-              {conversation.map((msg, idx) => {
-                const isUser = msg.role === 'user';
-                return (
-                  <div
-                    key={idx}
-                    className={`border-l pl-4 ${
-                      isUser
-                        ? 'border-[var(--line-strong)] sm:ml-8'
-                        : 'border-l-2 border-[var(--field)]'
-                    }`}
-                  >
-                    <p className="t-eyebrow mb-1 text-[0.55rem] text-[var(--ink-ghost)]">
-                      {isUser ? (isHi ? 'आप' : 'You') : 'AgriOptima'}
-                    </p>
-                    <p
-                      className={`leading-relaxed ${
-                        isUser ? 'text-[var(--ink-soft)]' : 'text-[var(--ink)]'
-                      }`}
-                    >
-                      {msg.text}
-                    </p>
-                    {msg.action && (
-                      <p className="mt-2 flex items-start gap-1.5 text-[11px] font-semibold text-[var(--field-deep)]">
-                        <Check size={12} className="mt-[2px] shrink-0" />
-                        <span>
-                          {isHi ? 'सुझाव:' : 'Action:'} {msg.action}
-                        </span>
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-
-              {isProcessingAI && (
-                <div className="flex items-center gap-2 text-xs text-[var(--ink-soft)]">
-                  <Loader2 size={13} className="animate-spin text-[var(--sky)]" />
-                  <span>{isHi ? 'एग्रीऑप्टिमा विचार कर रहा है...' : 'AgriOptima is thinking...'}</span>
-                </div>
-              )}
             </div>
 
-            {/* Things worth asking, in the same pill language as the planning flow. */}
-            <div className="mt-4 flex flex-wrap gap-2">
-              {quickPrompts.map((prompt, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handleAskQuestion(prompt)}
-                  disabled={isProcessingAI}
-                  className="choice max-w-full truncate px-3 py-1.5 text-[11px] disabled:opacity-50"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-
-            {/* What the mic is hearing right now, on a rule rather than in a box. */}
-            {isListening && chatInput && (
-              <p className="mt-4 flex items-center gap-2 border-l-2 border-[var(--risk)] pl-3 text-xs">
-                <span className="flex h-1.5 w-1.5 shrink-0 animate-ping rounded-full bg-[var(--risk)]" />
-                <span className="t-eyebrow shrink-0 text-[0.55rem] text-[var(--grain-deep)]">
-                  {isHi ? 'वर्तमान शब्द' : 'Hearing'}
-                </span>
-                <span className="truncate font-semibold text-[var(--ink)]">{chatInput}</span>
-              </p>
-            )}
-
-            {/* Input Bar & Mic Button */}
-            <div className="mt-4 flex items-center gap-3 border-t border-[var(--line)] pt-4">
+            {/* Central Compact Voice Interaction Hub */}
+            <div className="flex flex-col items-center justify-center text-center py-3.5 border-y border-[var(--line-soft)]">
               <button
                 type="button"
                 onClick={handleToggleVoice}
                 aria-pressed={isListening}
-                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-all ${isListening ? 'animate-breathe' : ''}`}
-                style={
+                className={`relative grid h-14 w-14 sm:h-16 sm:w-16 place-items-center rounded-full transition-all hover:scale-105 ${
                   isListening
-                    ? { background: 'var(--risk)', color: '#fff' }
-                    : { background: 'var(--grain-tint)', color: 'var(--grain-deep)' }
-                }
+                    ? 'bg-[var(--risk)] text-white shadow-[0_0_20px_rgba(239,68,68,0.45)] animate-breathe'
+                    : 'bg-gradient-to-tr from-[var(--field-deep)] to-[var(--field)] text-white shadow-[0_4px_16px_rgba(46,125,50,0.25)]'
+                }`}
                 title={
                   isListening
                     ? isHi
@@ -924,21 +851,102 @@ export function AutonomousSentinelScreen({
                       : 'Tap mic to stop & ask'
                     : isHi
                       ? 'बोलने के लिए माइक दबाएं'
-                      : 'Tap mic to speak'
+                      : 'Tap to speak'
                 }
-                aria-label={
-                  isListening
-                    ? isHi
-                      ? 'रोकने और पूछने के लिए माइक दबाएं'
-                      : 'Tap mic to stop & ask'
-                    : isHi
-                      ? 'बोलने के लिए माइक दबाएं'
-                      : 'Tap mic to speak'
-                }
+                aria-label={isHi ? 'बोलकर सवाल पूछें' : 'Speak to AI Assistant'}
               >
-                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                {isListening ? <MicOff size={24} /> : <Mic size={24} />}
+                {isListening && (
+                  <span className="absolute inset-0 rounded-full border-2 border-white animate-ping opacity-60 pointer-events-none" />
+                )}
               </button>
 
+              <h3 className="mt-2.5 text-sm sm:text-base font-bold text-[var(--ink)]">
+                {isListening
+                  ? (isHi ? 'सुन रहा हूँ... पूरा होने पर माइक पुनः दबाएं' : 'Listening... Tap mic when finished speaking')
+                  : (isHi ? 'अपनी भाषा में बोलकर पूछें' : 'Tap to speak in your language')}
+              </h3>
+              <p className="mt-0.5 text-[11px] text-[var(--ink-soft)] max-w-lg">
+                {isHi
+                  ? 'आज के कार्य, मौसम, खाद, सिंचाई, फसलों या कृषि योजना के बारे में पूछें।'
+                  : 'Ask about today\'s task, weather, fertilizer, irrigation, crops, or your farm plan.'}
+              </p>
+
+              {isListening && chatInput && (
+                <div className="mt-2 max-w-md rounded-full bg-[var(--field-tint)] px-3 py-1 text-xs font-semibold text-[var(--field-deep)]">
+                  {chatInput}
+                </div>
+              )}
+            </div>
+
+            {/* Dynamic Suggested Daily Questions */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
+                <span className="t-eyebrow text-[9.5px] font-bold text-[var(--ink-soft)] uppercase tracking-wider">
+                  {isHi ? 'आज के लिए सुझाए गए सवाल' : 'SUGGESTED QUESTIONS FOR TODAY'}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedPrompts.map((prompt, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleAskQuestion(prompt)}
+                    disabled={isProcessingAI}
+                    className="choice max-w-full truncate px-3 py-1 text-[11px] font-medium transition-all hover:border-[var(--field)] hover:text-[var(--field-deep)] disabled:opacity-50"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Conversation Exchange Stream (Dynamic height without huge empty whitespace) */}
+            <div
+              ref={streamRef}
+              className="min-h-[56px] max-h-[220px] space-y-3 overflow-y-auto rounded-[14px] bg-[var(--surface-inset)]/70 p-3 sm:p-3.5 text-[12.5px] border border-[var(--line-soft)]"
+              aria-live="polite"
+            >
+              {conversation.map((msg, idx) => {
+                const isUser = msg.role === 'user';
+                return (
+                  <div
+                    key={idx}
+                    className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
+                  >
+                    <span className="text-[9.5px] font-semibold text-[var(--ink-ghost)] mb-0.5 px-1">
+                      {isUser ? (isHi ? 'आप (किसान)' : 'You') : 'AgriOptima AI'}
+                    </span>
+                    <div
+                      className={`max-w-[85%] rounded-[12px] px-3.5 py-2 leading-relaxed ${
+                        isUser
+                          ? 'bg-[var(--field-deep)] text-white'
+                          : 'bg-[var(--surface-solid)] border border-[var(--line-soft)] text-[var(--ink)] shadow-2xs'
+                      }`}
+                    >
+                      <p>{msg.text}</p>
+                      {msg.action && (
+                        <div className="mt-1.5 flex items-start gap-1.5 pt-1.5 border-t border-[var(--line-soft)] text-[11px] font-semibold text-[var(--field-deep)]">
+                          <Check size={12} className="mt-0.5 shrink-0" />
+                          <span>{isHi ? 'सिफारिश:' : 'Recommended Action:'} {msg.action}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {isProcessingAI && (
+                <div className="flex items-center gap-2 text-xs font-medium text-[var(--field-deep)] p-1.5">
+                  <Loader2 size={13} className="animate-spin text-[var(--field)]" />
+                  <span>{isHi ? 'एग्रीऑप्टिमा विचार कर रहा है...' : 'AgriOptima is thinking...'}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Text Chat Input Bar */}
+            <div className="flex items-center gap-2">
               <input
                 ref={chatInputRef}
                 type="text"
@@ -951,24 +959,282 @@ export function AutonomousSentinelScreen({
                       ? 'माइक सक्रिय है... रोकने के लिए पुनः माइक दबाएं'
                       : 'Recording... Tap mic to stop & ask'
                     : isHi
-                      ? 'सवाल पूछें या बोलें...'
-                      : 'Ask a question or tap mic...'
+                      ? 'सवाल पूछें या टाइप करें...'
+                      : 'Ask a question or type here...'
                 }
-                className="line-input flex-1 text-[13px]"
+                className="line-input flex-1 text-xs sm:text-[13px] bg-[var(--surface-solid)] py-2"
               />
 
               <button
                 type="button"
                 onClick={() => handleAskQuestion(chatInput)}
                 disabled={!chatInput.trim() || isProcessingAI}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--field-deep)] text-white transition-colors hover:bg-[var(--field)] disabled:opacity-40"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--field-deep)] text-white shadow-xs transition-transform hover:scale-105 disabled:opacity-40"
                 aria-label={isHi ? 'भेजें' : 'Send'}
               >
-                <Send size={15} />
+                <Send size={14} />
               </button>
             </div>
-          </Reveal>
-        </div>
+          </div>
+        </Reveal>
+
+        {/* =================================================================== */}
+        {/* SECTION 3: FARMER OBSERVATIONS (LEFT) + RECENT OBSERVATIONS (RIGHT) */}
+        {/* =================================================================== */}
+        <Reveal delay={90} ref={observationSectionRef} className="border-b border-[var(--line)] pb-12">
+          <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-12">
+
+            {/* LEFT COLUMN: WHAT DID YOU SEE IN THE FIELD? */}
+            <div className="lg:col-span-7 space-y-6">
+              <div>
+                <SectionHeader title={isHi ? 'खेत में क्या देखा?' : 'WHAT DID YOU SEE IN THE FIELD?'} />
+                <p className="mt-2 text-[13px] leading-relaxed text-[var(--ink-soft)]">
+                  {isHi
+                    ? 'खेत के बदलाव व कार्य की स्थिति बताएं। AI सेंटीनेल तुरंत योजना का पुनः मूल्यांकन करेगा।'
+                    : 'Report field observations and the agent will dynamically re-evaluate the plan.'}
+                </p>
+              </div>
+
+              {/* 1. Dynamic Task-Specific Questions */}
+              {taskChecklist.questions.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
+                    <span className="t-eyebrow text-[10px] font-bold text-[var(--field-deep)] uppercase tracking-wider">
+                      {isHi
+                        ? `आज के कार्य से जुड़े सवाल (${progress.todayTask?.title || 'आज का कार्य'})`
+                        : `TODAY'S TASK QUESTIONS (${progress.todayTask?.title || 'Day ' + progress.currentDay})`}
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-[var(--line-soft)] border-y border-[var(--line-soft)]">
+                    {taskChecklist.questions.map((item) => {
+                      const checked = selectedObservations.includes(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          aria-pressed={checked}
+                          onClick={() => toggleObservation(item.id)}
+                          className={`flex w-full items-center gap-3 py-2.5 text-left transition-colors focus-visible:bg-[var(--surface-inset)] focus-visible:outline-none ${
+                            checked ? 'bg-[var(--field-tint)]/50 px-2 rounded-md' : ''
+                          }`}
+                        >
+                          <span
+                            className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] transition-colors"
+                            style={{
+                              background: checked ? 'var(--field)' : 'transparent',
+                              boxShadow: checked ? 'none' : 'inset 0 0 0 1.5px var(--line-strong)',
+                            }}
+                            aria-hidden
+                          >
+                            {checked && <Check size={12} className="text-white" strokeWidth={3} />}
+                          </span>
+                          <span
+                            className={`text-[12.5px] leading-snug ${
+                              checked ? 'font-semibold text-[var(--ink)]' : 'text-[var(--ink-soft)]'
+                            }`}
+                          >
+                            {isHi ? item.label.hi : item.label.en}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Universal Field Observations */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--grain)]" />
+                  <span className="t-eyebrow text-[10px] font-bold text-[var(--grain-deep)] uppercase tracking-wider">
+                    {isHi ? 'सामान्य खेत अवलोकन' : 'UNIVERSAL FIELD OBSERVATIONS'}
+                  </span>
+                </div>
+
+                <div className="divide-y divide-[var(--line-soft)] border-y border-[var(--line-soft)]">
+                  {UNIVERSAL_OBSERVATIONS.map((item) => {
+                    const checked = selectedObservations.includes(item.id);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        aria-pressed={checked}
+                        onClick={() => toggleObservation(item.id)}
+                        className={`flex w-full items-center gap-3 py-2.5 text-left transition-colors focus-visible:bg-[var(--surface-inset)] focus-visible:outline-none ${
+                          checked ? 'bg-[var(--field-tint)]/50 px-2 rounded-md' : ''
+                        }`}
+                      >
+                        <span
+                          className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] transition-colors"
+                          style={{
+                            background: checked ? 'var(--field)' : 'transparent',
+                            boxShadow: checked ? 'none' : 'inset 0 0 0 1.5px var(--line-strong)',
+                          }}
+                          aria-hidden
+                        >
+                          {checked && <Check size={12} className="text-white" strokeWidth={3} />}
+                        </span>
+                        <span
+                          className={`text-[12.5px] leading-snug ${
+                            checked ? 'font-semibold text-[var(--ink)]' : 'text-[var(--ink-soft)]'
+                          }`}
+                        >
+                          {isHi ? item.label.hi : item.label.en}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Observation Input */}
+              <div className="space-y-3 pt-1">
+                <textarea
+                  rows={3}
+                  value={customReportText}
+                  onChange={(e) => setCustomReportText(e.target.value)}
+                  placeholder={
+                    isHi
+                      ? 'अन्य कोई बात जो आपने देखी... (जैसे: खेत के उत्तरी हिस्से में भारी बारिश के बाद पानी रुका)'
+                      : 'Tell the agent what happened... (e.g. Heavy rainfall occurred after ploughing in the north plot)'
+                  }
+                  className="line-input w-full resize-none text-[13px] bg-[var(--surface-solid)]"
+                />
+
+                <button
+                  type="button"
+                  onClick={handleSubmitObservation}
+                  disabled={!hasReport}
+                  className="btn btn-primary w-full shadow-xs disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {reportSubmitted ? <CheckCircle2 size={15} /> : <ArrowRight size={15} />}
+                  <span>{isHi ? 'रिपोर्ट भेजें एवं पुनः जांच करें' : 'Submit Report & Re-evaluate'}</span>
+                </button>
+
+                {reportFeedback && (
+                  <p
+                    className="border-l-2 border-[var(--field)] pl-3 text-[12px] leading-relaxed text-[var(--field-deep)] font-medium"
+                    role="status"
+                  >
+                    {reportFeedback}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: RECENT OBSERVATIONS (Clean Activity Feed, No Floating Cards) */}
+            <div className="lg:col-span-5 lg:border-l lg:border-[var(--line)] lg:pl-10 space-y-4">
+              <SectionHeader title={isHi ? 'हाल के अवलोकन' : 'RECENT OBSERVATIONS'}>
+                <button
+                  type="button"
+                  onClick={() => setIsLogModalOpen(true)}
+                  className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-[var(--field-deep)] hover:underline"
+                >
+                  <span>{isHi ? 'सभी अवलोकन देखें' : 'View all observations'}</span>
+                  <ArrowRight size={12} />
+                </button>
+              </SectionHeader>
+
+              <div className="divide-y divide-[var(--line-soft)] border-y border-[var(--line-soft)]">
+                {recentObservations.map((obs) => {
+                  const isDone = obs.status === 'acknowledged';
+                  const isAction = obs.status === 'action_recommended' || obs.status === 'plan_updated';
+
+                  return (
+                    <div key={obs.id} className="py-3.5 space-y-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2">
+                          <span
+                            className={`mt-0.5 text-xs ${
+                              isDone ? 'text-[var(--field-deep)]' : isAction ? 'text-[var(--risk)]' : 'text-[var(--grain-deep)]'
+                            }`}
+                          >
+                            {isDone ? '✓' : isAction ? '⚠' : '●'}
+                          </span>
+                          <h4 className="text-[12.5px] font-medium text-[var(--ink)] leading-snug">
+                            {obs.title}
+                          </h4>
+                        </div>
+
+                        <span
+                          className={`chip text-[9px] font-medium shrink-0 ${
+                            isDone ? 'chip-field' : isAction ? 'chip-risk' : 'chip-grain'
+                          }`}
+                        >
+                          {obs.status === 'acknowledged'
+                            ? (isHi ? 'स्वीकृत' : 'Acknowledged')
+                            : obs.status === 'action_recommended'
+                            ? (isHi ? 'कार्यवाही अनुशंसित' : 'Action Recommended')
+                            : (isHi ? 'समीक्षाधीन' : 'Under Review')}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-[var(--ink-ghost)] font-data pl-5">
+                        <span>{obs.timestamp}</span>
+                        <span>{isHi ? `दिन ${obs.day} · सप्ताह ${obs.week}` : `Day ${obs.day} · Week ${obs.week}`}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        {/* =================================================================== */}
+        {/* SECTION 4: WHAT THE SENTINEL WATCHES (BOTTOM CONNECTED STRIP)       */}
+        {/* =================================================================== */}
+        <Reveal delay={120} className="space-y-4">
+          <SectionHeader title={isHi ? 'सेंटीनेल क्या निगरानी करता है' : 'WHAT THE SENTINEL WATCHES'}>
+            <button
+              type="button"
+              onClick={() => setIsLogModalOpen(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--field-deep)]"
+            >
+              <span>{isHi ? 'सभी निगरानी लॉग्स देखें' : 'View all sentinel logs'}</span>
+              <ArrowRight size={12} />
+            </button>
+          </SectionHeader>
+
+          <p className="text-xs text-[var(--ink-soft)]">
+            {isHi
+              ? 'सेंटीनेल लगातार बाहरी व जमीनी स्थितियों का विश्लेषण करता है जो आपकी कृषि योजना को प्रभावित कर सकती हैं।'
+              : 'Sentinel continuously analyzes external and field conditions that may affect your farm plan.'}
+          </p>
+
+          {/* Connected Single Monitoring Strip with subtle vertical dividers */}
+          <div className="rounded-[16px] border border-[var(--line)] bg-[var(--surface-solid)] divide-y sm:divide-y-0 sm:divide-x divide-[var(--line-soft)] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 shadow-2xs">
+            {streams.map((s) => (
+              <div
+                key={s.id}
+                className="p-4 space-y-1.5"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: s.tone }}>
+                    <s.Icon size={14} />
+                    <span>{s.name}</span>
+                  </span>
+                  {s.live && (
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-[var(--field)]" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--field)]" />
+                    </span>
+                  )}
+                </div>
+
+                <p className="font-data text-xs font-bold text-[var(--ink)] truncate">
+                  {s.reading}
+                </p>
+
+                <p className="t-eyebrow text-[9px] text-[var(--ink-ghost)]">
+                  {s.cadence}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Reveal>
       </main>
 
       {/* Activity Logs Modal */}
@@ -977,7 +1243,7 @@ export function AutonomousSentinelScreen({
         onClose={() => setIsLogModalOpen(false)}
         logs={logs}
         advisory={advisory}
-        onRunCheck={onRunCheck}
+        onRunCheck={() => onRunCheck(planContext)}
         isChecking={isChecking}
       />
 

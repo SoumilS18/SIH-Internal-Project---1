@@ -381,3 +381,74 @@ export function getContextualTaskChecklist(
     questions,
   };
 }
+
+/**
+ * Returns dynamic, context-aware quick questions for the AI assistant
+ * tailored to today's active task category, crop, and week.
+ */
+export function getContextualSuggestedPrompts(
+  category: string | undefined,
+  cropName: string,
+  day: number,
+  week: number,
+  isHi: boolean
+): string[] {
+  switch (category) {
+    case 'prep':
+      return [
+        isHi ? `क्या गहरी जुताई के लिए जमीन बहुत सूखी है?` : `Is the soil too dry for deep ploughing?`,
+        isHi ? `${cropName} के लिए कितनी गहरी जुताई करनी चाहिए?` : `How deep should I plough for ${cropName}?`,
+        isHi ? `क्या कल जुताई जारी रखनी चाहिए?` : `Should I continue ploughing tomorrow?`,
+        isHi ? `ट्रैक्टर में रुकावट आने पर क्या करें?` : `What should I do if tractor has problems?`,
+      ];
+
+    case 'sowing':
+      return [
+        isHi ? `क्या ${cropName} की बुवाई के लिए मिट्टी तैयार है?` : `Is soil ready for sowing ${cropName}?`,
+        isHi ? `${cropName} के बीज की सही गहराई क्या है?` : `What is the ideal sowing depth for ${cropName}?`,
+        isHi ? `क्या आज बुवाई करना मौसम के अनुसार सही है?` : `Is today suitable for sowing based on weather?`,
+        isHi ? `बुवाई से पहले बीजोपचार कैसे करें?` : `How should I treat seeds before planting?`,
+      ];
+
+    case 'nutrient':
+      return [
+        isHi ? `क्या आज खाद/उर्वरक डालना चाहिए?` : `Should fertilizer be applied today?`,
+        isHi ? `खाद डालने के बाद बारिश की संभावना है?` : `Is rain expected after fertilizer application?`,
+        isHi ? `${cropName} के लिए प्रति एकड़ कितनी यूरिया/डीएपी डालें?` : `How much fertilizer is recommended for ${cropName}?`,
+        isHi ? `पत्तियां पीली पड़ने पर कौन सी खाद दें?` : `What to apply if leaves turn yellow?`,
+      ];
+
+    case 'irrigation':
+      return [
+        isHi ? `क्या आज सिंचाई करनी चाहिए?` : `Should I irrigate today?`,
+        isHi ? `${cropName} को इस अवस्था में कितने पानी की आवश्यकता है?` : `How much water does ${cropName} need right now?`,
+        isHi ? `क्या अगले कुछ दिनों में बारिश की संभावना है?` : `Is rainfall expected soon?`,
+        isHi ? `सिंचाई में देरी करने से क्या नुकसान होगा?` : `Should I delay irrigation if rain is coming?`,
+      ];
+
+    case 'protection':
+      return [
+        isHi ? `${cropName} के लिए कौन सा स्प्रे उपयुक्त है?` : `Which spray is recommended for ${cropName}?`,
+        isHi ? `जैविक तरीके से कीटों का नियंत्रण कैसे करें?` : `How to control pests organically?`,
+        isHi ? `क्या आज हवा/मौसम के अनुसार छिड़काव सुरक्षित है?` : `Should I spray today considering wind & weather?`,
+        isHi ? `कीट नियंत्रण के लिए पीले ट्रैप्स कैसे लगाएं?` : `How to use sticky traps for insect control?`,
+      ];
+
+    case 'harvest':
+      return [
+        isHi ? `क्या ${cropName} कटाई के लिए पूरी तरह तैयार है?` : `Is ${cropName} ready for harvest?`,
+        isHi ? `${cropName} का आज का मंडी भाव क्या है?` : `What is the current mandi rate for ${cropName}?`,
+        isHi ? `उपज को सुरक्षित सुखाने और रखने का सही तरीका?` : `How to dry and store harvest safely?`,
+        isHi ? `नजदीकी मंडी में किस दाम पर उपज बिक रही है?` : `What are current mandi prices nearby?`,
+      ];
+
+    case 'monitoring':
+    default:
+      return [
+        isHi ? `दिन ${day} का मुख्य कार्य क्या है?` : `What is my task for Day ${day}?`,
+        isHi ? `${cropName} की बढ़वार कैसी चल रही है?` : `How is ${cropName} growth progressing?`,
+        isHi ? `अगले 7 दिनों के मौसम का पूर्वानुमान क्या है?` : `What is the 7-day weather forecast?`,
+        isHi ? `क्या आज खेत में कोई जोखिम है?` : `Are there any farm risks today?`,
+      ];
+  }
+}
