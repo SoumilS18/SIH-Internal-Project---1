@@ -28,6 +28,12 @@ import {
   getWeeklyActionPlan,
   getAllWeeksSummary,
 } from '@/lib/seasonalActionPlans';
+import {
+  calculatePlanProgress,
+  type PlanExecutionState,
+} from '@/lib/planProgress';
+import type { PlanStatus } from '@/types/planLifecycle';
+import { Play, Calendar, CheckCircle2 } from 'lucide-react';
 
 interface WeekDropdownProps {
   selectedWeek: number;
@@ -165,8 +171,11 @@ interface FarmPlanScreenProps {
   landAcres: number;
   budgetInr: number;
   season: 'Kharif' | 'Rabi' | 'Zaid';
-  decision: FarmDecisionResponse | null;
+  decision: FarmDecisionResponse;
   loading: boolean;
+  planExecutionState?: PlanExecutionState;
+  onStartPlan?: () => void;
+  onToggleDayCompletion?: (day: number) => void;
   onEditDetails: () => void;
   onChangeLocation: () => void;
   onProceedToSentinel: () => void;
@@ -223,6 +232,9 @@ export function FarmPlanScreen({
   season,
   decision,
   loading,
+  planExecutionState,
+  onStartPlan,
+  onToggleDayCompletion,
   onEditDetails,
   onChangeLocation,
   onProceedToSentinel,
@@ -245,14 +257,36 @@ export function FarmPlanScreen({
   const allocatedCrops = decision?.allocated_crops || [];
   const cropNames = allocatedCrops.map((c) => c.crop_name).filter(Boolean);
 
+  // Progressive Live Plan Calculation
+  const planLang: 'en' | 'hi' = isHi ? 'hi' : 'en';
+  const safePlanState: PlanExecutionState = planExecutionState || {
+    isStarted: false,
+    startDate: null,
+    lastActiveDate: null,
+    currentStatus: 'NOT_STARTED',
+    completedDays: [],
+    skippedDays: [],
+    taskNotes: {},
+    taskStatusMap: {},
+    adjustments: {},
+  };
+  const progress = calculatePlanProgress(safePlanState, season, cropNames, planLang);
+
   // Weeks & Seasonal Action Plan Calculation
   const totalWeeks = getSeasonWeeksCount(season);
   const clampedWeek = Math.max(1, Math.min(selectedWeek, totalWeeks));
   // The seasonal plan tables only exist in these two languages; every other
   // locale falls back to English rather than rendering blank stages.
-  const planLang: 'en' | 'hi' = isHi ? 'hi' : 'en';
   const currentWeekPlan = getWeeklyActionPlan(season, clampedWeek, planLang, cropNames);
   const allWeeksSummary = getAllWeeksSummary(season, planLang, cropNames);
+
+  // Auto-sync active week on initial load if plan is active
+  useEffect(() => {
+    if (safePlanState.isStarted && progress.currentWeek) {
+      setSelectedWeek(progress.currentWeek);
+    }
+  }, [safePlanState.isStarted, progress.currentWeek]);
+
   const farmTotals = decision?.farm_totals;
   const netProfit = farmTotals?.total_expected_net_profit_inr ?? 0;
   const totalInvestment = typeof farmTotals?.total_investment_inr === 'number' ? farmTotals.total_investment_inr : (budgetInr || 0);
@@ -375,14 +409,26 @@ export function FarmPlanScreen({
             <Reveal className="border-b border-[var(--line)] pb-8">
               <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-10">
                 <div className="lg:col-span-7">
-                  <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-[var(--field)]" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className={`absolute inline-flex h-full w-full rounded-full ${safePlanState.isStarted ? 'animate-pulse-ring bg-[var(--field)]' : 'bg-[var(--grain)]'}`} />
+                        <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${safePlanState.isStarted ? 'bg-[var(--field)]' : 'bg-[var(--grain-deep)]'}`} />
+                      </span>
+                      <span>
+                        {safePlanState.isStarted
+                          ? (isHi
+                              ? `योजना स्थिति: सक्रिय (दिन ${progress.currentDay}/${progress.totalDays} · सप्ताह ${progress.currentWeek})`
+                              : `Plan Status: Active (Day ${progress.currentDay}/${progress.totalDays} · Week ${progress.currentWeek})`)
+                          : (isHi
+                              ? `योजना पूर्वावलोकन · ${translateSeason(season, language)} 2026`
+                              : `Plan Preview · ${translateSeason(season, language)} 2026`)}
+                      </span>
+                    </div>
+
+                    <span className={`chip text-[10px] ${safePlanState.isStarted ? 'chip-field' : 'chip-grain'}`}>
+                      {safePlanState.isStarted ? (isHi ? 'सक्रिय निष्पादन' : 'Live Execution') : (isHi ? 'शुरू नहीं हुई' : 'Not Started')}
                     </span>
-                    {isHi
-                      ? `योजना जारी · ${translateSeason(season, language)} 2026`
-                      : `Plan issued · ${translateSeason(season, language)} 2026`}
                   </div>
 
                   <h2 className="plan-title animate-plan-title mt-3">{cropLine}</h2>
@@ -391,6 +437,22 @@ export function FarmPlanScreen({
                     <p className="animate-plan-sub mt-3.5 max-w-xl text-[0.95rem] leading-relaxed text-[var(--ink-soft)]">
                       {decision.explanation.headline}
                     </p>
+                  )}
+
+                  {!safePlanState.isStarted && onStartPlan && (
+                    <div className="mt-5 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={onStartPlan}
+                        className="btn btn-primary shadow-[0_8px_24px_rgba(46,125,50,0.25)] hover:scale-[1.02] transition-transform"
+                      >
+                        <Play size={14} className="fill-current" />
+                        <span>{isHi ? 'मेरी कृषि योजना शुरू करें (Start Plan)' : 'Start My Farm Plan'}</span>
+                      </button>
+                      <span className="text-xs text-[var(--ink-soft)]">
+                        {isHi ? 'शुरू करने पर आज का दिन 1 सक्रिय होगा।' : 'Starting will activate Day 1 from today.'}
+                      </span>
+                    </div>
                   )}
                 </div>
 
@@ -404,6 +466,14 @@ export function FarmPlanScreen({
                   <ReadingRow
                     label={isHi ? 'स्थान' : 'Location'}
                     value={`${getDistrictDisplayName(selectedDistrict, language)}, ${getStateDisplayName(selectedState, language)}`}
+                  />
+                  <ReadingRow
+                    label={isHi ? 'योजना स्थिति' : 'Execution'}
+                    value={
+                      safePlanState.isStarted
+                        ? (isHi ? `दिन ${progress.currentDay} (सक्रिय)` : `Day ${progress.currentDay} (Active)`)
+                        : (isHi ? 'पूर्वावलोकन' : 'Preview')
+                    }
                   />
                   <ReadingRow
                     label={isHi ? 'बोया गया' : 'Planted'}
@@ -631,6 +701,57 @@ export function FarmPlanScreen({
             {/* THE SCHEDULE — what to do, week by week                         */}
             {/* =============================================================== */}
             <Reveal delay={120} className="relative z-20">
+              {/* TODAY'S WORK SPOTLIGHT — prioritized clear daily focus */}
+              {safePlanState.isStarted && progress.todayTask && (
+                <div className="mb-6 rounded-[18px] border border-[var(--field)] bg-[var(--field-tint)] p-4 sm:p-5 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-[var(--field)]" />
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--field)]" />
+                      </span>
+                      <span className="t-eyebrow text-[11px] font-bold text-[var(--field-deep)] uppercase tracking-wider">
+                        {isHi ? 'आज का कार्य' : 'TODAY\'S ACTION'}
+                      </span>
+                      <span className="h-1 w-1 rounded-full bg-[var(--field)]" />
+                      <span className="font-data text-xs font-semibold text-[var(--field-deep)]">
+                        {isHi
+                          ? `दिन ${progress.currentDay} / ${progress.totalDays} (सप्ताह ${progress.currentWeek})`
+                          : `Day ${progress.currentDay} of ${progress.totalDays} (Week ${progress.currentWeek})`}
+                      </span>
+                    </div>
+
+                    {onToggleDayCompletion && (
+                      <button
+                        type="button"
+                        onClick={() => onToggleDayCompletion(progress.currentDay)}
+                        className={`btn btn-sm ${
+                          safePlanState.completedDays.includes(progress.currentDay)
+                            ? 'btn-ghost border border-[var(--field)] font-semibold text-[var(--field-deep)]'
+                            : 'btn-primary'
+                        }`}
+                      >
+                        <Check size={13} />
+                        <span>
+                          {safePlanState.completedDays.includes(progress.currentDay)
+                            ? (isHi ? 'कार्य संपन्न दर्ज है ✓' : 'Task Completed ✓')
+                            : (isHi ? 'आज का कार्य संपन्न करें' : 'Mark Completed')}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-2.5">
+                    <h4 className="text-base font-bold text-[var(--ink)] sm:text-lg">
+                      {progress.todayTask.title}
+                    </h4>
+                    <p className="mt-1 text-[13px] leading-relaxed text-[var(--ink-soft)]">
+                      {progress.todayTask.desc}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <SheetHead title={isHi ? 'कार्य अनुसूची' : 'Work schedule'}>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
@@ -699,36 +820,58 @@ export function FarmPlanScreen({
                 </p>
               </div>
 
-              {/* seven days on one continuous rule — a schedule, not seven cards */}
+              {/* seven days on one continuous rule — a schedule with live progress markers */}
               <div className="no-scrollbar mt-7 overflow-x-auto pb-1 relative z-0">
                 <div className="relative z-0 flex min-w-[720px] gap-4">
                   {/* the rule the whole week hangs from */}
                   <span
-                    className="absolute left-2 right-2 top-[5px] h-px z-0"
+                    className="absolute left-2 right-2 top-[6px] h-px z-0"
                     style={{ background: 'var(--line)' }}
                     aria-hidden
                   />
-                  {currentWeekPlan.days.map((step, i) => (
-                    <div key={step.day} className="relative z-0 flex flex-1 flex-col">
-                      <span
-                        className="relative z-0 h-[11px] w-[11px] rounded-full"
-                        style={{
-                          background: i === 0 ? 'var(--field)' : 'var(--surface-solid)',
-                          boxShadow: `inset 0 0 0 ${i === 0 ? 0 : 1.5}px var(--field)`,
-                        }}
-                        aria-hidden
-                      />
-                      <span className="t-eyebrow mt-3 text-[0.55rem] text-[var(--ink-ghost)]">
-                        {isHi ? `दिन ${step.day}` : `Day ${step.day}`}
-                      </span>
-                      <h4 className="mt-1 text-[13px] font-semibold leading-snug text-[var(--ink)]">
-                        {step.title}
-                      </h4>
-                      <p className="mt-1 pr-3 text-[11px] leading-relaxed text-[var(--ink-soft)]">
-                        {step.desc}
-                      </p>
-                    </div>
-                  ))}
+                  {currentWeekPlan.days.map((step) => {
+                    const dayNum = (clampedWeek - 1) * 7 + step.day;
+                    const isToday = safePlanState.isStarted && dayNum === progress.currentDay;
+                    const isPast = safePlanState.isStarted && dayNum < progress.currentDay;
+                    const isDone = safePlanState.completedDays.includes(dayNum) || isPast;
+
+                    return (
+                      <div
+                        key={step.day}
+                        className={`relative z-0 flex flex-1 flex-col rounded-[14px] p-2 transition-colors ${
+                          isToday ? 'bg-[var(--field-tint)] border border-[var(--field)] shadow-sm' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="relative z-0 h-[14px] w-[14px] rounded-full flex items-center justify-center text-[8px] text-[var(--paper)] font-bold shrink-0"
+                            style={{
+                              background: isDone || isToday ? 'var(--field)' : 'var(--surface-solid)',
+                              boxShadow: `inset 0 0 0 ${isDone || isToday ? 0 : 1.5}px var(--line-strong)`,
+                            }}
+                            aria-hidden
+                          >
+                            {isDone && !isToday ? '✓' : isToday ? '●' : ''}
+                          </span>
+                          {isToday && (
+                            <span className="t-eyebrow rounded-full bg-[var(--field)] px-1.5 py-0.2 text-[0.55rem] font-bold text-[var(--paper)]">
+                              {isHi ? 'आज' : 'TODAY'}
+                            </span>
+                          )}
+                        </div>
+
+                        <span className="t-eyebrow mt-2.5 text-[0.55rem] text-[var(--ink-ghost)]">
+                          {isHi ? `दिन ${step.day} (कुल ${dayNum})` : `Day ${step.day} (D${dayNum})`}
+                        </span>
+                        <h4 className="mt-1 text-[13px] font-semibold leading-snug text-[var(--ink)]">
+                          {step.title}
+                        </h4>
+                        <p className="mt-1 pr-2 text-[11px] leading-relaxed text-[var(--ink-soft)]">
+                          {step.desc}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </Reveal>

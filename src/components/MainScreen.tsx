@@ -10,6 +10,14 @@ import type { DetailedTabType } from '@/components/DetailedAnalysisView';
 import { StageSwap } from '@/components/ui/motion';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { runAutonomousCycle } from '@/services/autonomousSentinel';
+import {
+  loadPlanExecutionState,
+  savePlanExecutionState,
+  startPlanExecution,
+  toggleTaskCompletion,
+  type PlanExecutionState,
+} from '@/lib/planProgress';
+import type { PlanReasoningContext } from '@/types/planLifecycle';
 import type {
   FarmDecisionRequest,
   FarmDecisionResponse,
@@ -119,6 +127,27 @@ export function MainScreen({
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Progressive Live Plan Execution State
+  const [planExecutionState, setPlanExecutionState] = useState<PlanExecutionState>(() =>
+    loadPlanExecutionState()
+  );
+
+  const handleStartPlanExecution = useCallback(() => {
+    setPlanExecutionState((prev) => {
+      const next = startPlanExecution(prev);
+      savePlanExecutionState(next);
+      return next;
+    });
+  }, []);
+
+  const handleToggleDayCompletion = useCallback((day: number) => {
+    setPlanExecutionState((prev) => {
+      const next = toggleTaskCompletion(prev, day);
+      savePlanExecutionState(next);
+      return next;
+    });
+  }, []);
 
   // Guided flow navigation: Page 3 (details entry) → cinematic → Page 4 (plan).
   const [page, setPage] = useState<'details' | 'plan'>(
@@ -288,12 +317,17 @@ export function MainScreen({
   }, []);
 
   // Trigger manual telemetry observation & verification cycle on demand
-  const handleRunSentinelCheck = useCallback(() => {
+  const handleRunSentinelCheck = useCallback((planContext?: PlanReasoningContext) => {
     if (!decision) return;
     setIsCheckingSentinel(true);
     setTimeout(() => {
       try {
-        const { log, advisory } = runAutonomousCycle(decision, language, previousSentinelStateRef.current);
+        const { log, advisory } = runAutonomousCycle(
+          decision,
+          language,
+          previousSentinelStateRef.current,
+          planContext
+        );
         previousSentinelStateRef.current = {
           fingerprint: log.fingerprint,
           activeAdvisory: advisory,
@@ -393,7 +427,9 @@ export function MainScreen({
               logs={sentinelLogs}
               advisory={proactiveAdvisory}
               isChecking={isCheckingSentinel}
+              planExecutionState={planExecutionState}
               onRunCheck={handleRunSentinelCheck}
+              onToggleDayCompletion={handleToggleDayCompletion}
               onBackToPlan={() => {
                 setViewMode('farmer');
                 setPage('plan');
@@ -447,6 +483,9 @@ export function MainScreen({
               season={season}
               decision={decision}
               loading={loading}
+              planExecutionState={planExecutionState}
+              onStartPlan={handleStartPlanExecution}
+              onToggleDayCompletion={handleToggleDayCompletion}
               onEditDetails={handleEditDetails}
               onChangeLocation={onBack}
               onProceedToSentinel={() => setViewMode('autonomous')}

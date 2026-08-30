@@ -16,6 +16,7 @@
  */
 
 import type { FarmDecisionResponse, AllocatedCropItem } from '@/types/farm';
+import type { PlanReasoningContext } from '@/types/planLifecycle';
 import { formatCurrency, formatRainfall, formatTemperature } from '@/i18n/formatters';
 import { getCropDisplayName } from '@/i18n/cropNames';
 import { getDistrictDisplayName, getStateDisplayName } from '@/i18n/geoNames';
@@ -574,6 +575,23 @@ function classifySemanticIntent(query: string) {
     q.includes('क्या करना है')
   );
 
+  const isTodayTask = (
+    q.includes('today') ||
+    q.includes('aaj') ||
+    q.includes('आज')
+  ) && (
+    q.includes('karna') ||
+    q.includes('kare') ||
+    q.includes('task') ||
+    q.includes('karya') ||
+    q.includes('काम') ||
+    q.includes('कार्य') ||
+    q.includes('plan') ||
+    q.includes('do') ||
+    q.includes('kya') ||
+    q.includes('क्या')
+  );
+
   return {
     isWeekComparison,
     isTimingQuery,
@@ -588,8 +606,10 @@ function classifySemanticIntent(query: string) {
     isWhyChosen,
     isCropChoice,
     isNextSteps,
+    isTodayTask,
   };
 }
+
 
 /**
  * Main Reasoning Dispatcher: Processes a farmer natural language query
@@ -598,7 +618,8 @@ function classifySemanticIntent(query: string) {
 export async function askVoiceAgent(
   rawQuery: string,
   decision: FarmDecisionResponse | null,
-  lang: string = 'en'
+  lang: string = 'en',
+  planContext?: PlanReasoningContext | null
 ): Promise<VoiceAgentResponse> {
   // Language gatekeeper: Only English and Hindi are supported in initial release
   if (lang !== 'en' && lang !== 'hi' && lang !== 'en-IN' && lang !== 'hi-IN') {
@@ -1005,7 +1026,33 @@ export async function askVoiceAgent(
   }
 
   // ---------------------------------------------------------------------------
-  // 11. NEXT OPERATIONAL STEPS ("आगे क्या करना है?")
+  // 11. TODAY'S TASK & ACTIVE PLAN PROGRESS ("आज क्या करना है?")
+  // ---------------------------------------------------------------------------
+  if (sem.isTodayTask || (sem.isNextSteps && planContext?.todayTask)) {
+    if (planContext?.isStarted && planContext.todayTask) {
+      const task = planContext.todayTask;
+      const spoken = isHi
+        ? `आज दिन ${planContext.currentDay} का निर्धारित कार्य '${task.title}' है। ${task.desc}`
+        : `Today is Day ${planContext.currentDay} of your plan. Scheduled task: ${task.title}. ${task.desc}`;
+      const display = isHi
+        ? `आज का कार्य (दिन ${planContext.currentDay} · सप्ताह ${planContext.currentWeek}): ${task.title} — ${task.desc}`
+        : `Today's Action (Day ${planContext.currentDay} · Week ${planContext.currentWeek}): ${task.title} — ${task.desc}`;
+      return {
+        intent: 'TODAY_TASK',
+        spoken_text: spoken,
+        display_text: display,
+        action_required: false,
+        recommended_action: isHi ? `आज '${task.title}' को पूरा करें।` : `Execute '${task.title}' as planned.`,
+        reason: isHi ? 'सक्रिय कृषि योजना के अनुसार दैनिक कार्य।' : 'Scheduled task for active execution calendar.',
+        checked_steps: ['plan', 'weather', 'soil'],
+        telemetry_facts: telemetryFacts,
+        source: 'deterministic',
+      };
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 12. NEXT OPERATIONAL STEPS ("आगे क्या करना है?")
   // ---------------------------------------------------------------------------
   if (sem.isNextSteps) {
     const spoken = isHi
@@ -1061,7 +1108,8 @@ export async function askFarmerVoiceAssistant(
   rawQuery: string,
   decision: FarmDecisionResponse | null,
   lang: string = 'en',
-  conversationHistory?: Array<{ role: string; text: string }>
+  conversationHistory?: Array<{ role: string; text: string }>,
+  planContext?: PlanReasoningContext | null
 ): Promise<VoiceAgentResponse> {
   const cleanQuery = (rawQuery || '').trim();
   if (!cleanQuery) {
@@ -1096,10 +1144,10 @@ export async function askFarmerVoiceAssistant(
   const isHi = effectiveLang === 'hi';
 
   if (!decision) {
-    return askVoiceAgent(cleanQuery, decision, lang);
+    return askVoiceAgent(cleanQuery, decision, lang, planContext);
   }
 
-  // Build telemetry context from actual decision state
+  // Build telemetry context from actual decision state + live plan execution context
   const farmContext = {
     state_name: decision.location?.state_name,
     district_name: decision.location?.district_name,
@@ -1124,6 +1172,13 @@ export async function askFarmerVoiceAssistant(
     expected_farm_roi_pct: decision.farm_totals?.expected_farm_roi_pct,
     recommended_action: decision.explanation?.headline || '',
     decision_headline: decision.explanation?.headline || '',
+    plan_is_started: planContext?.isStarted,
+    current_day: planContext?.currentDay,
+    current_week: planContext?.currentWeek,
+    today_task_title: planContext?.todayTask?.title,
+    today_task_desc: planContext?.todayTask?.desc,
+    plan_status: planContext?.planStatus,
+    farmer_observations: planContext?.farmerObservations,
   };
 
   const telemetryFacts = {
@@ -1136,7 +1191,7 @@ export async function askFarmerVoiceAssistant(
     profit: formatCurrency(decision.farm_totals?.total_expected_net_profit_inr || 0, effectiveLang),
   };
 
-  // Try Server-Side Gemini Advisory API first (with 5-second connection timeout)
+  // Try Server-Side Gemini Advisory API first (with 6-second connection timeout)
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000);
@@ -1190,8 +1245,9 @@ export async function askFarmerVoiceAssistant(
   }
 
   // Offline / Fallback to deterministic NLP reasoning engine
-  return askVoiceAgent(cleanQuery, decision, effectiveLang);
+  return askVoiceAgent(cleanQuery, decision, effectiveLang, planContext);
 }
+
 
 /**
  * Transcribes audio blob using backend Sarvam AI STT proxy (Saarika model).

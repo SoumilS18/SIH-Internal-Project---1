@@ -18,6 +18,7 @@ import type {
   ActionValidationResult,
   ProactiveAdvisory,
 } from '../types/autonomous';
+import type { PlanReasoningContext, PlanStatus } from '../types/planLifecycle';
 import { getCropDisplayName } from '../i18n/cropNames';
 import { getDistrictDisplayName } from '../i18n/geoNames';
 
@@ -203,8 +204,9 @@ export interface SentinelPreviousState {
 export function runAutonomousCycle(
   decision: FarmDecisionResponse,
   language: string = 'en',
-  previousState?: SentinelPreviousState | null
-): { log: AutonomousCycleLog; advisory: ProactiveAdvisory | null } {
+  previousState?: SentinelPreviousState | null,
+  planContext?: PlanReasoningContext | null
+): { log: AutonomousCycleLog; advisory: ProactiveAdvisory | null; planStatus?: PlanStatus } {
   const isHi = language === 'hi';
   const timestamp = new Date().toLocaleTimeString(isHi ? 'hi-IN' : 'en-IN', {
     hour: '2-digit',
@@ -217,8 +219,11 @@ export function runAutonomousCycle(
   const crops = decision?.allocated_crops || [];
   const cropNames = crops.map((c) => c.crop_name);
 
-  // Compute deterministic fingerprint of the incoming state
-  const currentFingerprint = computeStateFingerprint(decision);
+  // Compute deterministic fingerprint of the incoming state (including farmer observations)
+  const obsKey = planContext?.farmerObservations?.sort().join('+') || '';
+  const dayKey = planContext?.currentDay ? `D${planContext.currentDay}` : '';
+  const baseFingerprint = computeStateFingerprint(decision);
+  const currentFingerprint = obsKey || dayKey ? `${baseFingerprint.slice(0, 5)}${dayKey}${obsKey ? 'O' : ''}` : baseFingerprint;
 
   // ---------------------------------------------------------------------------
   // 1. OBSERVE: Extract real runtime telemetry (Strictly preserving nulls)
@@ -252,6 +257,14 @@ export function runAutonomousCycle(
   let targetCrops: string[] = cropNames;
   let priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
   let monitoringStatus: 'ACTIVE_MONITORING' | 'ACTION_EXECUTED' | 'CONDITION_UNCHANGED' | 'STRESS_RESOLVED' | 'DEGRADED_TELEMETRY' = 'ACTIVE_MONITORING';
+  let resultingPlanStatus: PlanStatus = 'ON_TRACK';
+
+  const farmerObs = planContext?.farmerObservations || [];
+  const hasFarmerReportedRain = farmerObs.includes('rain') || farmerObs.includes('rain_heavy');
+  const hasFarmerReportedPest = farmerObs.includes('pest') || farmerObs.includes('pest_symptoms');
+  const hasFarmerReportedLeaf = farmerObs.includes('leaf_yellow') || farmerObs.includes('leaf_yellowing');
+  const hasFarmerReportedWater = farmerObs.includes('water') || farmerObs.includes('irrigation_fault');
+  const hasFarmerReportedDelayed = farmerObs.includes('task_delayed') || farmerObs.includes('sowing');
 
   // Check state-change vs previous cycle
   const isDuplicateState =
@@ -264,12 +277,95 @@ export function runAutonomousCycle(
     previousState.activeAdvisory !== null &&
     previousState.activeAdvisory.severity !== 'success';
 
-  // --- Check Critical Telemetry Availability (Honest Handling) ---
-  const isSoilMoistureMissing = effectiveMoisture === null;
-  const isForecastMissing = forecastRain7d === null;
+  // --- FARMER OBSERVATION OVERRIDE 1: PEST / DISEASE OUTBREAK ---
+  if (hasFarmerReportedPest || hasFarmerReportedLeaf) {
+    observationText = isHi
+      ? `खेत अवलोकन: फसल की पत्तियों में पीलापन या कीट के लक्षण दर्ज किए गए।`
+      : `Field Observation: Crop foliage stress / pest symptoms reported by farmer for standing crops.`;
 
-  if (isSoilMoistureMissing && isForecastMissing && isFallbackUsed) {
-    // Missing critical live telemetry -> Declare baseline fallback honestly
+    reasonText = isHi
+      ? `प्रारंभिक अवस्था में कीट/रोग नियंत्रण आवश्यक है ताकि उपज व गुणवत्ता सुरक्षित रहे।`
+      : `Immediate biological/neem foliar intervention recommended to prevent canopy infestation.`;
+
+    candidateActionType = 'APPLY_PROACTIVE_ADVISORY';
+    priority = 'HIGH';
+    candidateTitle = isHi ? 'पर्ण स्वास्थ्य एवं कीट नियंत्रण निर्देश' : 'Targeted Foliar Pest Protection';
+    candidateDesc = isHi
+      ? 'नीम तेल (5ml प्रति लीटर) का छिड़काव सुबह के समय करें और पीले चिपचिपे ट्रैप्स लगाएं।'
+      : 'Apply 5ml/L cold-pressed neem oil spray during early morning and install yellow sticky insect traps.';
+    monitoringStatus = 'ACTION_EXECUTED';
+    resultingPlanStatus = 'NEEDS_ATTENTION';
+  }
+  // --- FARMER OBSERVATION OVERRIDE 2: UNEXPECTED HEAVY RAIN VS TODAY'S TASK ---
+  else if (hasFarmerReportedRain && planContext?.todayTask) {
+    const isNutrientOrSpray = planContext.todayTask.category === 'nutrient' || planContext.todayTask.category === 'protection';
+    observationText = isHi
+      ? `खेत अवलोकन: अप्रत्याशित भारी वर्षा दर्ज की गई (आज का कार्य: ${planContext.todayTask.title})।`
+      : `Field Observation: Heavy rainfall reported on Day ${planContext.currentDay} (${planContext.todayTask.title}).`;
+
+    reasonText = isHi
+      ? isNutrientOrSpray
+        ? `भारी बारिश में खाद या स्प्रे डालने से पोषक तत्व बह जाने का खतरा है।`
+        : `खेत में अधिक नमी होने पर भारी जुताई या रोपाई से मिट्टी सख्त हो सकती है।`
+      : isNutrientOrSpray
+        ? `Rainfall induces severe nutrient leaching. Chemical/organic spray must be postponed.`
+        : `Excess soil saturation hinders machinery operation. Drainage is prioritized.`;
+
+    candidateActionType = 'APPLY_PROACTIVE_ADVISORY';
+    priority = 'HIGH';
+    candidateTitle = isHi
+      ? isNutrientOrSpray ? 'वर्षा सलाह: खाद/स्प्रे 24 घंटे टालें' : 'वर्षा सलाह: जल निकासी सुनिश्चित करें'
+      : isNutrientOrSpray ? 'Rain Advisory: Postpone Input Application' : 'Rain Advisory: Clear Drainage Channels';
+    candidateDesc = isHi
+      ? isNutrientOrSpray
+        ? 'वर्षा के दौरान खाद या छिड़काव न करें; मौसम साफ होने पर कार्य पुनः आरंभ करें।'
+        : 'खेत की जल निकासी नालियों को तुरंत खोलें ताकि पानी जमा न रहे।'
+      : isNutrientOrSpray
+        ? 'Hold fertilizer/spray application for 24-48 hours until topsoil stabilizes and sun emerges.'
+        : 'Clear drainage furrows immediately to allow rapid runoff discharge.';
+    monitoringStatus = 'ACTION_EXECUTED';
+    resultingPlanStatus = 'PLAN_UPDATED';
+  }
+  // --- FARMER OBSERVATION OVERRIDE 3: TASK DELAYED / MISSED ---
+  else if (hasFarmerReportedDelayed && planContext?.todayTask) {
+    observationText = isHi
+      ? `कार्य स्थिति: दिन ${planContext.currentDay} का कार्य (${planContext.todayTask.title}) आज पूरा नहीं हो सका।`
+      : `Task Realignment: Day ${planContext.currentDay} task (${planContext.todayTask.title}) was delayed.`;
+
+    reasonText = isHi
+      ? `कार्य को अगले दिन स्थानांतरित किया जा सकता है; मौसमी समय-सारिणी में पर्याप्त समय उपलब्ध है।`
+      : `Schedule buffer absorbs the 1-day shift without disrupting subsequent seasonal milestones.`;
+
+    candidateActionType = 'UPDATE_ACTION_PRIORITY';
+    priority = 'MEDIUM';
+    candidateTitle = isHi ? `दिन ${planContext.currentDay} कार्य समय समायोजन` : `Day ${planContext.currentDay} Task Rescheduled`;
+    candidateDesc = isHi
+      ? `'${planContext.todayTask.title}' को कल सुबह प्राथमिकता से पूरा करें। मुख्य फसल योजना अप्रभावित रहेगी।`
+      : `Complete '${planContext.todayTask.title}' tomorrow morning as primary task. Overall crop calendar remains safe.`;
+    monitoringStatus = 'ACTION_EXECUTED';
+    resultingPlanStatus = 'PLAN_UPDATED';
+  }
+  // --- FARMER OBSERVATION OVERRIDE 4: IRRIGATION INTERRUPTION ---
+  else if (hasFarmerReportedWater) {
+    observationText = isHi
+      ? `खेत अवलोकन: सिंचाई या पानी की आपूर्ति में रुकावट दर्ज की गई।`
+      : `Field Observation: Water or irrigation supply interruption reported by farmer.`;
+
+    reasonText = isHi
+      ? `जड़ों के पास उपलब्ध नमी को संरक्षित रखने के लिए सतह पर आंशिक मल्चिंग उपयोगी रहेगी।`
+      : `Surface mulching recommended to suppress soil moisture evaporation until pump restoration.`;
+
+    candidateActionType = 'APPLY_PROACTIVE_ADVISORY';
+    priority = 'MEDIUM';
+    candidateTitle = isHi ? 'नमी संरक्षण एवं मल्चिंग सलाह' : 'Moisture Retention Advisory';
+    candidateDesc = isHi
+      ? 'पौधों की जड़ों के पास सूखी घास की मल्चिंग करें ताकि मिट्टी की नमी सुरक्षित रहे।'
+      : 'Apply light organic mulching around crop rows to conserve root-zone moisture.';
+    monitoringStatus = 'ACTION_EXECUTED';
+    resultingPlanStatus = 'NEEDS_ATTENTION';
+  }
+  // --- Check Critical Telemetry Availability (Honest Handling) ---
+  else if (isSoilMoistureMissing && isForecastMissing && isFallbackUsed) {
     observationText = isHi
       ? `${districtName} के लिए लाइव उपग्रह टेलीमेट्री अनुपलब्ध है; क्षेत्रीय ऐतिहासिक जलवायु आधार रेखा का उपयोग किया जा रहा है।`
       : `Live numerical telemetry unavailable for ${districtName}; operating under verified regional climatology baseline.`;
@@ -303,6 +399,7 @@ export function runAutonomousCycle(
       ? 'खेत में जल निकासी नालियों को तुरंत साफ रखें ताकि जड़ों के पास पानी न ठहरे।'
       : 'Clear field drainage furrows immediately to ensure excess surface runoff discharges rapidly and prevents standing water.';
     monitoringStatus = 'ACTION_EXECUTED';
+    resultingPlanStatus = 'PLAN_UPDATED';
   }
   // --- PRIORITY 2: SEVERE HEAT STRESS ---
   else if ((heatScore >= 0.65 || (maxTemp !== null && maxTemp >= 38.5)) && crops.length > 0) {
@@ -321,6 +418,7 @@ export function runAutonomousCycle(
       ? 'मिट्टी की सतह पर मल्चिंग का उपयोग करें और सुबह के समय हल्की नमी बनाए रखें।'
       : 'Apply surface soil mulching and morning misting to buffer canopy temperatures against peak solar hours.';
     monitoringStatus = 'ACTION_EXECUTED';
+    resultingPlanStatus = 'NEEDS_ATTENTION';
   }
   // --- PRIORITY 3: SEVERE DROUGHT / MOISTURE DEFICIT ---
   else if (
@@ -343,6 +441,7 @@ export function runAutonomousCycle(
       ? 'वाष्पीकरण हानि को कम करने के लिए शाम के समय नियंत्रित सिंचाई करें।'
       : 'Apply split-irrigation during evening hours to minimize evaporative loss and sustain root zone moisture.';
     monitoringStatus = 'ACTION_EXECUTED';
+    resultingPlanStatus = 'NEEDS_ATTENTION';
   }
   // --- PRIORITY 4: PREVIOUS STRESS RESOLUTION ---
   else if (hadPreviousStress) {
@@ -361,26 +460,50 @@ export function runAutonomousCycle(
       ? 'सभी पर्यावरणीय खतरे सामान्य हो गए हैं। नियमित परिचालन जारी रखें।'
       : 'All agro-climatic parameters have normalized. Proceed with standard seasonal schedule.';
     monitoringStatus = 'STRESS_RESOLVED';
+    resultingPlanStatus = 'ON_TRACK';
   }
-  // --- PRIORITY 5: NORMAL / OPTIMAL BASELINE ---
+  // --- PRIORITY 5: NORMAL / OPTIMAL BASELINE (With Today's Task Alignment) ---
   else {
     const moistureStr = effectiveMoisture !== null ? `${effectiveMoisture.toFixed(2)} m³/m³` : 'इष्टतम';
-    observationText = isHi
-      ? `मिट्टी की नमी (${moistureStr}) और मौसम की स्थिति सभी फसलों के लिए अनुकूल हैं।`
-      : `Soil moisture (${effectiveMoisture !== null ? `${effectiveMoisture.toFixed(2)} m³/m³` : 'optimal'}) and temperature verified within safe agro-climatic boundaries.`;
+    const taskInfo = planContext?.todayTask;
 
-    reasonText = isHi
-      ? `कोई प्रतिकूल जलवायु खतरा नहीं मिला। वर्तमान कृषि योजना जोखिम-अनुकूलित है।`
-      : `No adverse meteorological stress detected. Current crop portfolio remains risk-optimized.`;
+    if (planContext?.isStarted && taskInfo) {
+      observationText = isHi
+        ? `दिन ${planContext.currentDay}: '${taskInfo.title}' निर्धारित है। मिट्टी नमी (${moistureStr}) और मौसम पूरी तरह अनुकूल हैं।`
+        : `Day ${planContext.currentDay}: '${taskInfo.title}' is active. Soil moisture (${moistureStr}) and weather verified optimal.`;
 
-    candidateActionType = 'RECORD_OPTIMAL_STATUS';
-    priority = 'LOW';
-    candidateTitle = isHi ? 'सामान्य कृषि स्थिति सत्यापित' : 'Baseline Security Clearance';
-    candidateDesc = isHi
-      ? 'कृषि परिचालन सामान्य रूप से जारी रखने की अनुमति है।'
-      : 'Standard farming operations verified safe to proceed.';
+      reasonText = isHi
+        ? `खेत की स्थिति आज के कार्य के लिए 100% अनुकूल है। कोई बाधा या तनाव नहीं पाया गया।`
+        : `Agro-climatic parameters match required thresholds for '${taskInfo.title}'. Safe to execute.`;
+
+      candidateActionType = 'RECORD_OPTIMAL_STATUS';
+      priority = 'LOW';
+      candidateTitle = isHi
+        ? `दिन ${planContext.currentDay}: ${taskInfo.title} (समय पर)`
+        : `Day ${planContext.currentDay}: ${taskInfo.title} (On Track)`;
+      candidateDesc = isHi
+        ? `आज के कार्य '${taskInfo.title}' के लिए सभी परिस्थितियां अनुकूल हैं। योजनानुसार कार्य पूरा करें।`
+        : `Proceed with scheduled execution of '${taskInfo.title}'. All field conditions optimal.`;
+    } else {
+      observationText = isHi
+        ? `मिट्टी की नमी (${moistureStr}) और मौसम की स्थिति सभी फसलों के लिए अनुकूल हैं।`
+        : `Soil moisture (${effectiveMoisture !== null ? `${effectiveMoisture.toFixed(2)} m³/m³` : 'optimal'}) and temperature verified within safe agro-climatic boundaries.`;
+
+      reasonText = isHi
+        ? `कोई प्रतिकूल जलवायु खतरा नहीं मिला। वर्तमान कृषि योजना जोखिम-अनुकूलित है।`
+        : `No adverse meteorological stress detected. Current crop portfolio remains risk-optimized.`;
+
+      candidateActionType = 'RECORD_OPTIMAL_STATUS';
+      priority = 'LOW';
+      candidateTitle = isHi ? 'सामान्य कृषि स्थिति सत्यापित' : 'Baseline Security Clearance';
+      candidateDesc = isHi
+        ? 'कृषि परिचालन सामान्य रूप से जारी रखने की अनुमति है।'
+        : 'Standard farming operations verified safe to proceed.';
+    }
     monitoringStatus = 'ACTIVE_MONITORING';
+    resultingPlanStatus = 'ON_TRACK';
   }
+
 
   // ---------------------------------------------------------------------------
   // Check Duplicate State (Advisory Spam Prevention)
@@ -428,6 +551,7 @@ export function runAutonomousCycle(
     return {
       log,
       advisory: previousState.activeAdvisory,
+      planStatus: resultingPlanStatus,
     };
   }
 
@@ -499,5 +623,7 @@ export function runAutonomousCycle(
   return {
     log,
     advisory: execution.advisory,
+    planStatus: resultingPlanStatus,
   };
 }
+

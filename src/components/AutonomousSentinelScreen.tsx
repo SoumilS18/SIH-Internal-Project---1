@@ -32,6 +32,15 @@ import { Reveal } from '@/components/ui/motion';
 import { ReadingRow } from '@/components/ui/ReadingRow';
 import type { FarmDecisionResponse } from '@/types/farm';
 import type { AutonomousCycleLog, ProactiveAdvisory } from '@/types/autonomous';
+import type { PlanReasoningContext } from '@/types/planLifecycle';
+import {
+  calculatePlanProgress,
+  type PlanExecutionState,
+} from '@/lib/planProgress';
+import {
+  getContextualTaskChecklist,
+  UNIVERSAL_OBSERVATIONS,
+} from '@/lib/contextualChecklists';
 
 /**
  * A section label on the watch sheet: caps, then a rule running to the edge.
@@ -59,11 +68,13 @@ interface AutonomousSentinelScreenProps {
   logs: AutonomousCycleLog[];
   advisory: ProactiveAdvisory | null;
   isChecking: boolean;
-  onRunCheck: () => void;
+  planExecutionState?: PlanExecutionState;
+  onRunCheck: (planContext?: PlanReasoningContext) => void;
   onBackToPlan: () => void;
   onLogout: () => void;
   onEditDetails?: () => void;
   onChangeLocation?: () => void;
+  onToggleDayCompletion?: (day: number) => void;
 }
 
 export function AutonomousSentinelScreen({
@@ -72,11 +83,13 @@ export function AutonomousSentinelScreen({
   logs,
   advisory,
   isChecking,
+  planExecutionState,
   onRunCheck,
   onBackToPlan,
   onLogout,
   onEditDetails,
   onChangeLocation,
+  onToggleDayCompletion,
 }: AutonomousSentinelScreenProps) {
   const { language } = useLanguage();
   const isHi = language === 'hi';
@@ -128,6 +141,41 @@ export function AutonomousSentinelScreen({
   const soilMoisture = decision?.weather?.root_zone_soil_moisture_m3m3 ?? 0.35;
   const allocatedCrops = decision?.allocated_crops || [];
   const primaryCropName = allocatedCrops[0]?.crop_name || 'Tomato';
+  const cropNames = allocatedCrops.map((c) => c.crop_name).filter(Boolean);
+
+  const safePlanState: PlanExecutionState = planExecutionState || {
+    isStarted: false,
+    startDate: null,
+    lastActiveDate: null,
+    currentStatus: 'NOT_STARTED',
+    completedDays: [],
+    skippedDays: [],
+    taskNotes: {},
+    taskStatusMap: {},
+    adjustments: {},
+  };
+  const season = (decision.request?.season || 'Kharif') as 'Kharif' | 'Rabi' | 'Zaid';
+  const progress = calculatePlanProgress(safePlanState, season, cropNames, isHi ? 'hi' : 'en');
+  const taskChecklist = getContextualTaskChecklist(
+    progress.currentDay,
+    progress.currentWeek,
+    progress.todayTask,
+    primaryCropName
+  );
+
+  const planContext: PlanReasoningContext = {
+    isStarted: safePlanState.isStarted,
+    currentDay: progress.currentDay,
+    currentWeek: progress.currentWeek,
+    totalDays: progress.totalDays,
+    totalWeeks: progress.totalWeeks,
+    todayTask: progress.todayTask,
+    primaryCrop: primaryCropName,
+    allocatedCrops: cropNames,
+    planStatus: progress.planStatus,
+    farmerObservations: selectedObservations,
+    customReportText: customReportText.trim() || undefined,
+  };
 
   const districtLabel = getDistrictDisplayName(decision.location?.district_name || 'Bhopal', language);
   const stateLabel = getStateDisplayName(decision.location?.state_name || 'Madhya Pradesh', language);
@@ -151,11 +199,11 @@ export function AutonomousSentinelScreen({
     if (selectedObservations.length === 0 && !customReportText.trim()) return;
 
     setReportSubmitted(true);
-    onRunCheck();
+    onRunCheck(planContext);
 
     const note = isHi
-      ? 'आपकी रिपोर्ट दर्ज कर ली गई है। AI सेंटीनेल ने खेत की स्थिति का पुनः विश्लेषण किया है।'
-      : 'Your report has been received. Sentinel has re-evaluated your farm condition.';
+      ? `आपकी रिपोर्ट दर्ज कर ली गई है। AI सेंटीनेल ने दिन ${progress.currentDay} के कार्य '${progress.todayTask?.title || 'कार्य'}' और खेत की स्थिति का पुनः विश्लेषण किया है।`
+      : `Your report has been received. Sentinel has re-evaluated Day ${progress.currentDay} task (${progress.todayTask?.title || 'Task'}) with live field telemetry.`;
 
     setReportFeedback(note);
     setTimeout(() => setReportFeedback(null), 6000);
@@ -171,7 +219,13 @@ export function AutonomousSentinelScreen({
     setIsProcessingAI(true);
 
     try {
-      const resp: VoiceAgentResponse = await askFarmerVoiceAssistant(q, decision, language);
+      const resp: VoiceAgentResponse = await askFarmerVoiceAssistant(
+        q,
+        decision,
+        language,
+        conversation.map((c) => ({ role: c.role, text: c.text })),
+        planContext
+      );
       const answerText = isHi ? resp.display_text || resp.spoken_text : resp.display_text || resp.spoken_text;
 
       setConversation((prev) => [
@@ -200,6 +254,7 @@ export function AutonomousSentinelScreen({
       setIsProcessingAI(false);
     }
   };
+
 
   // Stop the agent's spoken reply without cancelling the conversation
   const handleStopAudio = () => {
@@ -424,12 +479,22 @@ export function AutonomousSentinelScreen({
             {/* THE FARM, UNDER WATCH — the AI lives inside the land, not beside
                 it: aiState is driven by what is actually happening right now. */}
             <div className="lg:col-span-7">
-              <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-[var(--field)]" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
-                </span>
-                {isHi ? 'निगरानी सक्रिय' : 'Watching · live'}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="t-eyebrow flex items-center gap-2" style={{ color: 'var(--field)' }}>
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-[var(--field)]" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
+                  </span>
+                  {isHi ? 'निगरानी सक्रिय · 24/7' : 'Sentinel Watching · 24/7'}
+                </div>
+
+                {safePlanState.isStarted && (
+                  <span className="chip chip-field text-[10px]">
+                    {isHi
+                      ? `दिन ${progress.currentDay} / ${progress.totalDays} · सप्ताह ${progress.currentWeek}`
+                      : `Day ${progress.currentDay} of ${progress.totalDays} · Week ${progress.currentWeek}`}
+                  </span>
+                )}
               </div>
 
               <h1 className="t-h1 mt-3 text-[1.9rem] leading-[1.1] sm:text-[2.3rem]">
@@ -457,7 +522,44 @@ export function AutonomousSentinelScreen({
                   {latestLog ? latestLog.timestamp : isHi ? 'अभी-अभी' : 'just now'}
                 </span>
               </div>
+
+              {safePlanState.isStarted && progress.todayTask && (
+                <div className="mt-4 rounded-[14px] border border-[var(--field)] bg-[var(--field-tint)] p-3 shadow-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="t-eyebrow text-[10px] font-bold text-[var(--field-deep)]">
+                        {isHi ? 'आज का निर्धारित कार्य' : 'TODAY\'S SCHEDULED TASK'}
+                      </span>
+                      <span className="h-1 w-1 rounded-full bg-[var(--field)]" />
+                      <span className="font-data text-xs font-semibold text-[var(--field-deep)]">
+                        {isHi ? `दिन ${progress.currentDay}` : `Day ${progress.currentDay}`}
+                      </span>
+                    </div>
+                    {onToggleDayCompletion && (
+                      <button
+                        type="button"
+                        onClick={() => onToggleDayCompletion(progress.currentDay)}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--field-deep)] hover:underline"
+                      >
+                        <Check size={12} />
+                        <span>
+                          {safePlanState.completedDays.includes(progress.currentDay)
+                            ? (isHi ? 'संपन्न ✓' : 'Done ✓')
+                            : (isHi ? 'पूरा हुआ चिन्हित करें' : 'Mark Done')}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs font-bold text-[var(--ink)]">
+                    {progress.todayTask.title}
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--ink-soft)]">
+                    {progress.todayTask.desc}
+                  </p>
+                </div>
+              )}
             </div>
+
 
             {/* THE VERDICT — what the watch concluded, stated as a reading */}
             <div className="lg:col-span-5 lg:border-l lg:border-[var(--line)] lg:pl-10">
@@ -583,42 +685,98 @@ export function AutonomousSentinelScreen({
                 : 'Report field observations and the agent will re-evaluate the plan.'}
             </p>
 
-            {/* each observation is a real toggle on a ruled line — no boxes,
-                and the tick mark is the only fill, so the list stays quiet */}
+            {/* 1. Day-Specific Contextual Questions */}
+            {safePlanState.isStarted && taskChecklist.questions.length > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--field)]" />
+                  <span className="t-eyebrow text-[10px] font-bold text-[var(--field-deep)]">
+                    {isHi
+                      ? `दिन ${progress.currentDay} के कार्य से जुड़े सवाल (${progress.todayTask?.title || 'आज का कार्य'})`
+                      : `Today's Task Questions (${progress.todayTask?.title || 'Day ' + progress.currentDay})`}
+                  </span>
+                </div>
+                <div className="space-y-0.5">
+                  {taskChecklist.questions.map((item) => {
+                    const checked = selectedObservations.includes(item.id);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        aria-pressed={checked}
+                        onClick={() => toggleObservation(item.id)}
+                        className={`flex w-full items-center gap-3 border-b py-2.5 text-left transition-colors focus-visible:bg-[var(--surface-inset)] focus-visible:outline-none ${
+                          checked ? 'border-[var(--field)]' : 'border-[var(--line-soft)]'
+                        }`}
+                      >
+                        <span
+                          className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[6px] transition-colors"
+                          style={{
+                            background: checked ? 'var(--field)' : 'transparent',
+                            boxShadow: checked ? 'none' : 'inset 0 0 0 1.5px var(--line-strong)',
+                          }}
+                          aria-hidden
+                        >
+                          {checked && <Check size={12} className="text-[var(--paper)]" strokeWidth={3} />}
+                        </span>
+                        <span
+                          className={`text-[12.5px] leading-snug ${
+                            checked ? 'font-medium text-[var(--ink)]' : 'text-[var(--ink-soft)]'
+                          }`}
+                        >
+                          {isHi ? item.label.hi : item.label.en}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 2. Universal Field Observations */}
             <div className="mt-5">
-              {observations.map((item) => {
-                const checked = selectedObservations.includes(item.id);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    aria-pressed={checked}
-                    onClick={() => toggleObservation(item.id)}
-                    className={`flex w-full items-center gap-3 border-b py-3 text-left transition-colors focus-visible:bg-[var(--surface-inset)] focus-visible:outline-none ${
-                      checked ? 'border-[var(--field)]' : 'border-[var(--line-soft)]'
-                    }`}
-                  >
-                    <span
-                      className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[6px] transition-colors"
-                      style={{
-                        background: checked ? 'var(--field)' : 'transparent',
-                        boxShadow: checked ? 'none' : 'inset 0 0 0 1.5px var(--line-strong)',
-                      }}
-                      aria-hidden
-                    >
-                      {checked && <Check size={12} className="text-[var(--paper)]" strokeWidth={3} />}
-                    </span>
-                    <span
-                      className={`text-[13px] ${
-                        checked ? 'font-medium text-[var(--ink)]' : 'text-[var(--ink-soft)]'
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--grain)]" />
+                <span className="t-eyebrow text-[10px] font-bold text-[var(--grain-deep)]">
+                  {isHi ? 'सामान्य खेत अवलोकन' : 'Universal Field Observations'}
+                </span>
+              </div>
+              <div className="space-y-0.5">
+                {UNIVERSAL_OBSERVATIONS.map((item) => {
+                  const checked = selectedObservations.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-pressed={checked}
+                      onClick={() => toggleObservation(item.id)}
+                      className={`flex w-full items-center gap-3 border-b py-2.5 text-left transition-colors focus-visible:bg-[var(--surface-inset)] focus-visible:outline-none ${
+                        checked ? 'border-[var(--field)]' : 'border-[var(--line-soft)]'
                       }`}
                     >
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span
+                        className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[6px] transition-colors"
+                        style={{
+                          background: checked ? 'var(--field)' : 'transparent',
+                          boxShadow: checked ? 'none' : 'inset 0 0 0 1.5px var(--line-strong)',
+                        }}
+                        aria-hidden
+                      >
+                        {checked && <Check size={12} className="text-[var(--paper)]" strokeWidth={3} />}
+                      </span>
+                      <span
+                        className={`text-[12.5px] leading-snug ${
+                          checked ? 'font-medium text-[var(--ink)]' : 'text-[var(--ink-soft)]'
+                        }`}
+                      >
+                        {isHi ? item.label.hi : item.label.en}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
 
             <textarea
               rows={3}
