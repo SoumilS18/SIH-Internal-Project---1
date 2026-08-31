@@ -97,7 +97,11 @@ export function localizeAdjustment(
   if (isHi) {
     // Translate Title if stored in English
     if (!adj.adjustedTitleHi) {
-      if (title?.toLowerCase().includes('postponed')) {
+      if (title?.toLowerCase().includes('neem') || title?.toLowerCase().includes('foliar')) {
+        title = 'आपातकालीन जैविक नीम स्प्रे (5ml/L)';
+      } else if (title?.toLowerCase().includes('sticky trap') || title?.toLowerCase().includes('larval')) {
+        title = 'चिपचिपे ट्रैप्स व कीट प्रभाव निरीक्षण';
+      } else if (title?.toLowerCase().includes('postponed')) {
         title = `स्थगित: ${baseDayTitle} (वर्षा)`;
       } else if (title?.toLowerCase().includes('rescheduled')) {
         title = `पुनर्निर्धारित: ${baseDayTitle}`;
@@ -112,7 +116,11 @@ export function localizeAdjustment(
 
     // Translate Desc if stored in English
     if (!adj.adjustedDescHi && desc) {
-      if (desc.toLowerCase().includes('deferred by 2 days') || desc.toLowerCase().includes('heavy rain')) {
+      if (desc.toLowerCase().includes('neem oil') || desc.toLowerCase().includes('foliar spray')) {
+        desc = 'नीम तेल का छिड़काव सुबह 8 बजे से पहले करें।';
+      } else if (desc.toLowerCase().includes('sticky trap') || desc.toLowerCase().includes('inspect canopy')) {
+        desc = 'पीले चिपचिपे कार्ड लगाएं व पत्तियों का पुनरीक्षण करें।';
+      } else if (desc.toLowerCase().includes('deferred by 2 days') || desc.toLowerCase().includes('heavy rain')) {
         desc = 'भारी वर्षा के कारण कार्य 2 दिन आगे बढ़ाया गया।';
       } else if (desc.toLowerCase().includes('runoff') || desc.toLowerCase().includes('water stagnation') || desc.toLowerCase().includes('waterlogging')) {
         desc = 'वर्षा के बाद जलभराव की स्थिति जांचें।';
@@ -127,7 +135,11 @@ export function localizeAdjustment(
 
     // Translate Reason if stored in English
     if (!adj.reasonHi && reason) {
-      if (reason.toLowerCase().includes('rainfall') || reason.toLowerCase().includes('waterlogging')) {
+      if (reason.toLowerCase().includes('leaf/pest') || reason.toLowerCase().includes('pest symptoms') || reason.toLowerCase().includes('leaf')) {
+        reason = 'पत्तियों में कीट/रोग लक्षण दर्ज';
+      } else if (reason.toLowerCase().includes('suppression') || reason.toLowerCase().includes('verify pest')) {
+        reason = 'कीट निवारण प्रभाव की पुष्टि';
+      } else if (reason.toLowerCase().includes('rainfall') || reason.toLowerCase().includes('waterlogging')) {
         reason = 'भारी वर्षा एवं जलभराव से सुरक्षा';
       } else if (reason.toLowerCase().includes('aeration') || reason.toLowerCase().includes('post-rain') || reason.toLowerCase().includes('soil')) {
         reason = 'वर्षा पश्चात मिट्टी स्वास्थ्य जांच';
@@ -142,7 +154,11 @@ export function localizeAdjustment(
   } else {
     // Translate Title if stored in Hindi
     if (!adj.adjustedTitleEn) {
-      if (title?.includes('स्थगित')) {
+      if (title?.includes('नीम') || title?.includes('जैविक')) {
+        title = 'Foliar Neem Protection (5ml/L)';
+      } else if (title?.includes('चिपचिपे') || title?.includes('ट्रैप्स')) {
+        title = 'Sticky Traps & Larval Inspection';
+      } else if (title?.includes('स्थगित')) {
         title = `Postponed: ${baseDayTitle} (Rain)`;
       } else if (title?.includes('पुनर्निर्धारित')) {
         title = `Rescheduled: ${baseDayTitle}`;
@@ -157,7 +173,11 @@ export function localizeAdjustment(
 
     // Translate Desc if stored in Hindi
     if (!adj.adjustedDescEn && desc) {
-      if (desc.includes('भारी वर्षा')) {
+      if (desc.includes('नीम तेल')) {
+        desc = 'Apply 5ml/L neem oil foliar spray in early morning.';
+      } else if (desc.includes('चिपचिपे कार्ड')) {
+        desc = 'Install yellow sticky traps and inspect canopy.';
+      } else if (desc.includes('भारी वर्षा')) {
         desc = 'Field activity deferred by 2 days due to heavy rain.';
       } else if (desc.includes('जलभराव')) {
         desc = 'Check field runoff channels after rain.';
@@ -172,7 +192,11 @@ export function localizeAdjustment(
 
     // Translate Reason if stored in Hindi
     if (!adj.reasonEn && reason) {
-      if (reason.includes('भारी वर्षा') || reason.includes('जलभराव')) {
+      if (reason.includes('कीट/रोग') || reason.includes('पत्तियों')) {
+        reason = 'Farmer reported leaf/pest symptoms';
+      } else if (reason.includes('कीट निवारण') || reason.includes('प्रभाव की पुष्टि')) {
+        reason = 'Verify pest suppression effect';
+      } else if (reason.includes('भारी वर्षा') || reason.includes('जलभराव')) {
         reason = 'Heavy rainfall & waterlogging mitigation';
       } else if (reason.includes('मिट्टी स्वास्थ्य') || reason.includes('वातन')) {
         reason = 'Post-rain soil aeration check';
@@ -184,6 +208,7 @@ export function localizeAdjustment(
         reason = 'Precipitation forecast';
       }
     }
+
   }
 
   return {
