@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+
 import { LoginScreen } from '@/components/LoginScreen';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 import { MainScreen } from '@/components/MainScreen';
