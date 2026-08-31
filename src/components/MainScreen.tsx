@@ -6,9 +6,11 @@ import { FarmDetailsScreen } from '@/components/FarmDetailsScreen';
 import { FarmPlanScreen } from '@/components/FarmPlanScreen';
 import { InitializingScreen } from '@/components/InitializingScreen';
 import { AutonomousSentinelScreen } from '@/components/AutonomousSentinelScreen';
+import { GovernmentBenefitsScreen } from '@/components/GovernmentBenefitsScreen';
 import type { DetailedTabType } from '@/components/DetailedAnalysisView';
 import { StageSwap } from '@/components/ui/motion';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+
 import { runAutonomousCycle } from '@/services/autonomousSentinel';
 import {
   loadPlanExecutionState,
@@ -203,7 +205,8 @@ export function MainScreen({
     selectedExpertTab,
   ]);
 
-  // Autonomous Sentinel State
+  // Autonomous Sentinel & Tools State
+  const [isViewingBenefits, setIsViewingBenefits] = useState<boolean>(false);
   const [sentinelLogs, setSentinelLogs] = useState<AutonomousCycleLog[]>([]);
   const [proactiveAdvisory, setProactiveAdvisory] = useState<ProactiveAdvisory | null>(null);
   const [isCheckingSentinel, setIsCheckingSentinel] = useState<boolean>(false);
@@ -213,6 +216,7 @@ export function MainScreen({
     activeAdvisory: ProactiveAdvisory | null;
     lastActionType: ActionType;
   } | null>(null);
+
 
   // Load locations on mount
   useEffect(() => {
@@ -445,18 +449,30 @@ export function MainScreen({
   }, [decision, page, loading]);
 
   // Guided experience: Page 3 (details entry) → cinematic → Page 4 (full-screen
-  // plan) → Page 5 (Sentinel). The three live inside one StageSwap so moving
-  // between them morphs in the direction of travel instead of cutting.
-  const innerStage: 'details' | 'plan' | 'sentinel' =
-    viewMode === 'autonomous' ? 'sentinel' : page;
+  // plan) → Page 5 (Sentinel) → Page 6 (Government Benefits).
+  const innerStage: 'details' | 'plan' | 'sentinel' | 'benefits' =
+    isViewingBenefits ? 'benefits' : viewMode === 'autonomous' ? 'sentinel' : page;
 
   return (
     <>
       <StageSwap
         stageKey={innerStage}
-        order={innerStage === 'details' ? 3 : innerStage === 'plan' ? 4 : 5}
+        order={innerStage === 'details' ? 3 : innerStage === 'plan' ? 4 : innerStage === 'sentinel' ? 5 : 6}
       >
-        {innerStage === 'sentinel' ? (
+        {innerStage === 'benefits' ? (
+          <ErrorBoundary fallbackTitle={isHi ? 'सरकारी योजनाएं स्क्रीन लोड करने में समस्या आई' : 'Unable to load Government Benefits screen'}>
+            <GovernmentBenefitsScreen
+              userName={userName}
+              selectedState={selectedState}
+              selectedDistrict={selectedDistrict}
+              landAcres={landAcres}
+              primaryCrop={decision?.primary_crop_recommendation?.crop_name || 'Sugarcane'}
+              irrigationType={irrigationType}
+              onBackToSentinel={() => setIsViewingBenefits(false)}
+              onChangeLocation={onBack}
+            />
+          </ErrorBoundary>
+        ) : innerStage === 'sentinel' ? (
           <ErrorBoundary fallbackTitle={isHi ? 'सेंटीनेल स्क्रीन लोड करने में समस्या आई' : 'Unable to load Sentinel screen'}>
             <AutonomousSentinelScreen
               userName={userName}
@@ -468,6 +484,7 @@ export function MainScreen({
               onRunCheck={handleRunSentinelCheck}
               onToggleDayCompletion={handleToggleDayCompletion}
               onApplyPlanAdjustments={handleApplyPlanAdjustments}
+              onOpenBenefits={() => setIsViewingBenefits(true)}
               onBackToPlan={() => {
                 setViewMode('farmer');
                 setPage('plan');
@@ -482,7 +499,6 @@ export function MainScreen({
                 onBack();
               }}
             />
-
           </ErrorBoundary>
         ) : innerStage === 'details' ? (
           <ErrorBoundary fallbackTitle={isHi ? 'खेत विवरण स्क्रीन लोड करने में समस्या आई' : 'Unable to load Farm Details screen'}>
@@ -533,6 +549,7 @@ export function MainScreen({
           </ErrorBoundary>
         )}
       </StageSwap>
+
 
       {/* Cinematic analysis overlay — the AI reads the farm factor by factor
           using these very inputs, swaps the page underneath while it is still

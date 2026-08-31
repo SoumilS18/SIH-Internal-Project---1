@@ -18,7 +18,15 @@ import {
   Sparkles,
   Clock,
   AlertCircle,
+  Camera,
+  Landmark,
+  Scan,
+  ShieldCheck,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
+
 import { useLanguage } from '@/i18n/LanguageContext';
 import { JourneyNav } from '@/components/JourneyNav';
 import { getCropDisplayName } from '@/i18n/cropNames';
@@ -31,8 +39,10 @@ import {
   type VoiceAgentResponse,
 } from '@/services/voiceAgentService';
 import { AutonomousLogModal } from '@/components/AutonomousLogModal';
+import { CropHealthScannerModal } from '@/components/CropHealthScannerModal';
 import { FarmDigitalTwin } from '@/components/FarmDigitalTwin';
 import { Reveal } from '@/components/ui/motion';
+
 import { ReadingRow } from '@/components/ui/ReadingRow';
 import type { FarmDecisionResponse } from '@/types/farm';
 import type { AutonomousCycleLog, ProactiveAdvisory } from '@/types/autonomous';
@@ -175,6 +185,7 @@ interface AutonomousSentinelScreenProps {
   onChangeLocation?: () => void;
   onToggleDayCompletion?: (day: number) => void;
   onApplyPlanAdjustments?: (adjustments: TaskAdjustment | TaskAdjustment[]) => void;
+  onOpenBenefits?: () => void;
 }
 
 export function AutonomousSentinelScreen({
@@ -191,12 +202,15 @@ export function AutonomousSentinelScreen({
   onChangeLocation,
   onToggleDayCompletion,
   onApplyPlanAdjustments,
+  onOpenBenefits,
 }: AutonomousSentinelScreenProps) {
 
   const { language } = useLanguage();
   const isHi = language === 'hi';
 
   const [isLogModalOpen, setIsLogModalOpen] = useState<boolean>(false);
+  const [isScannerModalOpen, setIsScannerModalOpen] = useState<boolean>(false);
+
 
   // Farmer Ground Observation State
   const [selectedObservations, setSelectedObservations] = useState<string[]>([]);
@@ -206,6 +220,8 @@ export function AutonomousSentinelScreen({
   const [recentObservations, setRecentObservations] = useState<RecentObservationItem[]>(() =>
     loadRecentObservations(isHi)
   );
+  const [isRecentObsExpanded, setIsRecentObsExpanded] = useState<boolean>(false);
+
 
   // Voice & Text Assistant State
   const [isListening, setIsListening] = useState<boolean>(false);
@@ -1109,7 +1125,7 @@ export function AutonomousSentinelScreen({
         </Reveal>
 
         {/* =================================================================== */}
-        {/* SECTION 3: FARMER OBSERVATIONS (LEFT) + RECENT OBSERVATIONS (RIGHT) */}
+        {/* SECTION 3: FIELD OBSERVATIONS (LEFT) & AGRIOPTIMA TOOLS (RIGHT)      */}
         {/* =================================================================== */}
         <Reveal delay={90} ref={observationSectionRef} className="border-b border-[var(--line)] pb-12">
           <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-12">
@@ -1137,7 +1153,7 @@ export function AutonomousSentinelScreen({
                     </span>
                   </div>
 
-                  <div className="divide-y divide-[var(--line-soft)] border-y border-[var(--line-soft)]">
+                  <div className="divide-y divide-[var(--line-soft)] border-y border-[var(--line-soft)] rounded-xl bg-[var(--surface-solid)]/60 px-3">
                     {taskChecklist.questions.map((item) => {
                       const checked = selectedObservations.includes(item.id);
                       return (
@@ -1183,7 +1199,7 @@ export function AutonomousSentinelScreen({
                   </span>
                 </div>
 
-                <div className="divide-y divide-[var(--line-soft)] border-y border-[var(--line-soft)]">
+                <div className="divide-y divide-[var(--line-soft)] border-y border-[var(--line-soft)] rounded-xl bg-[var(--surface-solid)]/60 px-3">
                   {UNIVERSAL_OBSERVATIONS.map((item) => {
                     const checked = selectedObservations.includes(item.id);
                     return (
@@ -1219,16 +1235,16 @@ export function AutonomousSentinelScreen({
                 </div>
               </div>
 
-              {/* Custom Observation Input */}
+              {/* Custom Observation Input & Submit */}
               <div className="space-y-3 pt-1">
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={customReportText}
                   onChange={(e) => setCustomReportText(e.target.value)}
                   placeholder={
                     isHi
-                      ? 'अन्य कोई बात जो आपने देखी... (जैसे: खेत के उत्तरी हिस्से में भारी बारिश के बाद पानी रुका)'
-                      : 'Tell the agent what happened... (e.g. Heavy rainfall occurred after ploughing in the north plot)'
+                      ? 'अन्य कोई बात जो आपने देखी... (जैसे: खेत में अधिक पानी रुका)'
+                      : 'Tell the agent what happened... (e.g. Excessive standing water in north plot)'
                   }
                   className="line-input w-full resize-none text-[13px] bg-[var(--surface-solid)]"
                 />
@@ -1254,68 +1270,180 @@ export function AutonomousSentinelScreen({
               </div>
             </div>
 
-            {/* RIGHT COLUMN: RECENT OBSERVATIONS (Clean Activity Feed, No Floating Cards) */}
-            <div className="lg:col-span-5 lg:border-l lg:border-[var(--line)] lg:pl-10 space-y-4">
-              <SectionHeader title={isHi ? 'हाल के अवलोकन' : 'RECENT OBSERVATIONS'}>
-                <button
-                  type="button"
-                  onClick={() => setIsLogModalOpen(true)}
-                  className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-[var(--field-deep)] hover:underline"
+            {/* RIGHT COLUMN: AGRIOPTIMA TOOLS */}
+            <div className="lg:col-span-5 lg:border-l lg:border-[var(--line)] lg:pl-10 space-y-6">
+              <div>
+                <SectionHeader title={isHi ? 'एग्रीऑप्टिमा टूल्स' : 'AGRIOPTIMA TOOLS'} />
+                <p className="mt-2 text-[13px] leading-relaxed text-[var(--ink-soft)]">
+                  {isHi
+                    ? 'बुद्धिमान कृषि उपकरण जो आपकी खेत प्रबंधन क्षमताओं को सशक्त बनाते हैं।'
+                    : 'Intelligent agricultural capabilities extending your farm intelligence.'}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {/* TOOL 1: CROP HEALTH SCANNER (COMING SOON) */}
+                <div
+                  onClick={() => setIsScannerModalOpen(true)}
+                  className="group relative flex flex-col justify-between rounded-2xl border border-[var(--line-soft)] bg-[var(--surface-solid)] p-5 transition-all hover:border-[var(--field)]/40 hover:shadow-sm cursor-pointer"
                 >
-                  <span>{isHi ? 'सभी अवलोकन देखें' : 'View all observations'}</span>
-                  <ArrowRight size={12} />
-                </button>
-              </SectionHeader>
-
-              <div className="divide-y divide-[var(--line-soft)] border-y border-[var(--line-soft)]">
-                {recentObservations.map((obs) => {
-                  const isDone = obs.status === 'acknowledged';
-                  const isAction = obs.status === 'action_recommended' || obs.status === 'plan_updated';
-
-                  return (
-                    <div key={obs.id} className="py-3.5 space-y-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2">
-                          <span
-                            className={`mt-0.5 text-xs ${
-                              isDone ? 'text-[var(--field-deep)]' : isAction ? 'text-[var(--risk)]' : 'text-[var(--grain-deep)]'
-                            }`}
-                          >
-                            {isDone ? '✓' : isAction ? '⚠' : '●'}
-                          </span>
-                          <h4 className="text-[12.5px] font-medium text-[var(--ink)] leading-snug">
-                            {localizeObservationTitle(obs.title, isHi)}
-                          </h4>
-                        </div>
-
-                        <span
-                          className={`chip text-[9px] font-medium shrink-0 ${
-                            isDone ? 'chip-field' : isAction ? 'chip-risk' : 'chip-grain'
-                          }`}
-                        >
-                          {obs.status === 'acknowledged'
-                            ? (isHi ? 'स्वीकृत' : 'Acknowledged')
-                            : obs.status === 'action_recommended'
-                            ? (isHi ? 'कार्यवाही अनुशंसित' : 'Action Recommended')
-                            : (isHi ? 'समीक्षाधीन' : 'Under Review')}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-[var(--ink-ghost)] font-data pl-5">
-                        <span>{localizeTimestamp(obs.timestamp, isHi)}</span>
-                        <span>{isHi ? `दिन ${obs.day} · सप्ताह ${obs.week}` : `Day ${obs.day} · Week ${obs.week}`}</span>
-                      </div>
-
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--field-tint)] text-[var(--field-deep)] border border-[var(--field-tint)] group-hover:scale-105 transition-transform">
+                        <Camera size={18} />
+                      </span>
+                      <span className="chip chip-grain text-[9px] font-bold">
+                        {isHi ? 'शीघ्र आ रहा है' : 'Coming Soon'}
+                      </span>
                     </div>
-                  );
-                })}
+
+                    <div>
+                      <h3 className="font-serif text-sm sm:text-base font-bold text-[var(--ink)] group-hover:text-[var(--field-deep)] transition-colors">
+                        {isHi ? 'फसल स्वास्थ्य स्कैनर' : 'Crop Health Scanner'}
+                      </h3>
+                      <p className="mt-1 text-xs text-[var(--ink-soft)] leading-relaxed">
+                        {isHi
+                          ? 'स्मार्टफोन कैमरे से फसल की पत्ती स्कैन कर कीट, रोग व पोषक तत्व असंतुलन की त्वरित पहचान करें।'
+                          : 'Capture a crop leaf photo to identify diseases, pests, and nutrient deficiencies with AI vision diagnosis.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3.5 flex items-center justify-between border-t border-[var(--line-soft)] pt-2.5 text-xs font-semibold text-[var(--field-deep)]">
+                    <span className="text-[10.5px] text-[var(--ink-ghost)]">
+                      {isHi ? 'AI विज़न डायग्नोस्टिक्स' : 'AI Vision Diagnostics'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-[11px]">
+                      <span>{isHi ? 'पूर्वावलोकन देखें' : 'Preview Scanner'}</span>
+                      <ChevronRight size={12} />
+                    </span>
+                  </div>
+                </div>
+
+                {/* TOOL 2: GOVERNMENT BENEFITS & FINANCIAL ELIGIBILITY */}
+                <div
+                  onClick={() => onOpenBenefits?.()}
+                  className="group relative flex flex-col justify-between rounded-2xl border border-[var(--line-soft)] bg-[var(--surface-solid)] p-5 transition-all hover:border-[var(--field)] hover:shadow-sm cursor-pointer"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--field-tint)] text-[var(--field-deep)] border border-[var(--field-tint)] group-hover:scale-105 transition-transform">
+                        <Landmark size={18} />
+                      </span>
+                      <span className="chip chip-field text-[9px] font-bold">
+                        {isHi ? 'उपलब्ध' : 'Available'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="font-serif text-sm sm:text-base font-bold text-[var(--ink)] group-hover:text-[var(--field-deep)] transition-colors">
+                        {isHi ? 'सरकारी योजनाएं एवं वित्तीय पात्रता' : 'Government Benefits & Eligibility'}
+                      </h3>
+                      <p className="mt-1 text-xs text-[var(--ink-soft)] leading-relaxed">
+                        {isHi
+                          ? 'अपनी जोत, राज्य व फसल अनुसार पीएम-किसान, सिंचाई सब्सिडी, फसल बीमा व केसीसी रियायती ऋण पात्रता जांचें।'
+                          : 'Check potential eligibility for PM-KISAN, micro-irrigation subsidies, crop insurance, and KCC concessional credit.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3.5 flex items-center justify-between border-t border-[var(--line-soft)] pt-2.5 text-xs font-semibold text-[var(--field-deep)]">
+                    <span className="text-[10.5px] text-[var(--ink-ghost)]">
+                      {isHi ? '8+ योजनाएं व सब्सिडी' : '8+ Schemes & Subsidies'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-[11px]">
+                      <span>{isHi ? 'पात्रता जांचें' : 'Check Eligibility'}</span>
+                      <ChevronRight size={12} />
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </Reveal>
 
         {/* =================================================================== */}
-        {/* SECTION 4: WHAT THE SENTINEL WATCHES (BOTTOM CONNECTED STRIP)       */}
+        {/* SECTION 4: RECENT OBSERVATIONS (SUPPORTING ACTIVITY HISTORY)         */}
+        {/* =================================================================== */}
+        <Reveal delay={110} className="border-b border-[var(--line)] pb-12">
+          <div className="space-y-4">
+            <SectionHeader title={isHi ? 'हाल के अवलोकन' : 'RECENT OBSERVATIONS'}>
+              <button
+                type="button"
+                onClick={() => setIsLogModalOpen(true)}
+                className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-[var(--field-deep)] hover:underline"
+              >
+                <span>{isHi ? 'सभी अवलोकन देखें' : 'View all observations'}</span>
+                <ArrowRight size={12} />
+              </button>
+            </SectionHeader>
+
+            <div className="divide-y divide-[var(--line-soft)] border-y border-[var(--line-soft)] rounded-xl bg-[var(--surface-solid)]/60 px-4">
+              {recentObservations.slice(0, isRecentObsExpanded ? recentObservations.length : 2).map((obs) => {
+                const isDone = obs.status === 'acknowledged';
+                const isAction = obs.status === 'action_recommended' || obs.status === 'plan_updated';
+
+                return (
+                  <div key={obs.id} className="py-3.5 space-y-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2">
+                        <span
+                          className={`mt-0.5 text-xs ${
+                            isDone ? 'text-[var(--field-deep)]' : isAction ? 'text-[var(--risk)]' : 'text-[var(--grain-deep)]'
+                          }`}
+                        >
+                          {isDone ? '✓' : isAction ? '⚠' : '●'}
+                        </span>
+                        <h4 className="text-[12.5px] font-medium text-[var(--ink)] leading-snug">
+                          {localizeObservationTitle(obs.title, isHi)}
+                        </h4>
+                      </div>
+
+                      <span
+                        className={`chip text-[9px] font-medium shrink-0 ${
+                          isDone ? 'chip-field' : isAction ? 'chip-risk' : 'chip-grain'
+                        }`}
+                      >
+                        {obs.status === 'acknowledged'
+                          ? (isHi ? 'स्वीकृत' : 'Acknowledged')
+                          : obs.status === 'action_recommended'
+                          ? (isHi ? 'कार्यवाही अनुशंसित' : 'Action Recommended')
+                          : (isHi ? 'समीक्षाधीन' : 'Under Review')}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-[var(--ink-ghost)] font-data pl-5">
+                      <span>{localizeTimestamp(obs.timestamp, isHi)}</span>
+                      <span>{isHi ? `दिन ${obs.day} · सप्ताह ${obs.week}` : `Day ${obs.day} · Week ${obs.week}`}</span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {recentObservations.length > 2 && (
+                <div className="py-2.5 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsRecentObsExpanded(!isRecentObsExpanded)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface-solid)] px-3.5 py-1 text-xs font-semibold text-[var(--field-deep)] hover:bg-[var(--surface-inset)] transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <span>
+                      {isRecentObsExpanded
+                        ? (isHi ? 'कम अवलोकन दिखाएं' : 'Show fewer observations')
+                        : (isHi ? `+${recentObservations.length - 2} और अवलोकन देखें` : `+${recentObservations.length - 2} more observations`)}
+                    </span>
+                    {isRecentObsExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </Reveal>
+
+
+
+        {/* =================================================================== */}
+        {/* SECTION 6: WHAT THE SENTINEL WATCHES (BOTTOM CONNECTED STRIP)       */}
         {/* =================================================================== */}
         <Reveal delay={120} className="space-y-4">
           <SectionHeader title={isHi ? 'सेंटीनेल क्या निगरानी करता है' : 'WHAT THE SENTINEL WATCHES'}>
@@ -1377,6 +1505,14 @@ export function AutonomousSentinelScreen({
         onRunCheck={() => onRunCheck(planContext)}
         isChecking={isChecking}
       />
+
+      {/* Crop Health Scanner Preview Modal */}
+      <CropHealthScannerModal
+        isOpen={isScannerModalOpen}
+        onClose={() => setIsScannerModalOpen(false)}
+        primaryCrop={decision.primary_crop_recommendation?.crop_name || 'Crop'}
+      />
+
 
       {/* ===================================================================== */}
       {/* 3. FOOTER                                                             */}
