@@ -39,6 +39,9 @@ export class ErrorBoundary extends Component<Props, State> {
       localStorage.removeItem('agrioptima_session_state_v1');
       localStorage.removeItem('agrioptima_farm_params_v1');
       localStorage.removeItem('agrioptima_farm_decision_v1');
+      localStorage.removeItem('agrioptima_plan_lifecycle_v1');
+      localStorage.removeItem('agrioptima_is_demo_v1');
+      localStorage.removeItem('agrioptima_demo_name_v1');
     } catch {}
     if (this.props.onReset) {
       this.props.onReset();
@@ -49,8 +52,6 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
-      const isDev = import.meta.env.DEV;
-
       return (
         <div className="flex min-h-[70vh] w-full flex-col items-center justify-center p-6 text-center text-[var(--ink)]">
           <div className="w-full max-w-lg rounded-3xl border border-[var(--line)] bg-[var(--surface-elevated)] p-8 shadow-xl">
@@ -67,22 +68,27 @@ export class ErrorBoundary extends Component<Props, State> {
                 'पृष्ठ लोड करने में अस्थायी समस्या आई। कृपया पृष्ठ पुनः लोड करें या सत्र रीसेट करें।'}
             </p>
 
-            {isDev && this.state.error && (
-              <div className="mt-4 max-h-36 overflow-y-auto rounded-xl border border-[var(--line-soft)] bg-[var(--paper)] p-3 text-left font-mono text-[11px] text-[var(--risk-deep)]">
-                <p className="font-bold">{this.state.error.toString()}</p>
-                {this.state.errorInfo?.componentStack && (
-                  <pre className="mt-1 whitespace-pre-wrap text-[10px] text-[var(--ink-faint)]">
-                    {this.state.errorInfo.componentStack}
-                  </pre>
-                )}
-              </div>
+            {this.state.error && (
+              <details className="mt-4 text-left">
+                <summary className="cursor-pointer text-[11px] font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)]">
+                  तकनीकी विवरण · Technical details
+                </summary>
+                <div className="mt-2 max-h-36 overflow-y-auto rounded-xl border border-[var(--line-soft)] bg-[var(--paper)] p-3 font-mono text-[11px] text-[var(--risk-deep)]">
+                  <p className="font-bold">{this.state.error.toString()}</p>
+                  {this.state.errorInfo?.componentStack && (
+                    <pre className="mt-1 whitespace-pre-wrap text-[10px] text-[var(--ink-faint)]">
+                      {this.state.errorInfo.componentStack}
+                    </pre>
+                  )}
+                </div>
+              </details>
             )}
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={this.handleReload}
-                className="btn btn-primary btn-sm flex items-center gap-2"
+                className="btn btn-primary btn-sm flex items-center gap-2 cursor-pointer"
               >
                 <RefreshCw size={14} />
                 <span>पुनः लोड करें (Reload)</span>
@@ -91,7 +97,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <button
                 type="button"
                 onClick={this.handleReset}
-                className="btn btn-ghost btn-sm flex items-center gap-2"
+                className="btn btn-ghost btn-sm flex items-center gap-2 cursor-pointer"
               >
                 <RotateCcw size={14} />
                 <span>सत्र रीसेट करें (Reset)</span>
@@ -104,4 +110,5 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return this.props.children;
   }
+
 }
