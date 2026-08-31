@@ -40,9 +40,11 @@ export interface AuthContextType {
   signOut: () => Promise<void>;
   updateLanguagePreference: (langCode: string) => Promise<void>;
   continueAsDemo: (name?: string) => void;
+  resendConfirmationEmail: (email: string) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
 
 /**
  * Transforms technical Supabase/network auth errors into friendly user messages.
@@ -366,6 +368,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, []);
 
+  // Resend confirmation email
+  const resendConfirmationEmail = useCallback(async (emailAddress: string): Promise<{ error: string | null }> => {
+    if (!isSupabaseConfigured) {
+      return { error: 'Supabase is not configured yet.' };
+    }
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: emailAddress.trim(),
+      });
+      if (error) {
+        return { error: formatAuthError(error) };
+      }
+      return { error: null };
+    } catch (err) {
+      return { error: formatAuthError(err) };
+    }
+  }, []);
+
   // Compute active user display name
   const activeUserName = useMemo(() => {
     if (isDemo) return demoName;
@@ -389,6 +410,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut,
       updateLanguagePreference,
       continueAsDemo,
+      resendConfirmationEmail,
     }),
     [
       user,
@@ -402,8 +424,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut,
       updateLanguagePreference,
       continueAsDemo,
+      resendConfirmationEmail,
     ]
   );
+
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

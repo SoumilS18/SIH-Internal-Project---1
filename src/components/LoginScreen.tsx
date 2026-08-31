@@ -55,7 +55,13 @@ function GlobeMark() {
  * - Preserves the living twin horizon, hairline aesthetics, and demo mode access.
  */
 export function LoginScreen({ onLogin }: LoginScreenProps) {
-  const { signIn, signUp, continueAsDemo, isConfigured } = useAuth();
+  const {
+    signIn,
+    signUp,
+    continueAsDemo,
+    isConfigured,
+    resendConfirmationEmail,
+  } = useAuth();
   const { language } = useLanguage();
   const isHi = language === 'hi';
   const reduced = usePrefersReducedMotion();
@@ -70,7 +76,34 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [resendingEmail, setResendingEmail] = useState<boolean>(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
+
+  const isEmailUnconfirmed = Boolean(
+    errorMessage &&
+    (errorMessage.toLowerCase().includes('confirm') || errorMessage.toLowerCase().includes('पुष्टि'))
+  );
+
+  const handleResendConfirmation = async () => {
+    if (!email.trim()) {
+      setErrorMessage(isHi ? 'कृपया अपना ईमेल पता दर्ज करें।' : 'Please enter your email address first.');
+      return;
+    }
+    setResendingEmail(true);
+    setResendStatus(null);
+    const res = await resendConfirmationEmail(email.trim());
+    setResendingEmail(false);
+    if (res.error) {
+      setErrorMessage(res.error);
+    } else {
+      setResendStatus(
+        isHi
+          ? 'पुष्टिकरण ईमेल दोबारा भेज दिया गया है! कृपया इनबॉक्स या स्पैम फोल्डर देखें।'
+          : 'Confirmation link sent! Please check your email inbox or spam folder.'
+      );
+    }
+  };
 
   /* The horizon is a proportion of the screen, not a constant */
   const [vh, setVh] = useState(() => (typeof window === 'undefined' ? 820 : window.innerHeight));
@@ -306,9 +339,32 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
               {/* Status & Error Alerts */}
               {errorMessage && (
-                <div className="mt-3 flex items-start gap-2 rounded-lg border border-[var(--risk-line)] bg-[var(--risk-tint)] p-2.5 text-xs text-[var(--risk-deep)]">
-                  <AlertCircle size={15} className="mt-0.5 shrink-0 text-[var(--risk)]" />
-                  <span className="leading-snug">{errorMessage}</span>
+                <div className="mt-3 space-y-2 rounded-lg border border-[var(--risk-line)] bg-[var(--risk-tint)] p-3 text-xs text-[var(--risk-deep)]">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle size={15} className="mt-0.5 shrink-0 text-[var(--risk)]" />
+                    <span className="leading-snug">{errorMessage}</span>
+                  </div>
+                  {isEmailUnconfirmed && (
+                    <div className="pt-1.5 border-t border-[var(--risk-line)]/50 flex flex-wrap items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={handleResendConfirmation}
+                        disabled={resendingEmail}
+                        className="font-semibold underline hover:text-[var(--ink)] disabled:opacity-50 cursor-pointer"
+                      >
+                        {resendingEmail
+                          ? (isHi ? 'भेजा जा रहा है...' : 'Sending confirmation link...')
+                          : (isHi ? 'पुष्टिकरण ईमेल पुनः भेजें (Resend email)' : 'Resend confirmation email')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {resendStatus && (
+                <div className="mt-3 flex items-start gap-2 rounded-lg border border-[var(--field-tint)] bg-[var(--field-tint)] p-2.5 text-xs text-[var(--field-deep)]">
+                  <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[var(--field)]" />
+                  <span className="leading-snug">{resendStatus}</span>
                 </div>
               )}
 
@@ -318,6 +374,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   <span className="leading-snug">{successMessage}</span>
                 </div>
               )}
+
 
               {/* ============================================================ */}
               {/* FORM: SIGN IN MODE                                          */}

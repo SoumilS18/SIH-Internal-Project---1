@@ -60,11 +60,16 @@ function AppContent() {
   const [selectedDistrict, setSelectedDistrict] = useState<string>(initialSession?.selectedDistrict || 'Bhopal');
   const [welcomeKey, setWelcomeKey] = useState<number>(0);
 
-  // Sync user profile preferred language into LanguageContext on login
+  const profileLanguageLoadedRef = useRef(false);
+
+  // Sync user profile preferred language into LanguageContext ONCE on initial profile load
   useEffect(() => {
-    if (profile?.preferred_language && (profile.preferred_language === 'en' || profile.preferred_language === 'hi')) {
-      if (profile.preferred_language !== language) {
-        setLanguage(profile.preferred_language);
+    if (profile?.preferred_language && !profileLanguageLoadedRef.current) {
+      profileLanguageLoadedRef.current = true;
+      if (profile.preferred_language === 'en' || profile.preferred_language === 'hi') {
+        if (profile.preferred_language !== language) {
+          setLanguage(profile.preferred_language);
+        }
       }
     }
   }, [profile?.preferred_language, language, setLanguage]);
@@ -75,6 +80,7 @@ function AppContent() {
       updateLanguagePreference(language);
     }
   }, [language, user, profile, updateLanguagePreference]);
+
 
   // If user is authenticated or demo, move past login if at login stage
   useEffect(() => {
