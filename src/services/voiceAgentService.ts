@@ -833,21 +833,34 @@ export async function askVoiceAgent(
           newDay: currDay + 2,
           actionTaken: 'postponed',
           adjustedTitle: isHi ? 'सिंचाई स्थगित (पर्याप्त वर्षा/नमी)' : 'Irrigation Deferred (Moisture Optimal)',
+          adjustedTitleHi: 'सिंचाई स्थगित (पर्याप्त वर्षा/नमी)',
+          adjustedTitleEn: 'Irrigation Deferred (Moisture Optimal)',
           adjustedDesc: isHi ? 'पर्याप्त नमी व बारिश के कारण सिंचाई 2 दिन आगे बढ़ाई गई।' : 'Soil moisture sufficient. Irrigation deferred by 2 days.',
+          adjustedDescHi: 'पर्याप्त नमी व बारिश के कारण सिंचाई 2 दिन आगे बढ़ाई गई।',
+          adjustedDescEn: 'Soil moisture sufficient. Irrigation deferred by 2 days.',
           reason: isHi ? `${formatRainfall(rain7d, lang)} वर्षा का पूर्वानुमान` : `${formatRainfall(rain7d, lang)} rain expected`,
+          reasonHi: `${formatRainfall(rain7d, lang)} वर्षा का पूर्वानुमान`,
+          reasonEn: `${formatRainfall(rain7d, lang)} rain expected`,
           timestamp: new Date().toISOString(),
           category: 'irrigation',
         },
         {
           originalDay: currDay + 1,
           actionTaken: 'modified',
-          adjustedTitle: isHi ? 'खेत जल निकासी व मिट्टी वातन निरीक्षण' : 'Field Drainage & Soil Aeration Inspection',
+          adjustedTitle: isHi ? 'खेत जल निकासी व मेड़ निरीक्षण' : 'Field Drainage & Soil Aeration Inspection',
+          adjustedTitleHi: 'खेत जल निकासी व मेड़ निरीक्षण',
+          adjustedTitleEn: 'Field Drainage & Soil Aeration Inspection',
           adjustedDesc: isHi ? 'वर्षा के बाद जलभराव की स्थिति जांचें।' : 'Inspect for water stagnation after rain event.',
+          adjustedDescHi: 'वर्षा के बाद जलभराव की स्थिति जांचें।',
+          adjustedDescEn: 'Inspect for water stagnation after rain event.',
           reason: isHi ? 'वर्षा के पश्चात मिट्टी स्वास्थ्य जांच' : 'Post-rain soil aeration check',
+          reasonHi: 'वर्षा के पश्चात मिट्टी स्वास्थ्य जांच',
+          reasonEn: 'Post-rain soil aeration check',
           timestamp: new Date().toISOString(),
           category: 'monitoring',
         }
       ];
+
 
       return {
         intent: 'IRRIGATION_CHECK',

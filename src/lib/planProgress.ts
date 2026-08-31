@@ -80,6 +80,120 @@ export function savePlanExecutionState(
 }
 
 /**
+ * Dynamically localizes task adjustment titles, descriptions, and reasons
+ * ensuring 100% Hindi/English parity regardless of when the adjustment was created.
+ */
+export function localizeAdjustment(
+  adj: TaskAdjustment,
+  language: 'en' | 'hi',
+  baseDayTitle: string
+): { title: string; desc: string; reason: string } {
+  const isHi = language === 'hi';
+
+  let title = isHi ? (adj.adjustedTitleHi || adj.adjustedTitle) : (adj.adjustedTitleEn || adj.adjustedTitle);
+  let desc = isHi ? (adj.adjustedDescHi || adj.adjustedDesc) : (adj.adjustedDescEn || adj.adjustedDesc);
+  let reason = isHi ? (adj.reasonHi || adj.reason) : (adj.reasonEn || adj.reason);
+
+  if (isHi) {
+    // Translate Title if stored in English
+    if (!adj.adjustedTitleHi) {
+      if (title?.toLowerCase().includes('postponed')) {
+        title = `स्थगित: ${baseDayTitle} (वर्षा)`;
+      } else if (title?.toLowerCase().includes('rescheduled')) {
+        title = `पुनर्निर्धारित: ${baseDayTitle}`;
+      } else if (title?.toLowerCase().includes('drainage channel') || title?.toLowerCase().includes('runoff') || title?.toLowerCase().includes('drainage & soil')) {
+        title = 'खेत जल निकासी व मेड़ निरीक्षण';
+      } else if (title?.toLowerCase().includes('mulching')) {
+        title = 'जड़ों के पास आंशिक जैविक मल्चिंग';
+      } else if (title?.toLowerCase().includes('irrigation deferred')) {
+        title = 'सिंचाई स्थगित (पर्याप्त वर्षा/नमी)';
+      }
+    }
+
+    // Translate Desc if stored in English
+    if (!adj.adjustedDescHi && desc) {
+      if (desc.toLowerCase().includes('deferred by 2 days') || desc.toLowerCase().includes('heavy rain')) {
+        desc = 'भारी वर्षा के कारण कार्य 2 दिन आगे बढ़ाया गया।';
+      } else if (desc.toLowerCase().includes('runoff') || desc.toLowerCase().includes('water stagnation') || desc.toLowerCase().includes('waterlogging')) {
+        desc = 'वर्षा के बाद जलभराव की स्थिति जांचें।';
+      } else if (desc.toLowerCase().includes('tomorrow morning')) {
+        desc = 'विलंबित कार्य को कल सुबह प्राथमिकता से पूर्ण करें।';
+      } else if (desc.toLowerCase().includes('mulch')) {
+        desc = 'सूखी घास या पत्तों की 2-3 सेमी परत बिछाएं।';
+      } else if (desc.toLowerCase().includes('irrigation deferred') || desc.toLowerCase().includes('moisture sufficient')) {
+        desc = 'पर्याप्त नमी व बारिश के कारण सिंचाई 2 दिन आगे बढ़ाई गई।';
+      }
+    }
+
+    // Translate Reason if stored in English
+    if (!adj.reasonHi && reason) {
+      if (reason.toLowerCase().includes('rainfall') || reason.toLowerCase().includes('waterlogging')) {
+        reason = 'भारी वर्षा एवं जलभराव से सुरक्षा';
+      } else if (reason.toLowerCase().includes('aeration') || reason.toLowerCase().includes('post-rain') || reason.toLowerCase().includes('soil')) {
+        reason = 'वर्षा पश्चात मिट्टी स्वास्थ्य जांच';
+      } else if (reason.toLowerCase().includes('delay reported')) {
+        reason = 'किसान द्वारा कार्य विलंब दर्ज किया गया';
+      } else if (reason.toLowerCase().includes('conserve') || reason.toLowerCase().includes('outage')) {
+        reason = 'सिंचाई में रुकावट के कारण नमी संरक्षण';
+      } else if (reason.toLowerCase().includes('rain expected') || reason.toLowerCase().includes('rain forecast')) {
+        reason = 'वर्षा का पूर्वानुमान';
+      }
+    }
+  } else {
+    // Translate Title if stored in Hindi
+    if (!adj.adjustedTitleEn) {
+      if (title?.includes('स्थगित')) {
+        title = `Postponed: ${baseDayTitle} (Rain)`;
+      } else if (title?.includes('पुनर्निर्धारित')) {
+        title = `Rescheduled: ${baseDayTitle}`;
+      } else if (title?.includes('जल निकासी') || title?.includes('मेड़ निरीक्षण')) {
+        title = 'Field Drainage Channel Inspection';
+      } else if (title?.includes('मल्चिंग')) {
+        title = 'Crop Root Organic Mulching';
+      } else if (title?.includes('सिंचाई स्थगित')) {
+        title = 'Irrigation Deferred (Moisture Optimal)';
+      }
+    }
+
+    // Translate Desc if stored in Hindi
+    if (!adj.adjustedDescEn && desc) {
+      if (desc.includes('भारी वर्षा')) {
+        desc = 'Field activity deferred by 2 days due to heavy rain.';
+      } else if (desc.includes('जलभराव')) {
+        desc = 'Check field runoff channels after rain.';
+      } else if (desc.includes('कल सुबह')) {
+        desc = 'Complete deferred task tomorrow morning.';
+      } else if (desc.includes('सूखी घास')) {
+        desc = 'Lay 2-3cm layer of dry grass mulch to conserve moisture.';
+      } else if (desc.includes('पर्याप्त नमी')) {
+        desc = 'Soil moisture sufficient. Irrigation deferred by 2 days.';
+      }
+    }
+
+    // Translate Reason if stored in Hindi
+    if (!adj.reasonEn && reason) {
+      if (reason.includes('भारी वर्षा') || reason.includes('जलभराव')) {
+        reason = 'Heavy rainfall & waterlogging mitigation';
+      } else if (reason.includes('मिट्टी स्वास्थ्य') || reason.includes('वातन')) {
+        reason = 'Post-rain soil aeration check';
+      } else if (reason.includes('कार्य विलंब')) {
+        reason = 'Task delay reported from field';
+      } else if (reason.includes('नमी संरक्षण')) {
+        reason = 'Conserve root moisture during irrigation outage';
+      } else if (reason.includes('पूर्वानुमान')) {
+        reason = 'Precipitation forecast';
+      }
+    }
+  }
+
+  return {
+    title: title || baseDayTitle,
+    desc: desc || '',
+    reason: reason || (isHi ? 'खेत परिस्थिति अनुसार समायोजन' : 'Adjusted based on field conditions'),
+  };
+}
+
+/**
  * Retrieves weekly action plan with dynamic AI adjustments overlaid on each day.
  */
 export function getAdjustedWeekPlan(
@@ -97,10 +211,11 @@ export function getAdjustedWeekPlan(
   const adjustedDays = basePlan.days.map((dayItem) => {
     const adj = adjustments[dayItem.dayOfSeason];
     if (adj) {
+      const loc = localizeAdjustment(adj, language, dayItem.title);
       return {
         ...dayItem,
-        title: adj.adjustedTitle || dayItem.title,
-        desc: adj.adjustedDesc ? `${adj.adjustedDesc} (${language === 'hi' ? 'कारण' : 'Reason'}: ${adj.reason})` : dayItem.desc,
+        title: loc.title,
+        desc: loc.desc ? `${loc.desc} (${language === 'hi' ? 'कारण' : 'Reason'}: ${loc.reason})` : dayItem.desc,
         category: adj.category || dayItem.category,
         isAdjusted: true,
         adjustment: adj,
@@ -114,6 +229,7 @@ export function getAdjustedWeekPlan(
     days: adjustedDays,
   };
 }
+
 
 /**
  * Computes the dynamic calendar progress from the plan's start date with active AI adjustments.

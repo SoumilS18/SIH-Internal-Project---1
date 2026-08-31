@@ -102,21 +102,22 @@ export function AutonomousLogModal({
               <ShieldCheck size={14} /> {t('sentinel.allowedActionsTitle')}
             </div>
             <ul className="list-disc pl-5 text-[var(--ink-soft)] space-y-0.5 text-[11px]">
-              <li>APPLY_PROACTIVE_ADVISORY (Field directives, irrigation/drainage alerts)</li>
-              <li>UPDATE_ACTION_PRIORITY (Dynamic prioritization of seasonal operations)</li>
-              <li>RECORD_OPTIMAL_STATUS (Verification clearance logging)</li>
+              <li>{isHi ? 'सक्रिय कृषि सलाह लागू करना (सिंचाई, जल निकासी व पोषण निर्देश)' : 'APPLY_PROACTIVE_ADVISORY (Field directives, irrigation/drainage alerts)'}</li>
+              <li>{isHi ? 'दैनिक प्राथमिकताओं का समायोजन (मौसम अनुसार कार्यों का क्रम)' : 'UPDATE_ACTION_PRIORITY (Dynamic prioritization of seasonal operations)'}</li>
+              <li>{isHi ? 'अनुकूल स्थिति प्रमाणीकरण (संतुलित खेत स्थिति दर्ज करना)' : 'RECORD_OPTIMAL_STATUS (Verification clearance logging)'}</li>
             </ul>
 
             <div className="text-[var(--grain-deep)] font-semibold flex items-center gap-1.5 pt-1">
               <ShieldAlert size={14} /> {t('sentinel.blockedActionsTitle')}
             </div>
             <ul className="list-disc pl-5 text-[var(--ink-soft)] space-y-0.5 text-[11px]">
-              <li>Purchasing agricultural inputs (Chemicals, pesticides, seeds)</li>
-              <li>Financial transfers, budget modifications, or mandi orders</li>
-              <li>Arbitrary code/shell execution or deleting farmer telemetry records</li>
+              <li>{isHi ? 'कृषि आदानों की सीधी खरीदारी (रासायनिक कीटनाशक, बीज, उर्वरक का ऑनलाइन भुगतान)' : 'Purchasing agricultural inputs (Chemicals, pesticides, seeds)'}</li>
+              <li>{isHi ? 'वित्तीय लेनदेन, बजट में बदलाव या मंडी में ट्रेड निष्पादन' : 'Financial transfers, budget modifications, or mandi orders'}</li>
+              <li>{isHi ? 'बिना अनुमति के कोड निष्पादन या किसान रिकॉर्ड में छेड़छाड़' : 'Arbitrary code/shell execution or deleting farmer telemetry records'}</li>
             </ul>
           </div>
         )}
+
 
         {/* Event Selector Strip (if multiple logs in bounded buffer) */}
         {logs.length > 1 && (

@@ -367,7 +367,23 @@ export function MainScreen({
   useEffect(() => {
     if (decision && sentinelLogs.length > 0) {
       try {
-        const { log, advisory } = runAutonomousCycle(decision, language, null);
+        const primaryCropName = decision.allocated_crops?.[0]?.crop_name || 'Tomato';
+        const cropNames = decision.allocated_crops?.map((c) => c.crop_name).filter(Boolean) || [];
+        const planLang = language === 'hi' ? 'hi' : 'en';
+        const progress = calculatePlanProgress(planExecutionState, season, cropNames, planLang);
+        const planContext: PlanReasoningContext = {
+          isStarted: planExecutionState.isStarted,
+          currentDay: progress.currentDay,
+          currentWeek: progress.currentWeek,
+          totalDays: progress.totalDays,
+          totalWeeks: progress.totalWeeks,
+          todayTask: progress.todayTask,
+          primaryCrop: primaryCropName,
+          allocatedCrops: cropNames,
+          planStatus: progress.planStatus,
+        };
+
+        const { log, advisory } = runAutonomousCycle(decision, language, null, planContext);
         previousSentinelStateRef.current = {
           fingerprint: log.fingerprint,
           activeAdvisory: advisory,
@@ -379,7 +395,8 @@ export function MainScreen({
         // Safe fallback
       }
     }
-  }, [language]);
+  }, [language, decision, season, planExecutionState]);
+
 
   // Periodic background autonomous monitoring loop (OBSERVE -> REASON -> MONITOR)
   useEffect(() => {

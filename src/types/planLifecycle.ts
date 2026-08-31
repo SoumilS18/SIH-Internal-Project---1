@@ -18,13 +18,20 @@ export interface TaskAdjustment {
   originalDay: number;
   newDay?: number;
   adjustedTitle?: string;
+  adjustedTitleHi?: string;
+  adjustedTitleEn?: string;
   adjustedDesc?: string;
+  adjustedDescHi?: string;
+  adjustedDescEn?: string;
   reason: string;
+  reasonHi?: string;
+  reasonEn?: string;
   actionTaken: 'postponed' | 'modified' | 'supplemented' | 'retained';
   timestamp: string;
   affectedDays?: number[];
   category?: 'prep' | 'sowing' | 'irrigation' | 'nutrient' | 'protection' | 'monitoring' | 'harvest';
 }
+
 
 
 export interface PlanExecutionState {

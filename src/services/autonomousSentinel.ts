@@ -359,8 +359,14 @@ export function runAutonomousCycle(
         actionTaken: 'postponed',
         newDay: currDay + 2,
         adjustedTitle: isHi ? `स्थगित: ${planContext.todayTask.title} (वर्षा)` : `Postponed: ${planContext.todayTask.title} (Rain)`,
+        adjustedTitleHi: `स्थगित: ${planContext.todayTask.title} (वर्षा)`,
+        adjustedTitleEn: `Postponed: ${planContext.todayTask.title} (Rain)`,
         adjustedDesc: isHi ? 'भारी वर्षा के कारण कार्य 2 दिन आगे बढ़ाया गया।' : 'Field activity deferred by 2 days due to heavy rain.',
+        adjustedDescHi: 'भारी वर्षा के कारण कार्य 2 दिन आगे बढ़ाया गया।',
+        adjustedDescEn: 'Field activity deferred by 2 days due to heavy rain.',
         reason: isHi ? 'भारी वर्षा एवं जलभराव से सुरक्षा' : 'Heavy rainfall & waterlogging mitigation',
+        reasonHi: 'भारी वर्षा एवं जलभराव से सुरक्षा',
+        reasonEn: 'Heavy rainfall & waterlogging mitigation',
         timestamp: new Date().toISOString(),
         category: 'prep',
       },
@@ -368,8 +374,14 @@ export function runAutonomousCycle(
         originalDay: currDay + 1,
         actionTaken: 'modified',
         adjustedTitle: isHi ? 'खेत जल निकासी व मेड़ निरीक्षण' : 'Field Drainage Channel Inspection',
+        adjustedTitleHi: 'खेत जल निकासी व मेड़ निरीक्षण',
+        adjustedTitleEn: 'Field Drainage Channel Inspection',
         adjustedDesc: isHi ? 'वर्षा के बाद जलभराव की स्थिति जांचें।' : 'Check field runoff channels after rain.',
+        adjustedDescHi: 'वर्षा के बाद जलभराव की स्थिति जांचें।',
+        adjustedDescEn: 'Check field runoff channels after rain.',
         reason: isHi ? 'वर्षा पश्चात मिट्टी स्वास्थ्य जांच' : 'Post-rain soil aeration check',
+        reasonHi: 'वर्षा पश्चात मिट्टी स्वास्थ्य जांच',
+        reasonEn: 'Post-rain soil aeration check',
         timestamp: new Date().toISOString(),
         category: 'monitoring',
       }
@@ -401,8 +413,14 @@ export function runAutonomousCycle(
         actionTaken: 'postponed',
         newDay: currDay + 1,
         adjustedTitle: isHi ? `पुनर्निर्धारित: ${planContext.todayTask.title}` : `Rescheduled: ${planContext.todayTask.title}`,
+        adjustedTitleHi: `पुनर्निर्धारित: ${planContext.todayTask.title}`,
+        adjustedTitleEn: `Rescheduled: ${planContext.todayTask.title}`,
         adjustedDesc: isHi ? 'विलंबित कार्य को कल सुबह प्राथमिकता से पूर्ण करें।' : 'Complete deferred task tomorrow morning.',
+        adjustedDescHi: 'विलंबित कार्य को कल सुबह प्राथमिकता से पूर्ण करें।',
+        adjustedDescEn: 'Complete deferred task tomorrow morning.',
         reason: isHi ? 'किसान द्वारा कार्य विलंब दर्ज किया गया' : 'Task delay reported from field',
+        reasonHi: 'किसान द्वारा कार्य विलंब दर्ज किया गया',
+        reasonEn: 'Task delay reported from field',
         timestamp: new Date().toISOString(),
         category: planContext.todayTask.category,
       }
@@ -433,13 +451,20 @@ export function runAutonomousCycle(
         originalDay: currDay,
         actionTaken: 'supplemented',
         adjustedTitle: isHi ? 'जड़ों के पास आंशिक जैविक मल्चिंग' : 'Crop Root Organic Mulching',
+        adjustedTitleHi: 'जड़ों के पास आंशिक जैविक मल्चिंग',
+        adjustedTitleEn: 'Crop Root Organic Mulching',
         adjustedDesc: isHi ? 'सूखी घास या पत्तों की 2-3 सेमी परत बिछाएं।' : 'Lay 2-3cm layer of dry grass mulch to conserve moisture.',
+        adjustedDescHi: 'सूखी घास या पत्तों की 2-3 सेमी परत बिछाएं।',
+        adjustedDescEn: 'Lay 2-3cm layer of dry grass mulch to conserve moisture.',
         reason: isHi ? 'सिंचाई में रुकावट के कारण नमी संरक्षण' : 'Conserve root moisture during irrigation outage',
+        reasonHi: 'सिंचाई में रुकावट के कारण नमी संरक्षण',
+        reasonEn: 'Conserve root moisture during irrigation outage',
         timestamp: new Date().toISOString(),
         category: 'irrigation',
       }
     ];
   }
+
 
   // --- Check Critical Telemetry Availability (Honest Handling) ---
   else if (isSoilMoistureMissing && isForecastMissing && isFallbackUsed) {

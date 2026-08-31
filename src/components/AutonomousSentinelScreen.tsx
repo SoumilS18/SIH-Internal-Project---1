@@ -24,6 +24,7 @@ import { JourneyNav } from '@/components/JourneyNav';
 import { getCropDisplayName } from '@/i18n/cropNames';
 import { getStateDisplayName, getDistrictDisplayName } from '@/i18n/geoNames';
 import { formatRainfall } from '@/i18n/formatters';
+import { translateSeason } from '@/i18n/enums';
 import {
   askFarmerVoiceAssistant,
   speakVoiceAgentAudio,
@@ -45,6 +46,59 @@ import {
   getContextualSuggestedPrompts,
   UNIVERSAL_OBSERVATIONS,
 } from '@/lib/contextualChecklists';
+
+function getCategoryDisplayName(category: string | undefined, isHi: boolean): string {
+  if (!category) return isHi ? 'कृषि कार्य' : 'FARM WORK';
+  const cat = category.toUpperCase();
+  if (cat.includes('IRRIG') || cat.includes('सिंचाई')) return isHi ? 'सिंचाई प्रबंधन' : 'IRRIGATION';
+  if (cat.includes('NUTRI') || cat.includes('FERT') || cat.includes('खाद') || cat.includes('पोषण')) return isHi ? 'उर्वरक व पोषण' : 'NUTRIENT & FERTILIZER';
+  if (cat.includes('PEST') || cat.includes('DISEASE') || cat.includes('कीट')) return isHi ? 'कीट एवं रोग रोकथाम' : 'PEST & DISEASE';
+  if (cat.includes('PREP') || cat.includes('SOIL') || cat.includes('जुताई')) return isHi ? 'खेत तैयारी व जुताई' : 'FIELD PREPARATION';
+  if (cat.includes('HARVEST') || cat.includes('कटाई')) return isHi ? 'कटाई एवं भंडारण' : 'HARVEST & STORAGE';
+  if (cat.includes('WEED') || cat.includes('निराई')) return isHi ? 'निराई-गुड़ाई' : 'WEED MANAGEMENT';
+  return isHi ? 'दैनिक कृषि कार्य' : category.toUpperCase();
+}
+
+function localizeTimestamp(ts: string, isHi: boolean): string {
+  if (ts === 'Just now' || ts === 'अभी-अभी') return isHi ? 'अभी-अभी' : 'Just now';
+  if (ts === 'Today · Day 1' || ts === 'आज · दिन 1') return isHi ? 'आज · दिन 1' : 'Today · Day 1';
+  if (ts === '2 hours ago' || ts === '2 घंटे पहले') return isHi ? '2 घंटे पहले' : '2 hours ago';
+  return ts;
+}
+
+function localizeObservationTitle(title: string, isHi: boolean): string {
+  if (!title) return '';
+  if (isHi) {
+    if (title.toLowerCase().includes('heavy rain')) {
+      return 'अत्याधिक भारी वर्षा दर्ज की गई';
+    }
+    if (title.toLowerCase().includes('leveling was done') || title.toLowerCase().includes('level the field')) {
+      return 'खेत समतलीकरण व तैयारी का अवलोकन';
+    }
+    if (title.toLowerCase().includes('soil moisture and field drainage')) {
+      return 'मिट्टी नमी स्तर और जल निकासी की समीक्षा पूरी';
+    }
+    if (title.toLowerCase().includes('field preparation & deep ploughing')) {
+      return 'खेत की प्रारंभिक तैयारी व जुताई जांची गई';
+    }
+  } else {
+    if (title.includes('अत्याधिक भारी वर्षा') || title.includes('अप्रत्याशित भारी बारिश')) {
+      return 'Unexpected heavy rainfall reported';
+    }
+    if (title.includes('खेत समतलीकरण')) {
+      return 'Field leveling and preparation observation';
+    }
+    if (title.includes('मिट्टी नमी स्तर')) {
+      return 'Soil moisture and field drainage inspected';
+    }
+    if (title.includes('प्रारंभिक तैयारी व जुताई')) {
+      return 'Field preparation & deep ploughing verified';
+    }
+  }
+  return title;
+}
+
+
 
 /**
  * A section label on the workspace: caps, then a continuous hairline running to the edge.
@@ -166,6 +220,44 @@ export function AutonomousSentinelScreen({
         : 'Hello! I am your AgriOptima farm assistant. Ask me anything about your farm, weather, seeds, fertilizer, or irrigation.',
     },
   ]);
+
+  // Sync initial conversation greeting and default observations when user switches language
+  useEffect(() => {
+    setConversation((prev) => {
+      if (prev.length === 1 && prev[0].role === 'agent') {
+        return [
+          {
+            role: 'agent',
+            text: isHi
+              ? 'नमस्ते किसान मित्र! मैं आपका एग्रीऑप्टिमा सहायक हूँ। आप मुझसे खेत, मौसम, बीज, खाद या सिंचाई के बारे में कुछ भी पूछ सकते हैं।'
+              : 'Hello! I am your AgriOptima farm assistant. Ask me anything about your farm, weather, seeds, fertilizer, or irrigation.',
+          },
+        ];
+      }
+      return prev;
+    });
+
+    setRecentObservations((prev) => {
+      return prev.map((obs) => {
+        if (obs.id === 'obs-seed-1') {
+          return {
+            ...obs,
+            title: isHi ? 'खेत की प्रारंभिक तैयारी व जुताई जांची गई' : 'Field preparation & deep ploughing verified',
+            timestamp: isHi ? 'आज · दिन 1' : 'Today · Day 1',
+          };
+        }
+        if (obs.id === 'obs-seed-2') {
+          return {
+            ...obs,
+            title: isHi ? 'मिट्टी नमी स्तर और जल निकासी की समीक्षा पूरी' : 'Soil moisture and field drainage inspected',
+            timestamp: isHi ? '2 घंटे पहले' : '2 hours ago',
+          };
+        }
+        return obs;
+      });
+    });
+  }, [isHi]);
+
 
   const isRecordingRef = useRef<boolean>(false);
   const accumulatedSpeechRef = useRef<string>('');
@@ -593,7 +685,7 @@ export function AutonomousSentinelScreen({
                   {isHi ? `आज का कार्य (दिन ${progress.currentDay})` : `Today's Task (Day ${progress.currentDay})`}
                 </h1>
                 <p className="mt-1 text-xs text-[var(--ink-soft)] font-medium">
-                  {districtLabel}, {stateLabel} · {watchedCrops} · {season} 2026
+                  {districtLabel}, {stateLabel} · {watchedCrops} · {translateSeason(season, language)} 2026
                 </p>
               </div>
 
@@ -621,8 +713,8 @@ export function AutonomousSentinelScreen({
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="t-eyebrow text-[0.66rem] font-bold text-[var(--field-deep)] uppercase tracking-wider">
                           {isHi
-                            ? `दिन ${progress.currentDay} · ${progress.todayTask?.category || 'कृषि कार्य'}`
-                            : `DAY ${progress.currentDay} · ${(progress.todayTask?.category || 'FARM WORK').toUpperCase()}`}
+                            ? `दिन ${progress.currentDay} · ${getCategoryDisplayName(progress.todayTask?.category, isHi)}`
+                            : `DAY ${progress.currentDay} · ${getCategoryDisplayName(progress.todayTask?.category, isHi)}`}
                         </span>
                         {(progress.todayTask as any)?.isAdjusted && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full shadow-2xs">
@@ -630,6 +722,7 @@ export function AutonomousSentinelScreen({
                           </span>
                         )}
                       </div>
+
 
                       {safePlanState.completedDays.includes(progress.currentDay) && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--field-deep)] bg-white/70 px-2.5 py-0.5 rounded-full shadow-2xs">
@@ -1191,7 +1284,7 @@ export function AutonomousSentinelScreen({
                             {isDone ? '✓' : isAction ? '⚠' : '●'}
                           </span>
                           <h4 className="text-[12.5px] font-medium text-[var(--ink)] leading-snug">
-                            {obs.title}
+                            {localizeObservationTitle(obs.title, isHi)}
                           </h4>
                         </div>
 
@@ -1209,9 +1302,10 @@ export function AutonomousSentinelScreen({
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] text-[var(--ink-ghost)] font-data pl-5">
-                        <span>{obs.timestamp}</span>
+                        <span>{localizeTimestamp(obs.timestamp, isHi)}</span>
                         <span>{isHi ? `दिन ${obs.day} · सप्ताह ${obs.week}` : `Day ${obs.day} · Week ${obs.week}`}</span>
                       </div>
+
                     </div>
                   );
                 })}
