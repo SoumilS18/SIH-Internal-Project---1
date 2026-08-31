@@ -162,7 +162,7 @@ function AppContent() {
     return (
       <div className="relative min-h-screen w-full flex items-center justify-center font-sans text-[var(--ink)] bg-[var(--surface)]">
         <WorldBackground variant="ambient" />
-        <div className="relative z-10 flex flex-col items-center gap-3">
+        <div className="relative z-10 flex flex-col items-center gap-3 text-center px-4">
           <div className="h-9 w-9 animate-spin rounded-full border-2 border-[var(--field-tint)] border-t-[var(--field)]" />
           <span className="text-xs font-medium text-[var(--ink-soft)]">
             {language === 'hi' ? 'सत्र लोड हो रहा है...' : 'Restoring secure session…'}
@@ -171,6 +171,7 @@ function AppContent() {
       </div>
     );
   }
+
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden font-sans text-[var(--ink)]">

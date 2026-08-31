@@ -184,28 +184,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 1. Initial Session Check
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      if (!isMounted) return;
-      setSession(initialSession);
-      setUser(initialSession?.user ?? null);
-      if (initialSession?.user) {
-        setIsDemo(false);
-        try {
-          localStorage.removeItem('agrioptima_is_demo_v1');
-        } catch {}
-        loadOrCreateProfile(initialSession.user);
+    // Safety timeout: Ensure loading is ALWAYS dismissed within 1.5s regardless of network state
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
       }
-      setLoading(false);
-    }).catch((err) => {
-      console.warn('Session initial load error:', err);
-      if (isMounted) setLoading(false);
-    });
+    }, 1500);
+
+    // 1. Initial Session Check
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!isMounted) return;
+        const initialSession = data?.session ?? null;
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        if (initialSession?.user) {
+          setIsDemo(false);
+          try {
+            localStorage.removeItem('agrioptima_is_demo_v1');
+          } catch {}
+          loadOrCreateProfile(initialSession.user);
+        }
+        setLoading(false);
+        clearTimeout(safetyTimer);
+      })
+      .catch((err) => {
+        console.warn('Session initial load notice:', err);
+        if (isMounted) {
+          setLoading(false);
+          clearTimeout(safetyTimer);
+        }
+      });
 
     // 2. Auth State Change Listener
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!isMounted) return;
       setSession(newSession);
       setUser(newSession?.user ?? null);
@@ -215,18 +230,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           localStorage.removeItem('agrioptima_is_demo_v1');
         } catch {}
-        await loadOrCreateProfile(newSession.user);
+        loadOrCreateProfile(newSession.user);
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
       }
       setLoading(false);
+      clearTimeout(safetyTimer);
     });
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, [loadOrCreateProfile]);
+
 
   // Sign In with email & password
   const signIn = useCallback(
