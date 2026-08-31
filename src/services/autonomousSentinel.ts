@@ -245,6 +245,8 @@ export function runAutonomousCycle(
 
   const missingVariables = weather.missing_variables || [];
   const isFallbackUsed = weather.fallback_used === true;
+  const isSoilMoistureMissing = missingVariables.includes('soil_moisture') || weather.root_zone_soil_moisture_m3m3 === null || weather.root_zone_soil_moisture_m3m3 === undefined;
+  const isForecastMissing = missingVariables.includes('forecast_rain_7d') || weather.forecast_rain_7d_total_mm === null || weather.forecast_rain_7d_total_mm === undefined;
 
   // ---------------------------------------------------------------------------
   // 2. REASON & 3. DECIDE: Deterministic priority-ordered reasoning
@@ -277,6 +279,8 @@ export function runAutonomousCycle(
     previousState.activeAdvisory !== null &&
     previousState.activeAdvisory.severity !== 'success';
 
+  let candidateAdjustments: TaskAdjustment[] = [];
+
   // --- FARMER OBSERVATION OVERRIDE 1: PEST / DISEASE OUTBREAK ---
   if (hasFarmerReportedPest || hasFarmerReportedLeaf) {
     observationText = isHi
@@ -291,10 +295,32 @@ export function runAutonomousCycle(
     priority = 'HIGH';
     candidateTitle = isHi ? 'पर्ण स्वास्थ्य एवं कीट नियंत्रण निर्देश' : 'Targeted Foliar Pest Protection';
     candidateDesc = isHi
-      ? 'नीम तेल (5ml प्रति लीटर) का छिड़काव सुबह के समय करें और पीले चिपचिपे ट्रैप्स लगाएं।'
-      : 'Apply 5ml/L cold-pressed neem oil spray during early morning and install yellow sticky insect traps.';
+      ? 'नीम तेल (5ml प्रति लीटर) का छिड़काव सुबह के समय करें और पीले चिपचिपे ट्रैप्स लगाएं। अगले 2 दिनों की कार्य योजना को स्वतः संशोधित किया गया है।'
+      : 'Apply 5ml/L cold-pressed neem oil spray during early morning and install yellow sticky insect traps. Plan for next 2 days rescheduled.';
     monitoringStatus = 'ACTION_EXECUTED';
-    resultingPlanStatus = 'NEEDS_ATTENTION';
+    resultingPlanStatus = 'PLAN_UPDATED';
+
+    const currDay = planContext?.currentDay || 1;
+    candidateAdjustments = [
+      {
+        originalDay: currDay,
+        actionTaken: 'supplemented',
+        adjustedTitle: isHi ? 'आपातकालीन जैविक नीम स्प्रे (5ml/L)' : 'Foliar Neem Protection (5ml/L)',
+        adjustedDesc: isHi ? 'नीम तेल का छिड़काव सुबह 8 बजे से पहले करें।' : 'Apply 5ml/L neem oil foliar spray in early morning.',
+        reason: isHi ? 'पत्तियों में कीट/रोग लक्षण दर्ज' : 'Farmer reported leaf/pest symptoms',
+        timestamp: new Date().toISOString(),
+        category: 'protection',
+      },
+      {
+        originalDay: currDay + 1,
+        actionTaken: 'modified',
+        adjustedTitle: isHi ? 'चिपचिपे ट्रैप्स व कीट प्रभाव निरीक्षण' : 'Sticky Traps & Larval Inspection',
+        adjustedDesc: isHi ? 'पीले चिपचिपे कार्ड लगाएं व पत्तियों का पुनरीक्षण करें।' : 'Install yellow sticky traps and inspect canopy.',
+        reason: isHi ? 'कीट निवारण प्रभाव की पुष्टि' : 'Verify pest suppression effect',
+        timestamp: new Date().toISOString(),
+        category: 'monitoring',
+      }
+    ];
   }
   // --- FARMER OBSERVATION OVERRIDE 2: UNEXPECTED HEAVY RAIN VS TODAY'S TASK ---
   else if (hasFarmerReportedRain && planContext?.todayTask) {
@@ -314,17 +340,40 @@ export function runAutonomousCycle(
     candidateActionType = 'APPLY_PROACTIVE_ADVISORY';
     priority = 'HIGH';
     candidateTitle = isHi
-      ? isNutrientOrSpray ? 'वर्षा सलाह: खाद/स्प्रे 24 घंटे टालें' : 'वर्षा सलाह: जल निकासी सुनिश्चित करें'
+      ? isNutrientOrSpray ? 'वर्षा सलाह: खाद/स्प्रे 48 घंटे टालें' : 'वर्षा सलाह: जल निकासी सुनिश्चित करें'
       : isNutrientOrSpray ? 'Rain Advisory: Postpone Input Application' : 'Rain Advisory: Clear Drainage Channels';
     candidateDesc = isHi
       ? isNutrientOrSpray
-        ? 'वर्षा के दौरान खाद या छिड़काव न करें; मौसम साफ होने पर कार्य पुनः आरंभ करें।'
-        : 'खेत की जल निकासी नालियों को तुरंत खोलें ताकि पानी जमा न रहे।'
+        ? 'वर्षा के दौरान खाद या छिड़काव न करें; योजना में कार्य को 2 दिन आगे बढ़ाया गया है।'
+        : 'खेत की जल निकासी नालियों को तुरंत खोलें; योजना में आगामी कार्य को समायोजित किया गया है।'
       : isNutrientOrSpray
-        ? 'Hold fertilizer/spray application for 24-48 hours until topsoil stabilizes and sun emerges.'
-        : 'Clear drainage furrows immediately to allow rapid runoff discharge.';
+        ? 'Hold fertilizer/spray application for 48 hours. Farm plan schedule deferred accordingly.'
+        : 'Clear drainage furrows immediately. Next 2 days in schedule re-aligned.';
     monitoringStatus = 'ACTION_EXECUTED';
     resultingPlanStatus = 'PLAN_UPDATED';
+
+    const currDay = planContext.currentDay;
+    candidateAdjustments = [
+      {
+        originalDay: currDay,
+        actionTaken: 'postponed',
+        newDay: currDay + 2,
+        adjustedTitle: isHi ? `स्थगित: ${planContext.todayTask.title} (वर्षा)` : `Postponed: ${planContext.todayTask.title} (Rain)`,
+        adjustedDesc: isHi ? 'भारी वर्षा के कारण कार्य 2 दिन आगे बढ़ाया गया।' : 'Field activity deferred by 2 days due to heavy rain.',
+        reason: isHi ? 'भारी वर्षा एवं जलभराव से सुरक्षा' : 'Heavy rainfall & waterlogging mitigation',
+        timestamp: new Date().toISOString(),
+        category: 'prep',
+      },
+      {
+        originalDay: currDay + 1,
+        actionTaken: 'modified',
+        adjustedTitle: isHi ? 'खेत जल निकासी व मेड़ निरीक्षण' : 'Field Drainage Channel Inspection',
+        adjustedDesc: isHi ? 'वर्षा के बाद जलभराव की स्थिति जांचें।' : 'Check field runoff channels after rain.',
+        reason: isHi ? 'वर्षा पश्चात मिट्टी स्वास्थ्य जांच' : 'Post-rain soil aeration check',
+        timestamp: new Date().toISOString(),
+        category: 'monitoring',
+      }
+    ];
   }
   // --- FARMER OBSERVATION OVERRIDE 3: TASK DELAYED / MISSED ---
   else if (hasFarmerReportedDelayed && planContext?.todayTask) {
@@ -344,6 +393,20 @@ export function runAutonomousCycle(
       : `Complete '${planContext.todayTask.title}' tomorrow morning as primary task. Overall crop calendar remains safe.`;
     monitoringStatus = 'ACTION_EXECUTED';
     resultingPlanStatus = 'PLAN_UPDATED';
+
+    const currDay = planContext.currentDay;
+    candidateAdjustments = [
+      {
+        originalDay: currDay,
+        actionTaken: 'postponed',
+        newDay: currDay + 1,
+        adjustedTitle: isHi ? `पुनर्निर्धारित: ${planContext.todayTask.title}` : `Rescheduled: ${planContext.todayTask.title}`,
+        adjustedDesc: isHi ? 'विलंबित कार्य को कल सुबह प्राथमिकता से पूर्ण करें।' : 'Complete deferred task tomorrow morning.',
+        reason: isHi ? 'किसान द्वारा कार्य विलंब दर्ज किया गया' : 'Task delay reported from field',
+        timestamp: new Date().toISOString(),
+        category: planContext.todayTask.category,
+      }
+    ];
   }
   // --- FARMER OBSERVATION OVERRIDE 4: IRRIGATION INTERRUPTION ---
   else if (hasFarmerReportedWater) {
@@ -363,7 +426,21 @@ export function runAutonomousCycle(
       : 'Apply light organic mulching around crop rows to conserve root-zone moisture.';
     monitoringStatus = 'ACTION_EXECUTED';
     resultingPlanStatus = 'NEEDS_ATTENTION';
+
+    const currDay = planContext?.currentDay || 1;
+    candidateAdjustments = [
+      {
+        originalDay: currDay,
+        actionTaken: 'supplemented',
+        adjustedTitle: isHi ? 'जड़ों के पास आंशिक जैविक मल्चिंग' : 'Crop Root Organic Mulching',
+        adjustedDesc: isHi ? 'सूखी घास या पत्तों की 2-3 सेमी परत बिछाएं।' : 'Lay 2-3cm layer of dry grass mulch to conserve moisture.',
+        reason: isHi ? 'सिंचाई में रुकावट के कारण नमी संरक्षण' : 'Conserve root moisture during irrigation outage',
+        timestamp: new Date().toISOString(),
+        category: 'irrigation',
+      }
+    ];
   }
+
   // --- Check Critical Telemetry Availability (Honest Handling) ---
   else if (isSoilMoistureMissing && isForecastMissing && isFallbackUsed) {
     observationText = isHi
@@ -624,6 +701,8 @@ export function runAutonomousCycle(
     log,
     advisory: execution.advisory,
     planStatus: resultingPlanStatus,
+    planAdjustments: candidateAdjustments,
   };
 }
+
 

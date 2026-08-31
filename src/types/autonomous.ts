@@ -80,4 +80,7 @@ export interface ProactiveAdvisory {
   crop_impact: string;
   source: string;
   timestamp: string;
+  action_required?: boolean;
+  reason?: string;
 }
+

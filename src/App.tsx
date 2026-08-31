@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { LoginScreen } from '@/components/LoginScreen';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 import { MainScreen } from '@/components/MainScreen';
-import { LanguageProvider } from '@/i18n/LanguageContext';
+import { LanguageProvider, useLanguage } from '@/i18n/LanguageContext';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LanguageComingSoonModal } from '@/components/LanguageComingSoonModal';
 import { WorldBackground } from '@/components/WorldBackground';
 import { StageSwap } from '@/components/ui/motion';
@@ -44,53 +45,85 @@ function loadStoredSession(): StoredSession | null {
 }
 
 function AppContent() {
+  const { user, profile, loading: authLoading, userName: authUserName, signOut, isDemo, updateLanguagePreference } = useAuth();
+  const { language, setLanguage } = useLanguage();
+
   const initialSession = useMemo(() => loadStoredSession(), []);
 
-  const [stage, setStage] = useState<AppStage>(initialSession?.stage || 'login');
-  const [userName, setUserName] = useState<string>(initialSession?.userName || 'Demo Farmer');
+  const [stage, setStage] = useState<AppStage>(() => {
+    // If logged out initially, force login stage
+    if (!user && !isDemo && !initialSession) return 'login';
+    return initialSession?.stage || 'login';
+  });
+
   const [selectedState, setSelectedState] = useState<string>(initialSession?.selectedState || 'Madhya Pradesh');
   const [selectedDistrict, setSelectedDistrict] = useState<string>(initialSession?.selectedDistrict || 'Bhopal');
   const [welcomeKey, setWelcomeKey] = useState<number>(0);
 
+  // Sync user profile preferred language into LanguageContext on login
+  useEffect(() => {
+    if (profile?.preferred_language && (profile.preferred_language === 'en' || profile.preferred_language === 'hi')) {
+      if (profile.preferred_language !== language) {
+        setLanguage(profile.preferred_language);
+      }
+    }
+  }, [profile?.preferred_language, language, setLanguage]);
+
+  // When language changes in UI and user is authenticated, sync to Supabase profile
+  useEffect(() => {
+    if (user && profile && profile.preferred_language !== language) {
+      updateLanguagePreference(language);
+    }
+  }, [language, user, profile, updateLanguagePreference]);
+
+  // If user is authenticated or demo, move past login if at login stage
+  useEffect(() => {
+    if (!authLoading) {
+      if ((user || isDemo) && stage === 'login') {
+        const savedStage = initialSession?.stage && initialSession.stage !== 'login' ? initialSession.stage : 'map';
+        setStage(savedStage);
+      } else if (!user && !isDemo) {
+        setStage('login');
+      }
+    }
+  }, [user, isDemo, authLoading, initialSession?.stage]);
+
   // Sync session state to storage whenever it changes
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        SESSION_STORAGE_KEY,
-        JSON.stringify({
-          stage,
-          userName,
-          selectedState,
-          selectedDistrict,
-        })
-      );
-    } catch (err) {
-      console.warn('Could not save session state:', err);
+    if (user || isDemo) {
+      try {
+        localStorage.setItem(
+          SESSION_STORAGE_KEY,
+          JSON.stringify({
+            stage,
+            userName: authUserName,
+            selectedState,
+            selectedDistrict,
+          })
+        );
+      } catch (err) {
+        console.warn('Could not save session state:', err);
+      }
     }
-  }, [stage, userName, selectedState, selectedDistrict]);
+  }, [stage, authUserName, selectedState, selectedDistrict, user, isDemo]);
 
   // 1. Handle Login
-  const handleLogin = useCallback((name: string) => {
-    const finalName = name || 'Demo Farmer';
-    setUserName(finalName);
+  const handleLogin = useCallback((_name: string) => {
     setStage('map');
   }, []);
 
   // 2. Handle Logout
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
     try {
       localStorage.removeItem(SESSION_STORAGE_KEY);
       localStorage.removeItem('agrioptima_farm_params_v1');
       localStorage.removeItem('agrioptima_farm_decision_v1');
     } catch {}
-    setUserName('Demo Farmer');
+    await signOut();
     setStage('login');
-  }, []);
+  }, [signOut]);
 
   // 3. Handle Location Confirmation from Map & District Modal
-  //    → jumps straight to the dashboard, whose guided flow now begins on the
-  //    farm-details entry page (Page 3). The cinematic analysis has moved inside
-  //    the dashboard and plays after the farmer taps “Generate”.
   const handleConfirmLocation = useCallback(
     (stateName: string, districtName: string) => {
       setSelectedState(stateName);
@@ -117,6 +150,21 @@ function AppContent() {
     return () => window.removeEventListener('keydown', onKey);
   }, [stage, handleChangeFarm]);
 
+  // Loading state while checking active Supabase session
+  if (authLoading) {
+    return (
+      <div className="relative min-h-screen w-full flex items-center justify-center font-sans text-[var(--ink)] bg-[var(--surface)]">
+        <WorldBackground variant="ambient" />
+        <div className="relative z-10 flex flex-col items-center gap-3">
+          <div className="h-9 w-9 animate-spin rounded-full border-2 border-[var(--field-tint)] border-t-[var(--field)]" />
+          <span className="text-xs font-medium text-[var(--ink-soft)]">
+            {language === 'hi' ? 'सत्र लोड हो रहा है...' : 'Restoring secure session…'}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden font-sans text-[var(--ink)]">
       {/* Persistent living-world atmosphere — one daylight world, never unmounted */}
@@ -136,7 +184,7 @@ function AppContent() {
         {stage === 'map' && (
           <WelcomeScreen
             key={welcomeKey}
-            userName={userName}
+            userName={authUserName}
             onLogout={handleLogout}
             onConfirmLocation={handleConfirmLocation}
           />
@@ -146,7 +194,7 @@ function AppContent() {
         {stage === 'dashboard' && (
           <MainScreen
             key={`${selectedState}-${selectedDistrict}`}
-            userName={userName}
+            userName={authUserName}
             onBack={handleChangeFarm}
             onLogout={handleLogout}
             initialState={selectedState}
@@ -160,8 +208,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AppContent />
-    </LanguageProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
+    </AuthProvider>
   );
 }

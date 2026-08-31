@@ -16,7 +16,7 @@
  */
 
 import type { FarmDecisionResponse, AllocatedCropItem } from '@/types/farm';
-import type { PlanReasoningContext } from '@/types/planLifecycle';
+import type { PlanReasoningContext, TaskAdjustment } from '@/types/planLifecycle';
 import { formatCurrency, formatRainfall, formatTemperature } from '@/i18n/formatters';
 import { getCropDisplayName } from '@/i18n/cropNames';
 import { getDistrictDisplayName, getStateDisplayName } from '@/i18n/geoNames';
@@ -38,7 +38,9 @@ export interface VoiceAgentResponse {
   };
   is_unsupported_language?: boolean;
   source?: 'gemini' | 'deterministic' | 'system';
+  plan_adjustments?: TaskAdjustment[];
 }
+
 
 export interface QuickPromptItem {
   id: string;
@@ -815,33 +817,72 @@ export async function askVoiceAgent(
   // ---------------------------------------------------------------------------
   if (sem.isIrrigation) {
     const isMoistureAdequate = (soilMoisture !== null && soilMoisture !== undefined && soilMoisture >= 0.22) || rain7d > 15;
+    const currDay = planContext?.currentDay || 1;
 
     if (isMoistureAdequate) {
       const spoken = isHi
-        ? `आज सिंचाई करने की आवश्यकता नहीं है। अगले 7 दिनों में लगभग ${formatRainfall(rain7d, lang)} बारिश का अनुमान है और मिट्टी में नमी पर्याप्त है।`
-        : `No irrigation is needed today. Approximately ${formatRainfall(rain7d, lang)} of rain is forecast over the next 7 days, and root-zone soil moisture is adequate.`;
+        ? `आज सिंचाई करने की आवश्यकता नहीं है। अगले 7 दिनों में लगभग ${formatRainfall(rain7d, lang)} बारिश का अनुमान है और मिट्टी में नमी पर्याप्त है। हमने आपकी योजना में सिंचाई 2 दिन आगे बढ़ा दी है।`
+        : `No irrigation is needed today. Approximately ${formatRainfall(rain7d, lang)} of rain is forecast over the next 7 days, and root-zone soil moisture is adequate. We have adjusted your schedule to defer irrigation.`;
       const display = isHi
-        ? `आज सिंचाई करने की आवश्यकता नहीं है। ${district} में आने वाले दिनों में ${formatRainfall(rain7d, lang)} वर्षा संभावित है और मिट्टी की नमी (${soilMoisture ? soilMoisture.toFixed(2) : '0.32'} m³/m³) संतुलित है। अतिरिक्त पानी देने से बचें ताकि जड़ें सुरक्षित रहें।`
-        : `No irrigation is required today. In ${district}, ${formatRainfall(rain7d, lang)} of rainfall is expected over the next 7 days, and root-zone soil moisture (${soilMoisture ? soilMoisture.toFixed(2) : '0.32'} m³/m³) is at an optimal level.`;
+        ? `आज सिंचाई करने की आवश्यकता नहीं है। ${district} में आने वाले दिनों में ${formatRainfall(rain7d, lang)} वर्षा संभावित है और मिट्टी की नमी (${soilMoisture ? soilMoisture.toFixed(2) : '0.32'} m³/m³) संतुलित है। अतिरिक्त पानी देने से बचें। आगामी 2 दिनों की कार्य योजना को स्वतः समायोजित किया गया है।`
+        : `No irrigation is required today. In ${district}, ${formatRainfall(rain7d, lang)} of rainfall is expected over the next 7 days, and root-zone soil moisture (${soilMoisture ? soilMoisture.toFixed(2) : '0.32'} m³/m³) is at an optimal level. Your schedule for the next 2 days has been dynamically adjusted.`;
+      
+      const irrigationAdj: TaskAdjustment[] = [
+        {
+          originalDay: currDay,
+          newDay: currDay + 2,
+          actionTaken: 'postponed',
+          adjustedTitle: isHi ? 'सिंचाई स्थगित (पर्याप्त वर्षा/नमी)' : 'Irrigation Deferred (Moisture Optimal)',
+          adjustedDesc: isHi ? 'पर्याप्त नमी व बारिश के कारण सिंचाई 2 दिन आगे बढ़ाई गई।' : 'Soil moisture sufficient. Irrigation deferred by 2 days.',
+          reason: isHi ? `${formatRainfall(rain7d, lang)} वर्षा का पूर्वानुमान` : `${formatRainfall(rain7d, lang)} rain expected`,
+          timestamp: new Date().toISOString(),
+          category: 'irrigation',
+        },
+        {
+          originalDay: currDay + 1,
+          actionTaken: 'modified',
+          adjustedTitle: isHi ? 'खेत जल निकासी व मिट्टी वातन निरीक्षण' : 'Field Drainage & Soil Aeration Inspection',
+          adjustedDesc: isHi ? 'वर्षा के बाद जलभराव की स्थिति जांचें।' : 'Inspect for water stagnation after rain event.',
+          reason: isHi ? 'वर्षा के पश्चात मिट्टी स्वास्थ्य जांच' : 'Post-rain soil aeration check',
+          timestamp: new Date().toISOString(),
+          category: 'monitoring',
+        }
+      ];
+
       return {
         intent: 'IRRIGATION_CHECK',
         spoken_text: spoken,
         display_text: display,
-        action_required: false,
-        recommended_action: isHi ? 'सिंचाई रोक कर रखें और जल संतुलन बनाए रखें।' : 'Withhold extra irrigation to preserve root health and save water.',
+        action_required: true,
+        recommended_action: isHi ? 'सिंचाई रोक कर रखें और जल निकासी नालियों की सफाई करें।' : 'Withhold extra irrigation to preserve root health and save water.',
         reason: isHi
           ? 'मिट्टी की नमी और आने वाली वर्षा फसल की पानी की जरूरत पूरी करने के लिए पर्याप्त है।'
           : 'Current root-zone moisture and upcoming precipitation adequately meet crop transpiration demand.',
         checked_steps: ['weather', 'soil', 'crop', 'irrigation'],
         telemetry_facts: telemetryFacts,
+        source: 'deterministic',
+        plan_adjustments: irrigationAdj,
       };
     } else {
       const spoken = isHi
-        ? `हाँ, हल्की सिंचाई की सिफारिश की जाती है। मिट्टी की नमी कम हो रही है और बारिश का अनुमान कम है।`
-        : `Yes, light irrigation is recommended. Root-zone soil moisture is falling and little rain is forecast.`;
+        ? `हाँ, हल्की सिंचाई की सिफारिश की जाती है। मिट्टी की नमी कम हो रही है और बारिश का अनुमान कम है। कल सुबह हल्की सिंचाई करें।`
+        : `Yes, light irrigation is recommended. Root-zone soil moisture is falling and little rain is forecast. Plan light morning irrigation.`;
       const display = isHi
         ? `हाँ, आपके ${district} स्थित खेत में हल्की सिंचाई की सलाह दी जाती है। मिट्टी में नमी का स्तर (${soilMoisture ? soilMoisture.toFixed(2) : '0.18'} m³/m³) कम है और अगले 7 दिनों में केवल ${formatRainfall(rain7d, lang)} वर्षा का अनुमान है। कल सुबह हल्की सिंचाई करें।`
         : `Yes, light irrigation is recommended for your farm in ${district}. Root-zone soil moisture (${soilMoisture ? soilMoisture.toFixed(2) : '0.18'} m³/m³) is below target and only ${formatRainfall(rain7d, lang)} of rain is expected. Plan light morning irrigation.`;
+      
+      const lightIrrigationAdj: TaskAdjustment[] = [
+        {
+          originalDay: currDay,
+          actionTaken: 'supplemented',
+          adjustedTitle: isHi ? 'सुबह हल्की ड्रिप/स्प्रिंकलर सिंचाई' : 'Morning Pulse/Drip Irrigation',
+          adjustedDesc: isHi ? '25-30 मिमी गहराई तक हल्की सिंचाई करें।' : 'Apply 25-30mm depth light irrigation before 10 AM.',
+          reason: isHi ? 'मिट्टी में नमी की कमी की भरपाई' : 'Compensate root-zone moisture deficit',
+          timestamp: new Date().toISOString(),
+          category: 'irrigation',
+        }
+      ];
+
       return {
         intent: 'IRRIGATION_CHECK',
         spoken_text: spoken,
@@ -853,6 +894,8 @@ export async function askVoiceAgent(
           : 'Moisture deficit may induce crop stress without supplemental irrigation.',
         checked_steps: ['weather', 'soil', 'crop', 'irrigation'],
         telemetry_facts: telemetryFacts,
+        source: 'deterministic',
+        plan_adjustments: lightIrrigationAdj,
       };
     }
   }
@@ -875,6 +918,7 @@ export async function askVoiceAgent(
       reason: isHi ? 'ओपन-मिटिओ और IMD उपग्रह टेलीमेट्री से 7-दिवसीय पूर्वानुमान।' : '7-day telemetry sourced from Open-Meteo & IMD reanalysis model.',
       checked_steps: ['weather', 'soil'],
       telemetry_facts: telemetryFacts,
+      source: 'deterministic',
     };
   }
 
@@ -883,12 +927,35 @@ export async function askVoiceAgent(
   // ---------------------------------------------------------------------------
   if (sem.isPestDisease) {
     const targetCrop = cropMatch ? getCropDisplayName(cropMatch.cropName, lang) : (primaryCrops[0] ? getCropDisplayName(primaryCrops[0].crop_name, lang) : (isHi ? 'फसलों' : 'crops'));
+    const currDay = planContext?.currentDay || 1;
     const spoken = isHi
-      ? `पौधों की पत्तियों के नीचे कीटों की जाँच करें और शुरुआती लक्षण दिखने पर जैविक नीम तेल का छिड़काव करें।`
-      : `Inspect the underside of leaves for pest clusters and apply organic neem oil spray as a preventive measure.`;
+      ? `पौधों की पत्तियों के नीचे कीटों की जाँच करें और शाम के समय 5 मिली प्रति लीटर जैविक नीम तेल का छिड़काव करें। हमने आपके अगले 2 दिनों के कार्य को अपडेट कर दिया है।`
+      : `Inspect the underside of leaves for pest clusters and apply 5ml/L organic neem oil spray in the evening. We have scheduled targeted protection in your plan.`;
     const display = isHi
-      ? `फसल सुरक्षा परामर्श (${targetCrop}): (1) पत्तियों के नीचे सफेद मक्खी, माहू, थ्रिप्स या इल्ली के अंडों की जाँच करें, (2) शुरुआती लक्षण दिखने पर 5 मिली/लीटर जैविक नीम तेल (10,000 PPM) का छिड़काव शाम के समय करें, (3) पीले चिपचिपे कार्ड (Yellow Sticky Traps) लगाएं, (4) रासायनिक कीटनाशक डालने से पहले स्थानीय कृषि अधिकारी (KVK) की सलाह लें।`
-      : `Crop Protection Advisory (${targetCrop}): (1) Inspect the underside of leaves for whiteflies, aphids, thrips, or caterpillars, (2) Apply organic neem oil spray (5ml per litre of water) during evening hours as a preventive first line, (3) Deploy yellow sticky traps (4–5 per acre), (4) Consult local KVK before applying synthetic chemical pesticides.`;
+      ? `फसल सुरक्षा परामर्श (${targetCrop}): (1) पत्तियों के नीचे सफेद मक्खी, माहू, थ्रिप्स या इल्ली के अंडों की जाँच करें, (2) आज शाम 5 मिली/लीटर जैविक नीम तेल (10,000 PPM) का छिड़काव करें, (3) कल पीले चिपचिपे कार्ड (Yellow Sticky Traps) लगाएं, (4) योजना में आगामी 2 दिनों के कार्य को कीट नियंत्रण के अनुसार समायोजित किया गया है।`
+      : `Crop Protection Advisory (${targetCrop}): (1) Inspect leaf undersides for sucking pests / caterpillars, (2) Apply 5ml/L cold-pressed neem oil spray in early evening, (3) Deploy yellow sticky traps tomorrow, (4) Next 2 days in your farm plan have been dynamically adjusted for pest mitigation.`;
+    
+    const pestAdj: TaskAdjustment[] = [
+      {
+        originalDay: currDay,
+        actionTaken: 'supplemented',
+        adjustedTitle: isHi ? 'आपातकालीन जैविक नीम स्प्रे (5ml/L)' : 'Foliar Neem Protection (5ml/L)',
+        adjustedDesc: isHi ? 'नीम तेल का छिड़काव शाम 4 बजे के बाद करें।' : 'Apply 5ml/L neem oil foliar spray after 4 PM.',
+        reason: isHi ? 'कीट नियंत्रण एवं पत्तियों की सुरक्षा' : 'Foliar pest suppression and protection',
+        timestamp: new Date().toISOString(),
+        category: 'protection',
+      },
+      {
+        originalDay: currDay + 1,
+        actionTaken: 'modified',
+        adjustedTitle: isHi ? 'चिपचिपे ट्रैप्स व कीट प्रभाव निरीक्षण' : 'Sticky Traps & Larval Inspection',
+        adjustedDesc: isHi ? 'पीले चिपचिपे कार्ड लगाएं व पत्तियों का पुनरीक्षण करें।' : 'Install yellow sticky traps and inspect canopy.',
+        reason: isHi ? 'कीट निवारण प्रभाव की पुष्टि' : 'Verify pest suppression effect',
+        timestamp: new Date().toISOString(),
+        category: 'monitoring',
+      }
+    ];
+
     return {
       intent: 'CROP_HEALTH',
       spoken_text: spoken,
@@ -898,8 +965,11 @@ export async function askVoiceAgent(
       reason: isHi ? 'शुरुआती जैविक उपचार फसल की पैदावार को सुरक्षित रखता है।' : 'Early biological intervention prevents pest population surges without chemical residue.',
       checked_steps: ['crop', 'risk'],
       telemetry_facts: telemetryFacts,
+      source: 'deterministic',
+      plan_adjustments: pestAdj,
     };
   }
+
 
   // ---------------------------------------------------------------------------
   // 7. WHY DID AGENT CHOOSE THIS CROP ("यह फसल क्यों चुनी?")
@@ -1215,16 +1285,28 @@ export async function askFarmerVoiceAssistant(
     if (res.ok) {
       const data = await res.json();
       if (data.status === 'success' && data.answer) {
+        const parsedAdjustments: TaskAdjustment[] = (data.plan_adjustments || []).map((adj: any) => ({
+          originalDay: (planContext?.currentDay || 1) + (adj.day_offset || 0),
+          newDay: adj.new_day !== undefined ? adj.new_day : undefined,
+          adjustedTitle: adj.adjusted_title,
+          adjustedDesc: adj.adjusted_desc,
+          reason: adj.reason || (isHi ? 'AI द्वारा अनुशंसित संशोधन' : 'AI Recommended Adjustment'),
+          actionTaken: adj.action_type || 'modified',
+          timestamp: new Date().toISOString(),
+          category: adj.category,
+        }));
+
         return {
           intent: 'GEMINI_ADVISORY',
           spoken_text: data.answer,
           display_text: data.answer,
-          action_required: data.action_required || false,
+          action_required: data.action_required || parsedAdjustments.length > 0,
           recommended_action: data.recommended_action,
           reason: isHi ? 'AgriOptima AI और वास्तविक टेलीमेट्री पर आधारित सलाह।' : 'AgriOptima AI grounded in live farm telemetry.',
           checked_steps: ['weather', 'soil', 'crop', 'risk'],
           telemetry_facts: telemetryFacts,
           source: 'gemini',
+          plan_adjustments: parsedAdjustments.length > 0 ? parsedAdjustments : undefined,
         };
       } else if (data.status === 'unsupported_language') {
         return {
@@ -1247,6 +1329,7 @@ export async function askFarmerVoiceAssistant(
   // Offline / Fallback to deterministic NLP reasoning engine
   return askVoiceAgent(cleanQuery, decision, effectiveLang, planContext);
 }
+
 
 
 /**

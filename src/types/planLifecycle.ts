@@ -22,7 +22,10 @@ export interface TaskAdjustment {
   reason: string;
   actionTaken: 'postponed' | 'modified' | 'supplemented' | 'retained';
   timestamp: string;
+  affectedDays?: number[];
+  category?: 'prep' | 'sowing' | 'irrigation' | 'nutrient' | 'protection' | 'monitoring' | 'harvest';
 }
+
 
 export interface PlanExecutionState {
   isStarted: boolean;

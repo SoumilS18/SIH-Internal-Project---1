@@ -15,9 +15,11 @@ import {
   savePlanExecutionState,
   startPlanExecution,
   toggleTaskCompletion,
+  applyPlanAdjustments,
   type PlanExecutionState,
 } from '@/lib/planProgress';
-import type { PlanReasoningContext } from '@/types/planLifecycle';
+import type { PlanReasoningContext, TaskAdjustment } from '@/types/planLifecycle';
+
 import type {
   FarmDecisionRequest,
   FarmDecisionResponse,
@@ -134,7 +136,7 @@ export function MainScreen({
   );
 
   const handleStartPlanExecution = useCallback(() => {
-    setPlanExecutionState((prev) => {
+    setPlanExecutionState((prev: PlanExecutionState) => {
       const next = startPlanExecution(prev);
       savePlanExecutionState(next);
       return next;
@@ -142,14 +144,23 @@ export function MainScreen({
   }, []);
 
   const handleToggleDayCompletion = useCallback((day: number) => {
-    setPlanExecutionState((prev) => {
+    setPlanExecutionState((prev: PlanExecutionState) => {
       const next = toggleTaskCompletion(prev, day);
       savePlanExecutionState(next);
       return next;
     });
   }, []);
 
+  const handleApplyPlanAdjustments = useCallback((adjustments: TaskAdjustment | TaskAdjustment[]) => {
+    setPlanExecutionState((prev: PlanExecutionState) => {
+      const next = applyPlanAdjustments(prev, adjustments);
+      savePlanExecutionState(next);
+      return next;
+    });
+  }, []);
+
   // Guided flow navigation: Page 3 (details entry) → cinematic → Page 4 (plan).
+
   const [page, setPage] = useState<'details' | 'plan'>(
     savedParams?.page === 'plan' && decision ? 'plan' : 'details'
   );
@@ -322,7 +333,7 @@ export function MainScreen({
     setIsCheckingSentinel(true);
     setTimeout(() => {
       try {
-        const { log, advisory } = runAutonomousCycle(
+        const { log, advisory, planAdjustments } = runAutonomousCycle(
           decision,
           language,
           previousSentinelStateRef.current,
@@ -335,6 +346,14 @@ export function MainScreen({
         };
         setSentinelLogs((prev) => [log, ...prev.slice(0, 49)]);
         setProactiveAdvisory(advisory);
+
+        if (planAdjustments && planAdjustments.length > 0) {
+          setPlanExecutionState((prev: PlanExecutionState) => {
+            const next = applyPlanAdjustments(prev, planAdjustments);
+            savePlanExecutionState(next);
+            return next;
+          });
+        }
       } catch (err) {
         console.warn('Manual Sentinel check fallback:', err);
       } finally {
@@ -342,6 +361,7 @@ export function MainScreen({
       }
     }, 350);
   }, [decision, language]);
+
 
   // Update latest log language if language switches
   useEffect(() => {
@@ -430,6 +450,7 @@ export function MainScreen({
               planExecutionState={planExecutionState}
               onRunCheck={handleRunSentinelCheck}
               onToggleDayCompletion={handleToggleDayCompletion}
+              onApplyPlanAdjustments={handleApplyPlanAdjustments}
               onBackToPlan={() => {
                 setViewMode('farmer');
                 setPage('plan');
@@ -444,6 +465,7 @@ export function MainScreen({
                 onBack();
               }}
             />
+
           </ErrorBoundary>
         ) : innerStage === 'details' ? (
           <ErrorBoundary fallbackTitle={isHi ? 'खेत विवरण स्क्रीन लोड करने में समस्या आई' : 'Unable to load Farm Details screen'}>

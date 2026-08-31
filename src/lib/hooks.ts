@@ -56,7 +56,7 @@ export function useRafLoop(callback: (dt: number, t: number) => void, active = t
 /* ------------------------------------------------------------------ */
 export function useInView<T extends HTMLElement = HTMLDivElement>(
   options?: IntersectionObserverInit & { once?: boolean }
-): [React.RefObject<T>, boolean] {
+): [React.RefObject<T | null>, boolean] {
   const ref = useRef<T>(null);
   const [inView, setInView] = useState(false);
   const once = options?.once ?? true;
@@ -280,7 +280,7 @@ export function useMagnetic<T extends HTMLElement = HTMLButtonElement>(strength 
 /* Scroll progress of an element through the viewport (0..1)           */
 /* ------------------------------------------------------------------ */
 export function useScrollProgress<T extends HTMLElement = HTMLDivElement>(): [
-  React.RefObject<T>,
+  React.RefObject<T | null>,
   number
 ] {
   const ref = useRef<T>(null);
@@ -293,11 +293,12 @@ export function useScrollProgress<T extends HTMLElement = HTMLDivElement>(): [
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        const r = node.getBoundingClientRect();
+        const rect = node.getBoundingClientRect();
         const vh = window.innerHeight || 1;
-        // 0 when element top hits bottom of viewport, 1 when its bottom passes top
-        const p = 1 - (r.top + r.height) / (vh + r.height);
-        setProgress(Math.max(0, Math.min(1, p)));
+        const total = rect.height + vh;
+        const current = vh - rect.top;
+        const p = Math.max(0, Math.min(1, current / total));
+        setProgress(p);
       });
     };
     onScroll();
@@ -361,7 +362,7 @@ export function useInterval(callback: () => void, delayMs: number | null) {
 
 /* Convenience: a callback ref that measures element size on resize */
 export function useElementSize<T extends HTMLElement = HTMLDivElement>(): [
-  React.RefObject<T>,
+  React.RefObject<T | null>,
   { width: number; height: number }
 ] {
   const ref = useRef<T>(null);

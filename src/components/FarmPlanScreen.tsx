@@ -25,13 +25,14 @@ import { usePrefersReducedMotion } from '@/lib/hooks';
 import type { FarmDecisionResponse } from '@/types/farm';
 import {
   getSeasonWeeksCount,
-  getWeeklyActionPlan,
   getAllWeeksSummary,
 } from '@/lib/seasonalActionPlans';
 import {
   calculatePlanProgress,
+  getAdjustedWeekPlan,
   type PlanExecutionState,
 } from '@/lib/planProgress';
+
 import type { PlanStatus } from '@/types/planLifecycle';
 import { Play, Calendar, CheckCircle2 } from 'lucide-react';
 
@@ -171,7 +172,7 @@ interface FarmPlanScreenProps {
   landAcres: number;
   budgetInr: number;
   season: 'Kharif' | 'Rabi' | 'Zaid';
-  decision: FarmDecisionResponse;
+  decision: FarmDecisionResponse | null;
   loading: boolean;
   planExecutionState?: PlanExecutionState;
   onStartPlan?: () => void;
@@ -277,8 +278,9 @@ export function FarmPlanScreen({
   const clampedWeek = Math.max(1, Math.min(selectedWeek, totalWeeks));
   // The seasonal plan tables only exist in these two languages; every other
   // locale falls back to English rather than rendering blank stages.
-  const currentWeekPlan = getWeeklyActionPlan(season, clampedWeek, planLang, cropNames);
+  const currentWeekPlan = getAdjustedWeekPlan(season, clampedWeek, planLang, cropNames, safePlanState.adjustments);
   const allWeeksSummary = getAllWeeksSummary(season, planLang, cropNames);
+
 
   // Auto-sync active week on initial load if plan is active
   useEffect(() => {
@@ -834,15 +836,20 @@ export function FarmPlanScreen({
                     const isToday = safePlanState.isStarted && dayNum === progress.currentDay;
                     const isPast = safePlanState.isStarted && dayNum < progress.currentDay;
                     const isDone = safePlanState.completedDays.includes(dayNum) || isPast;
+                    const isAdjusted = Boolean((step as any).isAdjusted);
 
                     return (
                       <div
                         key={step.day}
-                        className={`relative z-0 flex flex-1 flex-col rounded-[14px] p-2 transition-colors ${
-                          isToday ? 'bg-[var(--field-tint)] border border-[var(--field)] shadow-sm' : ''
+                        className={`relative flex flex-1 flex-col rounded-[14px] p-2 transition-colors ${
+                          isToday
+                            ? 'z-10 bg-[var(--field-tint)] border border-[var(--field)] shadow-sm'
+                            : isAdjusted
+                            ? 'z-10 bg-[#fffbeb] border border-amber-300 shadow-xs'
+                            : 'z-0'
                         }`}
                       >
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span
                             className="relative z-0 h-[14px] w-[14px] rounded-full flex items-center justify-center text-[8px] text-[var(--paper)] font-bold shrink-0"
                             style={{
@@ -858,10 +865,15 @@ export function FarmPlanScreen({
                               {isHi ? 'आज' : 'TODAY'}
                             </span>
                           )}
+                          {isAdjusted && (
+                            <span className="t-eyebrow rounded-full bg-amber-100 border border-amber-300 px-1.5 py-0.2 text-[0.52rem] font-bold text-amber-800">
+                              ⚡ {(step as any).adjustment?.actionTaken === 'postponed' ? (isHi ? 'स्थगित' : 'DEFERRED') : (isHi ? 'AI संशोधित' : 'AI ADJUSTED')}
+                            </span>
+                          )}
                         </div>
 
-                        <span className="t-eyebrow mt-2.5 text-[0.55rem] text-[var(--ink-ghost)]">
-                          {isHi ? `दिन ${step.day} (कुल ${dayNum})` : `Day ${step.day} (D${dayNum})`}
+                        <span className="t-eyebrow mt-2.5 text-[0.55rem] text-[var(--ink-ghost)] uppercase">
+                          {isHi ? `दिन ${step.day}` : `Day ${step.day}`}
                         </span>
                         <h4 className="mt-1 text-[13px] font-semibold leading-snug text-[var(--ink)]">
                           {step.title}
@@ -872,6 +884,7 @@ export function FarmPlanScreen({
                       </div>
                     );
                   })}
+
                 </div>
               </div>
             </Reveal>

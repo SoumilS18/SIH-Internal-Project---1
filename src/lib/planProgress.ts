@@ -4,15 +4,18 @@
  * Handles calendar day calculation, state persistence, and task lifecycles.
  */
 
-import type {
+export type {
   PlanStatus,
   PlanExecutionState,
   PlanProgressInfo,
+  TaskAdjustment,
 } from '@/types/planLifecycle';
+import type { TaskAdjustment, PlanStatus, PlanExecutionState, PlanProgressInfo } from '@/types/planLifecycle';
 import {
   getSeasonWeeksCount,
   getWeeklyActionPlan,
   type DailyAction,
+  type WeekPlan,
 } from './seasonalActionPlans';
 
 export const PLAN_LIFECYCLE_STORAGE_KEY = 'agrioptima_plan_lifecycle_v1';
@@ -77,7 +80,43 @@ export function savePlanExecutionState(
 }
 
 /**
- * Computes the dynamic calendar progress from the plan's start date.
+ * Retrieves weekly action plan with dynamic AI adjustments overlaid on each day.
+ */
+export function getAdjustedWeekPlan(
+  season: 'Kharif' | 'Rabi' | 'Zaid',
+  weekNumber: number,
+  language: 'en' | 'hi' = 'en',
+  cropNames?: string[],
+  adjustments?: Record<number, TaskAdjustment>
+): WeekPlan & { days: (DailyAction & { isAdjusted?: boolean; adjustment?: TaskAdjustment })[] } {
+  const basePlan = getWeeklyActionPlan(season, weekNumber, language, cropNames);
+  if (!adjustments || Object.keys(adjustments).length === 0) {
+    return basePlan;
+  }
+
+  const adjustedDays = basePlan.days.map((dayItem) => {
+    const adj = adjustments[dayItem.dayOfSeason];
+    if (adj) {
+      return {
+        ...dayItem,
+        title: adj.adjustedTitle || dayItem.title,
+        desc: adj.adjustedDesc ? `${adj.adjustedDesc} (${language === 'hi' ? 'कारण' : 'Reason'}: ${adj.reason})` : dayItem.desc,
+        category: adj.category || dayItem.category,
+        isAdjusted: true,
+        adjustment: adj,
+      };
+    }
+    return dayItem;
+  });
+
+  return {
+    ...basePlan,
+    days: adjustedDays,
+  };
+}
+
+/**
+ * Computes the dynamic calendar progress from the plan's start date with active AI adjustments.
  */
 export function calculatePlanProgress(
   state: PlanExecutionState,
@@ -87,10 +126,9 @@ export function calculatePlanProgress(
 ): PlanProgressInfo {
   const totalWeeks = getSeasonWeeksCount(season);
   const totalDays = totalWeeks * 7;
-  const isHi = language === 'hi';
 
   if (!state.isStarted || !state.startDate) {
-    const week1Plan = getWeeklyActionPlan(season, 1, language, cropNames);
+    const week1Plan = getAdjustedWeekPlan(season, 1, language, cropNames, state.adjustments);
     const day1Action = week1Plan.days[0] || null;
 
     return {
@@ -122,15 +160,19 @@ export function calculatePlanProgress(
   const currentWeek = Math.max(1, Math.min(totalWeeks, Math.floor((currentDay - 1) / 7) + 1));
   const isCompleted = dayDelta + 1 > totalDays;
 
-  // Retrieve today's scheduled task
-  const weekPlan = getWeeklyActionPlan(season, currentWeek, language, cropNames);
+  // Retrieve today's scheduled task with adjustments overlaid
+  const weekPlan = getAdjustedWeekPlan(season, currentWeek, language, cropNames, state.adjustments);
   const dayIndexInWeek = (currentDay - 1) % 7;
   const todayTask = weekPlan.days[dayIndexInWeek] || weekPlan.days[0] || null;
 
   // Derive human status labels
   let status: PlanStatus = state.currentStatus;
+  const hasRecentAdjustments = Object.keys(state.adjustments || {}).length > 0;
+
   if (isCompleted) {
     status = 'COMPLETED';
+  } else if (hasRecentAdjustments && status === 'ACTIVE') {
+    status = 'PLAN_UPDATED';
   } else if (status === 'NOT_STARTED') {
     status = 'ACTIVE';
   }
@@ -140,7 +182,7 @@ export function calculatePlanProgress(
     ACTIVE: { en: 'Active', hi: 'सक्रिय' },
     ON_TRACK: { en: 'On Track', hi: 'समय पर जारी' },
     NEEDS_ATTENTION: { en: 'Needs Attention', hi: 'ध्यान देने योग्य' },
-    PLAN_UPDATED: { en: 'Plan Adjusted', hi: 'योजना समायोजित' },
+    PLAN_UPDATED: { en: 'Plan Adjusted by AI', hi: 'योजना AI द्वारा समायोजित' },
     COMPLETED: { en: 'Completed', hi: 'सफलतापूर्वक संपन्न' },
   };
 
@@ -157,6 +199,63 @@ export function calculatePlanProgress(
     statusLabelEn: statusMap[status]?.en || 'Active',
     statusLabelHi: statusMap[status]?.hi || 'सक्रिय',
   };
+}
+
+/**
+ * Applies single or multi-day task adjustments to the plan execution state.
+ */
+export function applyPlanAdjustments(
+  currentState: PlanExecutionState,
+  adjustments: TaskAdjustment | TaskAdjustment[]
+): PlanExecutionState {
+  const adjList = Array.isArray(adjustments) ? adjustments : [adjustments];
+  const newAdjustments = { ...currentState.adjustments };
+  const newStatusMap = { ...currentState.taskStatusMap };
+
+  for (const adj of adjList) {
+    newAdjustments[adj.originalDay] = adj;
+    if (adj.actionTaken === 'postponed') {
+      newStatusMap[adj.originalDay] = 'delayed';
+    }
+  }
+
+  const nextState: PlanExecutionState = {
+    ...currentState,
+    currentStatus: 'PLAN_UPDATED',
+    adjustments: newAdjustments,
+    taskStatusMap: newStatusMap,
+    lastActiveDate: new Date().toISOString(),
+  };
+
+  savePlanExecutionState(nextState);
+  return nextState;
+}
+
+/**
+ * Clears adjustments for a specific day or all days.
+ */
+export function clearPlanAdjustments(
+  currentState: PlanExecutionState,
+  dayNumber?: number
+): PlanExecutionState {
+  const newAdjustments = { ...currentState.adjustments };
+  if (dayNumber !== undefined) {
+    delete newAdjustments[dayNumber];
+  } else {
+    for (const key of Object.keys(newAdjustments)) {
+      delete newAdjustments[Number(key)];
+    }
+  }
+
+  const nextState: PlanExecutionState = {
+    ...currentState,
+    adjustments: newAdjustments,
+    currentStatus: Object.keys(newAdjustments).length > 0 ? 'PLAN_UPDATED' : 'ACTIVE',
+    lastActiveDate: new Date().toISOString(),
+  };
+
+  savePlanExecutionState(nextState);
+  return nextState;
 }
 
 /**
@@ -190,10 +289,14 @@ export function toggleTaskCompletion(
   const newStatusMap = { ...currentState.taskStatusMap };
   newStatusMap[dayNumber] = isDone ? 'pending' : 'completed';
 
-  return {
+  const nextState: PlanExecutionState = {
     ...currentState,
     completedDays: newCompleted,
     taskStatusMap: newStatusMap,
     lastActiveDate: new Date().toISOString(),
   };
+
+  savePlanExecutionState(nextState);
+  return nextState;
 }
+

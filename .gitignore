@@ -1,3 +1,13 @@
+# Environment & Secrets
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.local
+
 # Python bytecode & caching
 __pycache__/
 *.py[cod]
@@ -7,7 +17,6 @@ __pycache__/
 env/
 venv/
 ENV/
-.env
 
 # Testing & IDE
 .pytest_cache/
@@ -29,6 +38,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node / Frontend Build
 node_modules
 dist
 dist-ssr
@@ -37,10 +47,8 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
-.env
+

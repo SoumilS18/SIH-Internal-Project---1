@@ -120,6 +120,7 @@ interface AutonomousSentinelScreenProps {
   onEditDetails?: () => void;
   onChangeLocation?: () => void;
   onToggleDayCompletion?: (day: number) => void;
+  onApplyPlanAdjustments?: (adjustments: TaskAdjustment | TaskAdjustment[]) => void;
 }
 
 export function AutonomousSentinelScreen({
@@ -135,7 +136,9 @@ export function AutonomousSentinelScreen({
   onEditDetails,
   onChangeLocation,
   onToggleDayCompletion,
+  onApplyPlanAdjustments,
 }: AutonomousSentinelScreenProps) {
+
   const { language } = useLanguage();
   const isHi = language === 'hi';
 
@@ -332,6 +335,19 @@ export function AutonomousSentinelScreen({
         },
       ]);
 
+      // Automatically update plan for upcoming days if AI suggested task modifications
+      if (resp.plan_adjustments && resp.plan_adjustments.length > 0) {
+        if (onApplyPlanAdjustments) {
+          onApplyPlanAdjustments(resp.plan_adjustments);
+        }
+        const adjDayNums = resp.plan_adjustments.map((a) => a.originalDay).join(', ');
+        const adjMsg = isHi
+          ? `⚡ AI अनुशंसा: दिन ${adjDayNums} की कार्य योजना को स्वतः अद्यतन कर दिया गया है।`
+          : `⚡ AI recommendation: Schedule for Day ${adjDayNums} has been dynamically updated.`;
+        setReportFeedback(adjMsg);
+        setTimeout(() => setReportFeedback(null), 8000);
+      }
+
       // Play TTS
       try {
         if (audioSpeakerRef.current) audioSpeakerRef.current.stop();
@@ -340,6 +356,7 @@ export function AutonomousSentinelScreen({
       } catch {
         // Fallback TTS
       }
+
     } catch {
       const fallback = isHi
         ? 'वर्तमान खेत योजना एवं मौसम के अनुसार स्थिति सामान्य है।'
@@ -601,11 +618,18 @@ export function AutonomousSentinelScreen({
                   {/* Task Info & Actions */}
                   <div className="flex-1 min-w-0 space-y-3 w-full">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="t-eyebrow text-[0.66rem] font-bold text-[var(--field-deep)] uppercase tracking-wider">
-                        {isHi
-                          ? `दिन ${progress.currentDay} · ${progress.todayTask?.category || 'कृषि कार्य'}`
-                          : `DAY ${progress.currentDay} · ${(progress.todayTask?.category || 'FARM WORK').toUpperCase()}`}
-                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="t-eyebrow text-[0.66rem] font-bold text-[var(--field-deep)] uppercase tracking-wider">
+                          {isHi
+                            ? `दिन ${progress.currentDay} · ${progress.todayTask?.category || 'कृषि कार्य'}`
+                            : `DAY ${progress.currentDay} · ${(progress.todayTask?.category || 'FARM WORK').toUpperCase()}`}
+                        </span>
+                        {(progress.todayTask as any)?.isAdjusted && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full shadow-2xs">
+                            ⚡ {isHi ? 'AI द्वारा समायोजित' : 'AI Adjusted'}
+                          </span>
+                        )}
+                      </div>
 
                       {safePlanState.completedDays.includes(progress.currentDay) && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--field-deep)] bg-white/70 px-2.5 py-0.5 rounded-full shadow-2xs">
@@ -681,6 +705,7 @@ export function AutonomousSentinelScreen({
                     const dayNum = (progress.currentWeek - 1) * 7 + i + 1;
                     const isToday = dayNum === progress.currentDay && safePlanState.isStarted;
                     const isDone = safePlanState.completedDays.includes(dayNum) || (dayNum < progress.currentDay && safePlanState.isStarted);
+                    const hasAdjustment = Boolean(safePlanState.adjustments?.[dayNum]);
 
                     return (
                       <div
@@ -688,16 +713,28 @@ export function AutonomousSentinelScreen({
                         className="relative z-10 flex flex-col items-center group cursor-default"
                       >
                         {/* Node */}
-                        <div
-                          className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-transform ${
-                            isToday
-                              ? 'bg-[var(--field-deep)] text-white ring-4 ring-[var(--field-tint)] shadow-sm scale-110'
-                              : isDone
-                              ? 'bg-[var(--field)] text-white shadow-xs'
-                              : 'bg-[var(--surface-solid)] border-2 border-[var(--line-strong)] text-[var(--ink-ghost)]'
-                          }`}
-                        >
-                          {isDone ? '✓' : isToday ? '●' : '○'}
+                        <div className="relative">
+                          <div
+                            className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-transform ${
+                              isToday
+                                ? 'bg-[var(--field-deep)] text-white ring-4 ring-[var(--field-tint)] shadow-sm scale-110'
+                                : isDone
+                                ? 'bg-[var(--field)] text-white shadow-xs'
+                                : hasAdjustment
+                                ? 'bg-amber-100 border-2 border-amber-400 text-amber-900 font-bold'
+                                : 'bg-[var(--surface-solid)] border-2 border-[var(--line-strong)] text-[var(--ink-ghost)]'
+                            }`}
+                          >
+                            {isDone ? '✓' : isToday ? '●' : '○'}
+                          </div>
+                          {hasAdjustment && (
+                            <span
+                              className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-[8px] text-white font-bold shadow-xs"
+                              title={safePlanState.adjustments?.[dayNum]?.reason || 'Adjusted'}
+                            >
+                              ⚡
+                            </span>
+                          )}
                         </div>
 
                         {/* Day Label */}
@@ -707,20 +744,20 @@ export function AutonomousSentinelScreen({
                               ? 'font-bold text-[var(--field-deep)]'
                               : isDone
                               ? 'text-[var(--ink)]'
+                              : hasAdjustment
+                              ? 'text-amber-800 font-semibold'
                               : 'text-[var(--ink-ghost)]'
                           }`}
                         >
                           {isHi ? `दिन ${i + 1}` : `Day ${i + 1}`}
                         </span>
-
-                        <span className="font-data text-[9px] text-[var(--ink-faint)]">
-                          d{dayNum}
-                        </span>
                       </div>
                     );
+
                   })}
                 </div>
               </div>
+
             </div>
 
             {/* RIGHT COLUMN: AGENT DECISION (Clean System Status Panel, No Cards Inside Cards) */}

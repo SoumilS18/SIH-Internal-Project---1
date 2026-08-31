@@ -241,49 +241,57 @@ class GeminiFarmAdvisor:
     @classmethod
     def build_system_prompt(cls, language: str) -> str:
         """
-        Builds comprehensive, logically grounded system guardrail instructions for Gemini.
+        Builds comprehensive, scientifically grounded agronomy instructions for Gemini.
+        Enforces farmer-friendly communication, actionable guidance, and structured plan adjustments.
         """
         is_hindi = language in ("hi", "hi-IN")
         if is_hindi:
-            language_rule = "1. OUTPUT LANGUAGE: You MUST respond EXCLUSIVELY in clear, natural Hindi using Devanagari script (हिन्दी). Absolutely DO NOT use English sentences or Latin script."
-            vocab_rule = """4. VOCABULARY & TONE:
-   - Use warm, respectful, farmer-friendly Hindi vocabulary (e.g. "किसान भाई", "खेत की तैयारी", "खाद", "दवा/कीटनाशक", "नमी", "बुवाई").
-   - Avoid bureaucratic or academic jargon (e.g. say "मिट्टी में नमी" instead of "volumetric water content index")."""
+            language_rule = "1. OUTPUT LANGUAGE: You MUST respond EXCLUSIVELY in clear, natural, spoken Hindi using Devanagari script (हिन्दी). Absolutely DO NOT use English sentences or Latin script in spoken text."
+            vocab_rule = """4. VOCABULARY, DOSAGES & AGRONOMIC PRECISION:
+   - Use warm, respectful, practical Hindi farming terms (e.g. "किसान भाई", "खेत की जुताई", "नीम का तेल", "डीएपी/यूरिया", "नमी", "दवा छिड़काव", "बुवाई").
+   - When suggesting fertilizers or pest sprays, give exact standard ICAR/KVK dosages (e.g. "5 मिली नीम का तेल प्रति लीटर पानी में", "25 किलो यूरिया प्रति एकड़") और उपयुक्त समय (सुबह या शाम 4 बजे के बाद)।
+   - Explain clearly what the farmer should do TODAY and in the NEXT 2-3 DAYS."""
             irrelevant_reply = "'मैं आपके खेत, फसलों, मौसम, सिंचाई, खाद-दवा और कृषि निर्णयों के बारे में मदद कर सकता हूँ।'"
         else:
-            language_rule = "1. OUTPUT LANGUAGE: You MUST respond EXCLUSIVELY in clear, simple English. Absolutely DO NOT use Hindi or Devanagari script under any circumstances."
-            vocab_rule = """4. VOCABULARY & TONE:
-   - Use warm, clear, farmer-friendly English (e.g. "field preparation", "compost/fertilizer", "seed treatment", "soil moisture", "sowing").
-   - Absolutely DO NOT include any Hindi words or Devanagari script."""
+            language_rule = "1. OUTPUT LANGUAGE: You MUST respond EXCLUSIVELY in clear, direct English. Absolutely DO NOT include Hindi or Devanagari script."
+            vocab_rule = """4. VOCABULARY, DOSAGES & AGRONOMIC PRECISION:
+   - Use warm, clear, farmer-friendly English with actionable agronomic terms.
+   - When recommending fertilizers or pest protection, state exact standard ICAR/KVK dosages (e.g. "5ml neem oil per litre of water", "25 kg Urea per acre top-dressing") and ideal application timing (early morning or late afternoon).
+   - Detail the actionable steps for TODAY and the NEXT 2-3 DAYS clearly."""
             irrelevant_reply = "'I am your farm advisor and can assist you with your crops, weather, soil, fertilizers, irrigation, and agricultural decisions.'"
 
-        return f"""You are the AgriOptima AI Farm Advisory & Agronomy Assistant.
-Your mission is to serve as a trustworthy, practical, and highly knowledgeable agricultural advisor for Indian farmers, explaining their personalized farm decision plan and providing logical, scientifically sound farming advice.
+        return f"""You are AgriOptima AI — India's premier Autonomous Agro-Economic & Precision Agronomy Advisor.
+Your mission is to serve as an expert, practical, and highly trusted agricultural advisor for Indian farmers, explaining their personalized farm decision plan and providing logical, scientifically sound, and actionable farming advice.
 
 STRICT OPERATIONAL RULES:
 {language_rule}
 
-2. DUAL-TIER REASONING & ALIGNMENT:
+2. DUAL-TIER REASONING & ACTIVE GROUND TRUTH:
    - TIER 1 (FARM PLAN GROUND TRUTH): When the farmer asks about their specific farm plan numbers (location, soil moisture, 7-day rainfall forecast, temperature, allocated crops, expected profits, or risk scores):
      * Strictly use the metrics provided in the CURRENT REAL FARM CONTEXT.
      * Never contradict or invent different acreage, profit, or weather numbers.
-   - TIER 2 (GENERAL AGRONOMY & LOGICAL REASONING): When the farmer asks broader agricultural, agronomic, or practical farming questions (e.g. fertilizer dosage & timing, seed treatment, pest & disease management, organic remedies, irrigation methods, intercropping benefits, crop care, harvesting techniques, storage tips, market readiness, weather adaptation):
-     * Answer helpfully, logically, and accurately using established agricultural science and Indian farming best practices (ICAR / KVK standards).
-     * Always tailor your advice logically to the farmer's region (State/District), soil type, season, and allocated crops from the context!
-     * NEVER refuse legitimate agricultural, crop care, soil, weather, or farming questions.
+   - TIER 2 (GENERAL AGRONOMY & ADAPTIVE DECISION MAKING): When the farmer asks questions about irrigation timing, fertilizer dosage, pest & disease protection, rain adaptation, delayed tasks, or crop care:
+     * Ground your response in the farmer's real region, soil type, season, current day of season, and allocated crops.
+     * Provide concrete, step-by-step guidance rather than vague generalities.
+     * Always explain WHY (cause) and WHAT TO DO (immediate and next 2-3 days).
 
-3. CRISPNESS, BREVITY & COMPLETENESS:
-   - Keep answers concise, crisp, and direct: approximately 2 to 4 short sentences (about 45 to 80 words).
-   - Avoid lengthy essays, long introductory preambles, or large bullet lists.
-   - State the core insight directly and conclude smoothly so the response is fast to read and pleasant to hear over audio.
+3. CRISPNESS & SPOKEN QUALITY:
+   - Keep the spoken response natural, punchy, and complete (about 50 to 90 words / 3 to 5 sentences).
+   - Ensure it sounds natural and fluent when read aloud over voice audio.
 
 {vocab_rule}
 
-5. IRRELEVANT / NON-FARMING TOPICS:
-   - If the user asks about completely non-agricultural topics unrelated to farming, rural life, weather, soil, or crops (e.g. movies, coding, politics, video games), politely reply: {irrelevant_reply}
+5. DYNAMIC PLAN ADJUSTMENTS (CRITICAL):
+   - If the situation clearly calls for adjusting the farmer's schedule for today or the upcoming days (e.g. heavy rain expected -> postpone irrigation/spray; pest detected -> schedule foliar spray tomorrow; severe heat -> evening irrigation; task delayed -> reschedule):
+     Append a structured JSON block at the very end of your response inside a comment tag:
+     <!--PLAN_ADJUSTMENT:{{"adjustments":[{{"day_offset":0,"action_type":"postponed","adjusted_title":"...","adjusted_desc":"...","reason":"...","category":"irrigation"}},{{"day_offset":2,"action_type":"supplemented","adjusted_title":"...","adjusted_desc":"...","reason":"...","category":"nutrient"}}]}}-->
+   - If no schedule change is needed, DO NOT include the comment tag.
 
-6. CONTINUITY:
-   - If conversation history is provided, maintain context and understand pronouns or references to previously discussed crops or topics."""
+6. IRRELEVANT / NON-FARMING TOPICS:
+   - If the user asks about completely non-agricultural topics (e.g. movies, coding, politics), reply: {irrelevant_reply}
+
+7. CONVERSATION CONTINUITY:
+   - Reference previous turns smoothly when pronouns ("it", "they", "इस फसल") are used."""
 
     @classmethod
     def format_farm_context(cls, context_dict: Optional[Dict[str, Any]]) -> str:
@@ -325,6 +333,31 @@ STRICT OPERATIONAL RULES:
         lines.append(f"- Current Temperature: {temp_str} (Forecast Max: {max_temp_str})")
         lines.append(f"- 7-Day Rainfall Forecast: {rain_str}")
         lines.append(f"- Root-Zone Soil Moisture: {sm_str}")
+
+        # Live Plan Execution State & Progress
+        current_day = context_dict.get("current_day")
+        current_week = context_dict.get("current_week")
+        if current_day is not None:
+            lines.append(f"- Plan Execution Timeline: Day {current_day} (Week {current_week or 1}) of active season")
+
+        today_task = context_dict.get("today_task")
+        if today_task and isinstance(today_task, dict):
+            task_title = today_task.get("title", "")
+            task_desc = today_task.get("desc", "")
+            task_cat = today_task.get("category", "")
+            lines.append(f"- Scheduled Task for Today: [{task_cat.upper()}] {task_title} — {task_desc}")
+
+        farmer_obs = context_dict.get("farmer_observations", [])
+        if farmer_obs:
+            lines.append(f"- Active Farmer Field Observations: {', '.join(farmer_obs)}")
+
+        custom_report = context_dict.get("custom_report_text")
+        if custom_report:
+            lines.append(f"- Farmer Note/Report from Field: \"{custom_report}\"")
+
+        plan_status = context_dict.get("plan_status")
+        if plan_status:
+            lines.append(f"- Plan Health Status: {plan_status}")
 
         # Risk Engine Output
         overall_risk = context_dict.get("overall_risk_label") or "Unavailable"
@@ -388,6 +421,7 @@ STRICT OPERATIONAL RULES:
     ) -> Dict[str, Any]:
         """
         Sends the farmer's question with full farm context and history to Google Gemini API.
+        Extracts clean answer and any dynamic plan adjustment directives.
         """
         api_key = cls.get_api_key()
         if not api_key:
@@ -413,7 +447,7 @@ STRICT OPERATIONAL RULES:
 
         # Add conversation history turns if present
         if conversation_history:
-            for turn in conversation_history[-4:]:  # last 4 turns for lightweight context
+            for turn in conversation_history[-4:]:
                 role = "user" if turn.get("role") in ("user", "farmer") else "model"
                 text = turn.get("text", "")
                 if text:
@@ -435,7 +469,7 @@ STRICT OPERATIONAL RULES:
             },
             "contents": contents,
             "generationConfig": {
-                "temperature": 0.3,
+                "temperature": 0.25,
                 "topP": 0.9,
                 "maxOutputTokens": 1200
             }
@@ -469,15 +503,33 @@ STRICT OPERATIONAL RULES:
                         if parts:
                             raw_answer = parts[0].get("text", "").strip()
                             if raw_answer:
+                                # Parse structured plan adjustments if present
+                                plan_adjustments = []
+                                clean_answer = raw_answer
+
+                                if "<!--PLAN_ADJUSTMENT:" in raw_answer:
+                                    try:
+                                        start_idx = raw_answer.index("<!--PLAN_ADJUSTMENT:") + len("<!--PLAN_ADJUSTMENT:")
+                                        end_idx = raw_answer.index("-->", start_idx)
+                                        json_str = raw_answer[start_idx:end_idx].strip()
+                                        parsed_adj = json.loads(json_str)
+                                        plan_adjustments = parsed_adj.get("adjustments", [])
+                                        # Clean text by removing tag
+                                        clean_answer = (raw_answer[:raw_answer.index("<!--PLAN_ADJUSTMENT:")] + raw_answer[end_idx + 3:]).strip()
+                                    except Exception as ex:
+                                        logging.warning(f"Plan adjustment parsing notice: {ex}")
+
                                 return {
                                     "status": "success",
-                                    "answer": raw_answer,
+                                    "answer": clean_answer,
+                                    "plan_adjustments": plan_adjustments,
                                     "language": language,
                                     "model": model,
                                     "source": "gemini"
                                 }
             except urllib.error.HTTPError as he:
                 err_body = he.read().decode("utf-8", errors="replace") if hasattr(he, "read") else str(he)
+
                 last_error = f"Gemini HTTP {he.code}: {err_body}"
             except Exception as ex:
                 last_error = f"Gemini Connection Error: {str(ex)}"
@@ -553,9 +605,10 @@ class FarmerVoiceService:
             return {
                 "status": "success",
                 "answer": gemini_res["answer"],
+                "plan_adjustments": gemini_res.get("plan_adjustments", []),
                 "language": effective_lang,
                 "source": "gemini",
-                "model": gemini_res.get("model", "gemini-1.5-flash")
+                "model": gemini_res.get("model", "gemini-2.5-flash")
             }
 
         # If Gemini is not configured or failed, return fallback_needed signal
